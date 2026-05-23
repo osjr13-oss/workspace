@@ -1,0 +1,94 @@
+import { NextResponse } from "next/server";
+import { callGroq } from "@/lib/groq";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+export async function POST(request: Request) {
+  try {
+    const { supabase, user } = await getAuthenticatedUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = (await request.json()) as { message?: string; threadId?: string | null; projectId?: string | null };
+    if (!body.message?.trim()) return NextResponse.json({ error: "Message is required" }, { status: 400 });
+
+    let threadId = body.threadId || null;
+    if (!threadId) {
+      const title = body.message.slice(0, 72);
+      const { data, error } = await supabase
+        .from("chat_threads")
+        .insert({ user_id: user.id, project_id: body.projectId || null, title })
+        .select("*")
+        .single();
+      if (error) throw error;
+      threadId = data.id;
+    }
+
+    const { error: userMessageError } = await supabase.from("chat_messages").insert({
+      user_id: user.id,
+      thread_id: threadId,
+      role: "user",
+      content: body.message
+    });
+    if (userMessageError) throw userMessageError;
+
+    const [historyResult, context] = await Promise.all([
+      supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(16),
+      loadProjectContext(supabase, body.projectId || null)
+    ]);
+
+    const messages = [
+      {
+        role: "system" as const,
+        content:
+          "You are Meridian, a concise academic workspace assistant. Use provided project context when relevant. If context does not answer the question, say what is missing and answer from general reasoning only when useful."
+      },
+      ...(context
+        ? [
+            {
+              role: "system" as const,
+              content: `Project context:\n${context}`
+            }
+          ]
+        : []),
+      ...((historyResult.data || []) as Array<{ role: "user" | "assistant"; content: string }>).map((message) => ({
+        role: message.role,
+        content: message.content
+      }))
+    ];
+
+    const answer = await callGroq(messages, { temperature: 0.35 });
+
+    const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
+      user_id: user.id,
+      thread_id: threadId,
+      role: "assistant",
+      content: answer
+    });
+    if (assistantMessageError) throw assistantMessageError;
+
+    await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
+
+    return NextResponse.json({ threadId, answer });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Chat failed" }, { status: 500 });
+  }
+}
+
+async function loadProjectContext(supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"], projectId: string | null) {
+  if (!projectId) return "";
+
+  const [notes, chunks, cards] = await Promise.all([
+    supabase.from("notes").select("title, content").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(6),
+    supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10),
+    supabase.from("flashcards").select("front, back").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(12)
+  ]);
+
+  const parts = [
+    ...((notes.data || []) as Array<{ title: string; content: string }>).map((note) => `Note: ${note.title}\n${note.content.slice(0, 1800)}`),
+    ...((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`),
+    ...((cards.data || []) as Array<{ front: string; back: string }>).map((card) => `Flashcard: ${card.front}\nAnswer: ${card.back}`)
+  ];
+
+  return parts.join("\n\n---\n\n").slice(0, 14000);
+}
