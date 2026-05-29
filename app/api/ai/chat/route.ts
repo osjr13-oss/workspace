@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       {
         role: "system" as const,
         content:
-          "You are Meridian, a concise academic workspace assistant. Use provided project context when relevant. If context does not answer the question, say what is missing and answer from general reasoning only when useful."
+          "You are Meridian, an AI built into an academic workspace. Be direct and conversational — answer the question immediately without preamble, intros, or sign-offs. Never start with 'I can help with...' or list your own capabilities. Never use bullet points or numbered lists unless the user explicitly asks for them or the content is genuinely list-like. Write in plain prose. Keep responses tight — say what needs to be said, nothing more. If the user's project context is relevant, use it naturally without announcing that you're doing so. If you don't know something, say so plainly."
       },
       ...(context
         ? [
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       }))
     ];
 
-    const answer = await callGroq(messages, { temperature: 0.35 });
+    const answer = await callGroq(messages, { temperature: 0.6 });
 
     const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
       user_id: user.id,
