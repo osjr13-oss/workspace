@@ -54,12 +54,7 @@ export default function SettingsPage() {
         <Link href="/reset-password" className="btn-secondary mt-5">Send reset email</Link>
       </section>
 
-      <section className="panel p-6">
-        <h2 className="text-base font-extrabold tracking-[-0.01em]">AI configuration</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          Groq runs server-side through `GROQ_API_KEY` and `GROQ_MODEL`. Secrets are never shown in the browser.
-        </p>
-      </section>
+
     </div>
   );
 }
