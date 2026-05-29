@@ -204,3 +204,7 @@ create index if not exists file_chunks_project_idx on public.file_chunks(user_id
 create index if not exists chat_threads_user_updated_idx on public.chat_threads(user_id, updated_at desc);
 create index if not exists chat_messages_thread_created_idx on public.chat_messages(thread_id, created_at);
 create index if not exists flashcards_due_idx on public.flashcards(user_id, due_at);
+
+grant usage on schema public to anon, authenticated;
+grant all on all tables in schema public to anon, authenticated;
+grant all on all sequences in schema public to anon, authenticated;
