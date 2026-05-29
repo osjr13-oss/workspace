@@ -71,7 +71,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ threadId, answer });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Chat failed" }, { status: 500 });
+    const message = error instanceof Error ? error.message : (error as { message?: string })?.message ?? JSON.stringify(error);
+    console.error("[chat]", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
