@@ -116,7 +116,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="11. Changes to This Privacy Policy">
-        <p>We may update this Privacy Policy from time to time to reflect changes in our practices or for legal, operational, or regulatory reasons. We will update the "Last updated" date at the top of this page. For material changes, we will notify you by email or by posting a prominent notice within the Service before the changes take effect. Your continued use of the Service after the effective date constitutes acceptance of the revised policy.</p>
+        <p>We may update this Privacy Policy from time to time to reflect changes in our practices or for legal, operational, or regulatory reasons. We will update the &quot;Last updated&quot; date at the top of this page. For material changes, we will notify you by email or by posting a prominent notice within the Service before the changes take effect. Your continued use of the Service after the effective date constitutes acceptance of the revised policy.</p>
       </Section>
 
       <Section title="12. Contact Us">
