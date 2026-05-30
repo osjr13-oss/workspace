@@ -115,6 +115,16 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <footer className="mx-auto max-w-7xl border-t border-[var(--border)] px-5 py-8 sm:px-6">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-sm text-[var(--muted)]">© {new Date().getFullYear()} Meridian. All rights reserved.</p>
+          <nav className="flex gap-6 text-sm font-bold text-[var(--muted)]">
+            <Link href="/terms" className="hover:text-[var(--text)] transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-[var(--text)] transition-colors">Privacy Policy</Link>
+          </nav>
+        </div>
+      </footer>
     </main>
   );
 }
