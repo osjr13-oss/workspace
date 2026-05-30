@@ -7,6 +7,8 @@ import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ChatsPage() {
   const searchParams = useSearchParams();
@@ -120,7 +122,16 @@ export default function ChatsPage() {
             messages.map((message) => (
               <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[78%] rounded-[18px] border border-[var(--border)] p-4 text-sm leading-6 ${message.role === "user" ? "bg-[var(--text)] text-white" : "bg-white/72 text-[var(--muted-strong)]"}`}>
-                  {message.content}
+                  {message.role === "user" ? (
+                    message.content
+                  ) : (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-extrabold prose-headings:tracking-tight prose-code:text-xs prose-pre:text-xs"
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))
