@@ -11,7 +11,7 @@ export default function TermsPage() {
       <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Terms of Service</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
-        Please read these Terms of Service ("Terms") carefully before using Meridian ("Service", "we", "us"). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
+        Please read these Terms of Service (&quot;Terms&quot;) carefully before using Meridian (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
       </p>
 
       <Section title="1. Eligibility">
@@ -55,7 +55,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="5. User Content">
-        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Meridian ("User Content"), including notes, files, flashcards, and chat messages.</p>
+        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Meridian (&quot;User Content&quot;), including notes, files, flashcards, and chat messages.</p>
         <p><strong>License to us.</strong> By using the Service, you grant Meridian a limited, non-exclusive, royalty-free license to access, store, process, and transmit your User Content solely as necessary to provide and improve the Service. We do not claim ownership of your content and do not sell it to third parties.</p>
         <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
         <p><strong>Your responsibility.</strong> You are solely responsible for the legality, accuracy, and appropriateness of your User Content. We have no obligation to monitor content but reserve the right to remove any content that violates these Terms.</p>
@@ -94,7 +94,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="11. Disclaimers">
-        <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, SECURE, OR FREE OF VIRUSES OR HARMFUL COMPONENTS. YOUR USE OF THE SERVICE IS AT YOUR SOLE RISK.</p>
+        <p>THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, SECURE, OR FREE OF VIRUSES OR HARMFUL COMPONENTS. YOUR USE OF THE SERVICE IS AT YOUR SOLE RISK.</p>
       </Section>
 
       <Section title="12. Limitation of Liability">
@@ -112,7 +112,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="15. Changes to These Terms">
-        <p>We may update these Terms from time to time. When we do, we will update the "Last updated" date at the top of this page. For material changes, we will provide notice via email or a prominent notice within the Service. Your continued use of the Service after changes become effective constitutes acceptance of the revised Terms.</p>
+        <p>We may update these Terms from time to time. When we do, we will update the &quot;Last updated&quot; date at the top of this page. For material changes, we will provide notice via email or a prominent notice within the Service. Your continued use of the Service after changes become effective constitutes acceptance of the revised Terms.</p>
       </Section>
 
       <Section title="16. Governing Law and Disputes">

@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
-        This Privacy Policy explains how Meridian ("we", "us", "our") collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
+        This Privacy Policy explains how Meridian (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
       </p>
 
       <Section title="1. Information We Collect">
