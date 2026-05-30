@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Upload } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -10,6 +10,14 @@ import { fileSize, formatDate } from "@/lib/format";
 import type { Project, WorkspaceFile } from "@/lib/types";
 
 export default function FilesPage() {
+  return (
+    <Suspense>
+      <FilesContent />
+    </Suspense>
+  );
+}
+
+function FilesContent() {
   const searchParams = useSearchParams();
   const projectFilter = searchParams.get("project");
   const [files, setFiles] = useState<WorkspaceFile[]>([]);

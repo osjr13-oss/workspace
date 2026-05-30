@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Send } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -11,6 +11,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export default function ChatsPage() {
+  return (
+    <Suspense>
+      <ChatsContent />
+    </Suspense>
+  );
+}
+
+function ChatsContent() {
   const searchParams = useSearchParams();
   const initialThread = searchParams.get("thread");
   const initialProject = searchParams.get("project");

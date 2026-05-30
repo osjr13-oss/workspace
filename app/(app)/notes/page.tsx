@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { MarkdownEditor } from "@/components/markdown-editor";
@@ -11,6 +11,14 @@ import { formatRelative } from "@/lib/format";
 import type { Note, Project } from "@/lib/types";
 
 export default function NotesPage() {
+  return (
+    <Suspense>
+      <NotesContent />
+    </Suspense>
+  );
+}
+
+function NotesContent() {
   const searchParams = useSearchParams();
   const projectFilter = searchParams.get("project");
   const [notes, setNotes] = useState<Note[]>([]);

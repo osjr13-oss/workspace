@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Sparkles, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -9,6 +9,14 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Flashcard, FlashcardDeck, Note, Project, WorkspaceFile } from "@/lib/types";
 
 export default function FlashcardsPage() {
+  return (
+    <Suspense>
+      <FlashcardsContent />
+    </Suspense>
+  );
+}
+
+function FlashcardsContent() {
   const searchParams = useSearchParams();
   const projectFilter = searchParams.get("project");
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
