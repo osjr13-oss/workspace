@@ -62,7 +62,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="6. AI-Generated Content Disclaimer">
-        <p>Meridian's AI features are powered by third-party large language models. AI-generated responses are provided for informational and educational purposes only. You acknowledge that:</p>
+        <p>Meridian&apos;s AI features are powered by third-party large language models. AI-generated responses are provided for informational and educational purposes only. You acknowledge that:</p>
         <ul>
           <li>AI outputs may be inaccurate, incomplete, outdated, or misleading.</li>
           <li>AI outputs do not constitute professional legal, medical, financial, or academic advice.</li>

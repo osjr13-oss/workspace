@@ -54,7 +54,7 @@ export default function PrivacyPage() {
       <Section title="3. AI Processing and Third-Party AI Providers">
         <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content are transmitted to <strong>Groq, Inc.</strong> for AI inference processing. This is necessary to generate AI responses.</p>
         <ul>
-          <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq's Privacy Policy</a>.</li>
+          <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
           <li>We recommend you do not submit sensitive personal information, passwords, financial data, or confidential third-party data through AI features.</li>
         </ul>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="5. Data Storage and Security">
-        <p>Your data is stored securely on Supabase's infrastructure (PostgreSQL database and private object storage). We implement the following safeguards:</p>
+        <p>Your data is stored securely on Supabase&apos;s infrastructure (PostgreSQL database and private object storage). We implement the following safeguards:</p>
         <ul>
           <li><strong>Row-level security (RLS):</strong> database policies ensure each user can only access their own data — your data is never accessible to other users.</li>
           <li><strong>Encrypted storage:</strong> all data is encrypted at rest and in transit (HTTPS/TLS).</li>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
         <p>You can disable cookies in your browser settings, but doing so will prevent you from logging in to the Service.</p>
       </Section>
 
-      <Section title="9. Children's Privacy">
+      <Section title="9. Children&apos;s Privacy">
         <p>Meridian is intended for users who are 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <strong>support@meridian.app</strong> and we will delete that information promptly.</p>
       </Section>
 
