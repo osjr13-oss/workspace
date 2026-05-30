@@ -23,6 +23,7 @@ export default function FlashcardsPage() {
   const [back, setBack] = useState("");
   const [source, setSource] = useState("");
   const [working, setWorking] = useState(false);
+  const [generateError, setGenerateError] = useState("");
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -77,13 +78,20 @@ export default function FlashcardsPage() {
   async function generate() {
     if (!deckId || !source) return;
     setWorking(true);
+    setGenerateError("");
     const [type, id] = source.split(":");
-    await fetch("/api/ai/flashcards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deckId, sourceType: type, sourceId: id, projectId: projectId || null })
-    });
-    await load();
+    try {
+      const res = await fetch("/api/ai/flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deckId, sourceType: type, sourceId: id, projectId: projectId || null })
+      });
+      const payload = await res.json();
+      if (!res.ok) setGenerateError(payload.error || "Generation failed. Please try again.");
+      else await load();
+    } catch {
+      setGenerateError("Network error. Please try again.");
+    }
     setWorking(false);
   }
 
@@ -99,24 +107,28 @@ export default function FlashcardsPage() {
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Flashcards" eyebrow="Study system" />
       <section className="grid gap-5 lg:grid-cols-2">
-        <form onSubmit={createDeck} className="panel grid gap-3 p-5 sm:grid-cols-[1fr_220px_auto]">
-          <input aria-label="Deck name" className="input-premium px-5" placeholder="Deck name" value={deckName} onChange={(event) => setDeckName(event.target.value)} required />
-          <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+        <form onSubmit={createDeck} className="panel flex flex-wrap items-center gap-3 p-5">
+          <input aria-label="Deck name" className="input-premium min-w-0 flex-1 px-5" placeholder="Deck name" value={deckName} onChange={(event) => setDeckName(event.target.value)} required />
+          <select aria-label="Project" className="input-premium w-44 shrink-0 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
             <option value="">No project</option>
             {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
           </select>
-          <button className="btn-primary" type="submit"><Plus size={18} />Deck</button>
+          <button className="btn-primary shrink-0" type="submit"><Plus size={18} />Deck</button>
         </form>
-        <div className="panel grid gap-3 p-5 sm:grid-cols-[1fr_auto]">
-          <select aria-label="Flashcard generation source" className="input-premium px-5" value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="">Choose note or extracted file</option>
-            {notes.map((note) => <option key={note.id} value={`note:${note.id}`}>Note: {note.title}</option>)}
-            {files.map((file) => <option key={file.id} value={`file:${file.id}`}>File: {file.name}</option>)}
-          </select>
-          <button type="button" onClick={generate} className="btn-secondary" disabled={!source || !deckId || working}>
-            <Sparkles size={18} />
-            {working ? "Generating" : "Generate"}
-          </button>
+        <div className="panel flex flex-col gap-3 p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <select aria-label="Flashcard generation source" className="input-premium min-w-0 flex-1 px-5" value={source} onChange={(event) => setSource(event.target.value)}>
+              <option value="">Choose note or extracted file</option>
+              {notes.map((note) => <option key={note.id} value={`note:${note.id}`}>Note: {note.title}</option>)}
+              {files.map((file) => <option key={file.id} value={`file:${file.id}`}>File: {file.name}</option>)}
+            </select>
+            <button type="button" onClick={generate} className="btn-primary shrink-0" disabled={!source || !deckId || working}>
+              <Sparkles size={18} />
+              {working ? "Generating…" : "Generate"}
+            </button>
+          </div>
+          {!deckId && <p className="text-xs text-[var(--muted)]">Create or select a deck first before generating cards.</p>}
+          {generateError && <p className="text-xs text-[var(--critical)]">{generateError}</p>}
         </div>
       </section>
 
