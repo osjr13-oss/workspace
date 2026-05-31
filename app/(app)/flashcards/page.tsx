@@ -103,6 +103,14 @@ function FlashcardsContent() {
     setWorking(false);
   }
 
+  async function removeDeck(id: string) {
+    if (!confirm("Delete this deck and all its cards?")) return;
+    const supabase = createSupabaseBrowserClient();
+    await supabase.from("flashcard_decks").delete().eq("id", id);
+    if (deckId === id) setDeckId("");
+    await load();
+  }
+
   async function removeCard(id: string) {
     const supabase = createSupabaseBrowserClient();
     await supabase.from("flashcards").delete().eq("id", id);
@@ -144,9 +152,14 @@ function FlashcardsContent() {
         <aside className="panel p-4">
           <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Decks</p>
           {decks.map((deck) => (
-            <button key={deck.id} type="button" onClick={() => setDeckId(deck.id)} className={`mb-2 w-full rounded-2xl p-4 text-left font-bold ${deckId === deck.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}>
-              {deck.name}
-            </button>
+            <div key={deck.id} className={`group mb-2 flex items-center gap-2 rounded-2xl p-4 ${deckId === deck.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}>
+              <button type="button" onClick={() => setDeckId(deck.id)} className="min-w-0 flex-1 text-left font-bold truncate">
+                {deck.name}
+              </button>
+              <button type="button" onClick={() => removeDeck(deck.id)} title="Delete deck" className="shrink-0 text-[var(--muted)] opacity-0 hover:text-[var(--critical)] group-hover:opacity-100">
+                <Trash2 size={15} />
+              </button>
+            </div>
           ))}
         </aside>
         <main className="space-y-5">

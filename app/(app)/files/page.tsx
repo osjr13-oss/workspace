@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Upload } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -26,6 +26,7 @@ function FilesContent() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -41,6 +42,16 @@ function FilesContent() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectFilter]);
+
+  async function deleteFile(file: WorkspaceFile) {
+    if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
+    setDeletingId(file.id);
+    const supabase = createSupabaseBrowserClient();
+    await supabase.storage.from("workspace-files").remove([file.storage_path]);
+    await supabase.from("files").delete().eq("id", file.id);
+    await load();
+    setDeletingId(null);
+  }
 
   async function upload(event: React.FormEvent) {
     event.preventDefault();
@@ -93,6 +104,7 @@ function FilesContent() {
                 <th>Size</th>
                 <th>Status</th>
                 <th>Uploaded</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -105,6 +117,11 @@ function FilesContent() {
                   <td>{fileSize(item.size_bytes)}</td>
                   <td><span className="status-pill">{item.extraction_status}</span></td>
                   <td>{formatDate(item.created_at)}</td>
+                  <td>
+                    <button type="button" onClick={() => deleteFile(item)} disabled={deletingId === item.id} title="Delete file" className="text-[var(--muted)] hover:text-[var(--critical)]">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

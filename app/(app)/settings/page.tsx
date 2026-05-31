@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -54,6 +57,34 @@ export default function SettingsPage() {
         <Link href="/reset-password" className="btn-secondary mt-5">Send reset email</Link>
       </section>
 
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em] text-[var(--critical)]">Danger zone</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Permanently delete your account and all your data. This cannot be undone.
+        </p>
+        <button
+          type="button"
+          className="btn-secondary mt-5 text-[var(--critical)]"
+          disabled={deletingAccount}
+          onClick={async () => {
+            if (!confirm("Are you absolutely sure? This will permanently delete your account and ALL your data. This cannot be undone.")) return;
+            setDeletingAccount(true);
+            const res = await fetch("/api/account/delete", { method: "DELETE" });
+            if (res.ok) {
+              const supabase = createSupabaseBrowserClient();
+              await supabase.auth.signOut();
+              router.push("/");
+            } else {
+              const payload = await res.json();
+              setMessage(payload.error || "Failed to delete account.");
+              setDeletingAccount(false);
+            }
+          }}
+        >
+          <Trash2 size={16} />
+          {deletingAccount ? "Deleting…" : "Delete my account"}
+        </button>
+      </section>
 
     </div>
   );
