@@ -9,7 +9,8 @@ const protectedPrefixes = [
   "/files",
   "/flashcards",
   "/study",
-  "/settings"
+  "/settings",
+  "/help"
 ];
 
 const authOnlyPaths = ["/signin", "/signup"];

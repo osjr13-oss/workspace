@@ -1,0 +1,97 @@
+import { NextResponse } from "next/server";
+import { clientIp, logAudit } from "@/lib/audit";
+import { brand } from "@/lib/brand";
+import { sendEmail, isEmailConfigured } from "@/lib/email/send";
+import { supportConfirmationEmail, supportTeamNotificationEmail } from "@/lib/email/templates";
+import { serializeError } from "@/lib/serialize-error";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+function ticketId() {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `SRN-${date}-${suffix}`;
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as {
+      name?: string;
+      email?: string;
+      subject?: string;
+      message?: string;
+      company?: string;
+    };
+
+    if (body.company?.trim()) {
+      return NextResponse.json({ success: true, ticketId: "SRN-SPAM" });
+    }
+
+    const name = body.name?.trim();
+    const email = body.email?.trim();
+    const subject = body.subject?.trim();
+    const message = body.message?.trim();
+
+    if (!name || !email || !subject || !message) {
+      return NextResponse.json({ error: "Name, email, subject, and message are required." }, { status: 400 });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+    }
+
+    if (message.length > 8000) {
+      return NextResponse.json({ error: "Message is too long." }, { status: 400 });
+    }
+
+    const { supabase, user } = await getAuthenticatedUser();
+    const id = ticketId();
+
+    const { error: insertError } = await supabase.from("support_requests").insert({
+      ticket_id: id,
+      user_id: user?.id || null,
+      name,
+      email,
+      subject,
+      message
+    });
+
+    if (insertError) throw insertError;
+
+    await logAudit(supabase, {
+      user_id: user?.id || null,
+      action: "support.contact",
+      metadata: { ticket_id: id, subject },
+      ip: clientIp(request)
+    });
+
+    if (isEmailConfigured()) {
+      const inbox = process.env.SUPPORT_INBOX || brand.emails.support;
+      await Promise.all([
+        sendEmail({
+          to: email,
+          subject: supportConfirmationEmail({ name, ticketId: id, subject }).subject,
+          html: supportConfirmationEmail({ name, ticketId: id, subject }).html,
+          replyTo: brand.emails.support
+        }),
+        sendEmail({
+          to: inbox,
+          subject: supportTeamNotificationEmail({ ticketId: id, name, email, subject, message, userId: user?.id }).subject,
+          html: supportTeamNotificationEmail({ ticketId: id, name, email, subject, message, userId: user?.id }).html,
+          replyTo: email
+        })
+      ]);
+    }
+
+    return NextResponse.json({
+      success: true,
+      ticketId: id,
+      emailSent: isEmailConfigured()
+    });
+  } catch (error) {
+    const msg = serializeError(error);
+    console.error("[support/contact]", msg, error);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

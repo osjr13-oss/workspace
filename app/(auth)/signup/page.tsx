@@ -26,6 +26,11 @@ export default function SignUpPage() {
         options: { data: { full_name: fullName } }
       });
       if (error) throw error;
+      fetch("/api/email/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName })
+      }).catch(() => undefined);
       router.replace("/dashboard");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create account.");

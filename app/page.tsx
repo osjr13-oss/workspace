@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Files, MessageSquare, Sparkles } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function LandingPage() {
   return (
@@ -116,15 +117,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-7xl border-t border-[var(--border)] px-5 py-8 sm:px-6">
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-sm text-[var(--muted)]">© {new Date().getFullYear()} Selrano. All rights reserved.</p>
-          <nav className="flex gap-6 text-sm font-bold text-[var(--muted)]">
-            <Link href="/terms" className="hover:text-[var(--text)] transition-colors">Terms of Service</Link>
-            <Link href="/privacy" className="hover:text-[var(--text)] transition-colors">Privacy Policy</Link>
-          </nav>
-        </div>
-      </footer>
+      <div className="mx-auto max-w-7xl px-5 sm:px-6">
+        <SiteFooter />
+      </div>
     </main>
   );
 }
