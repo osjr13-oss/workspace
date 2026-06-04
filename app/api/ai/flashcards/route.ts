@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { assertWithinLimit, recordUsage } from "@/lib/ai-usage";
 import { callGroq } from "@/lib/groq";
+import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -8,6 +10,9 @@ export async function POST(request: Request) {
   try {
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const limitError = await assertWithinLimit(supabase, user.id);
+    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const body = (await request.json()) as {
       deckId?: string;
@@ -49,9 +54,16 @@ export async function POST(request: Request) {
     );
     if (error) throw error;
 
+    await recordUsage(supabase, user.id, "flashcards", {
+      model: process.env.GROQ_MODEL || "groq",
+      input_chars: sourceText.length
+    });
+
     return NextResponse.json({ cards: parsed.length });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Flashcard generation failed" }, { status: 500 });
+    const message = serializeError(error);
+    console.error("[flashcards]", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

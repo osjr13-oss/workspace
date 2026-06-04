@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { assertWithinLimit, recordUsage } from "@/lib/ai-usage";
 import { callGroq } from "@/lib/groq";
+import { searchProjectChunks } from "@/lib/retrieve-context";
+import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -8,6 +11,9 @@ export async function POST(request: Request) {
   try {
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const limitError = await assertWithinLimit(supabase, user.id);
+    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const body = (await request.json()) as { message?: string; threadId?: string | null; projectId?: string | null };
     if (!body.message?.trim()) return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -34,7 +40,7 @@ export async function POST(request: Request) {
 
     const [historyResult, context] = await Promise.all([
       supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(16),
-      loadProjectContext(supabase, body.projectId || null)
+      loadProjectContext(supabase, body.projectId || null, body.message)
     ]);
 
     const messages = [
@@ -69,26 +75,43 @@ export async function POST(request: Request) {
 
     await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
 
+    await recordUsage(supabase, user.id, "chat", {
+      model: process.env.GROQ_MODEL || "groq",
+      input_chars: body.message.length
+    });
+
     return NextResponse.json({ threadId, answer });
   } catch (error) {
-    const message = error instanceof Error ? error.message : (error as { message?: string })?.message ?? JSON.stringify(error);
+    const message = serializeError(error);
     console.error("[chat]", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-async function loadProjectContext(supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"], projectId: string | null) {
+async function loadProjectContext(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
+  projectId: string | null,
+  query?: string
+) {
   if (!projectId) return "";
+
+  const semanticChunks = query?.trim() ? await searchProjectChunks(supabase, projectId, query, 6) : [];
 
   const [notes, chunks, cards] = await Promise.all([
     supabase.from("notes").select("title, content").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(6),
-    supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10),
+    semanticChunks.length
+      ? Promise.resolve({ data: [] as Array<{ content: string }> })
+      : supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10),
     supabase.from("flashcards").select("front, back").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(12)
   ]);
 
+  const fileExcerpts = semanticChunks.length
+    ? semanticChunks.map((chunk) => `File excerpt (relevant):\n${chunk.content}`)
+    : ((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`);
+
   const parts = [
     ...((notes.data || []) as Array<{ title: string; content: string }>).map((note) => `Note: ${note.title}\n${note.content.slice(0, 1800)}`),
-    ...((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`),
+    ...fileExcerpts,
     ...((cards.data || []) as Array<{ front: string; back: string }>).map((card) => `Flashcard: ${card.front}\nAnswer: ${card.back}`)
   ];
 

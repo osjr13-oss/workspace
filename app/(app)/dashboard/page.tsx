@@ -22,7 +22,12 @@ export default function DashboardPage() {
       const {
         data: { user }
       } = await supabase.auth.getUser();
-      setName(user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there");
+      let displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+        if (profile?.full_name) displayName = profile.full_name;
+      }
+      setName(displayName.split(" ")[0] || "there");
       const [projectsResult, chatsResult, filesResult, notesResult, cardsResult] = await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),

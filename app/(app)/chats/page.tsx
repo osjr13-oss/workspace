@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
@@ -29,6 +29,7 @@ function ChatsContent() {
   const [projectId, setProjectId] = useState(initialProject || "");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   async function loadThreads() {
@@ -92,6 +93,18 @@ function ChatsContent() {
     setLoading(false);
   }
 
+  async function deleteThread() {
+    if (!threadId) return;
+    if (!confirm("Delete this conversation? All messages will be permanently removed.")) return;
+    setDeleting(true);
+    const supabase = createSupabaseBrowserClient();
+    await supabase.from("chat_threads").delete().eq("id", threadId);
+    setThreadId(null);
+    setMessages([]);
+    await loadThreads();
+    setDeleting(false);
+  }
+
   return (
     <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
       <aside className="panel flex min-h-0 flex-col p-4">
@@ -121,9 +134,22 @@ function ChatsContent() {
       </aside>
 
       <section className="panel flex min-h-0 flex-col overflow-hidden">
-        <div className="border-b border-[var(--border)] p-5">
-          <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
+          <div>
+            <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
+            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+          </div>
+          {threadId ? (
+            <button
+              type="button"
+              onClick={deleteThread}
+              disabled={deleting}
+              title="Delete conversation"
+              className="btn-secondary shrink-0 text-[var(--critical)]"
+            >
+              <Trash2 size={16} />
+            </button>
+          ) : null}
         </div>
         <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length ? (

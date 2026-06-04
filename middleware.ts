@@ -1,8 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+const protectedPrefixes = [
+  "/dashboard",
+  "/chats",
+  "/projects",
+  "/notes",
+  "/files",
+  "/flashcards",
+  "/study",
+  "/settings"
+];
+
+const authOnlyPaths = ["/signin", "/signup"];
+
+function isProtectedPath(pathname: string) {
+  return protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +39,23 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user && isProtectedPath(pathname)) {
+    const signIn = request.nextUrl.clone();
+    signIn.pathname = "/signin";
+    signIn.searchParams.set("next", pathname);
+    return NextResponse.redirect(signIn);
+  }
+
+  if (user && authOnlyPaths.includes(pathname)) {
+    const dashboard = request.nextUrl.clone();
+    dashboard.pathname = "/dashboard";
+    dashboard.search = "";
+    return NextResponse.redirect(dashboard);
+  }
 
   return response;
 }

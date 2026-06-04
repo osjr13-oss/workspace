@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { assertWithinLimit, recordUsage } from "@/lib/ai-usage";
 import { callGroq } from "@/lib/groq";
+import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -17,8 +19,11 @@ const allowedActions = new Set([
 
 export async function POST(request: Request) {
   try {
-    const { user } = await getAuthenticatedUser();
+    const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const limitError = await assertWithinLimit(supabase, user.id);
+    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const body = (await request.json()) as { action?: string; text?: string };
     if (!body.text?.trim()) return NextResponse.json({ error: "Text is required" }, { status: 400 });
@@ -36,8 +41,15 @@ export async function POST(request: Request) {
       }
     ]);
 
+    await recordUsage(supabase, user.id, "transform", {
+      model: process.env.GROQ_MODEL || "groq",
+      input_chars: body.text.length
+    });
+
     return NextResponse.json({ result });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Transform failed" }, { status: 500 });
+    const message = serializeError(error);
+    console.error("[transform]", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

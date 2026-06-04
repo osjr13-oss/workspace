@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -15,9 +16,8 @@ export async function DELETE() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete account" },
-      { status: 500 }
-    );
+    const message = serializeError(error);
+    console.error("[account/delete]", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

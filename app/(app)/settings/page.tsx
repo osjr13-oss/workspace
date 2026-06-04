@@ -17,9 +17,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setEmail(data.user?.email || "");
-      setFullName(data.user?.user_metadata?.full_name || "");
+      const metadataName = data.user?.user_metadata?.full_name || "";
+      if (!data.user) return;
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", data.user.id).single();
+      setFullName(profile?.full_name || metadataName);
     });
   }, []);
 
@@ -27,8 +30,28 @@ export default function SettingsPage() {
     event.preventDefault();
     setSaving(true);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ data: { full_name: fullName } });
-    setMessage(error ? error.message : "Profile updated.");
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setMessage("You must be signed in to save.");
+      setSaving(false);
+      return;
+    }
+
+    const { error: authError } = await supabase.auth.updateUser({ data: { full_name: fullName } });
+    if (authError) {
+      setMessage(authError.message);
+      setSaving(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ full_name: fullName, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+
+    setMessage(profileError ? profileError.message : "Profile updated.");
     setSaving(false);
   }
 
@@ -53,7 +76,9 @@ export default function SettingsPage() {
 
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Security</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Password reset is handled by Supabase email links.</p>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Request a reset link by email. After you click the link, you will set a new password on a secure page.
+        </p>
         <Link href="/reset-password" className="btn-secondary mt-5">Send reset email</Link>
       </section>
 

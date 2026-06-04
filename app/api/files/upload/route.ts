@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { embedChunksForFile } from "@/lib/embeddings";
 import { chunkText } from "@/lib/chunk";
+import { serializeError } from "@/lib/serialize-error";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -47,22 +49,34 @@ export async function POST(request: Request) {
     if (insertError) throw insertError;
 
     const chunks = chunkText(extraction.text || "");
+    let embedded = 0;
     if (chunks.length) {
-      const { error: chunkError } = await supabase.from("file_chunks").insert(
-        chunks.map((content, index) => ({
-          user_id: user.id,
-          file_id: fileRecord.id,
-          project_id: projectId,
-          chunk_index: index,
-          content
-        }))
-      );
+      const { data: insertedChunks, error: chunkError } = await supabase
+        .from("file_chunks")
+        .insert(
+          chunks.map((content, index) => ({
+            user_id: user.id,
+            file_id: fileRecord.id,
+            project_id: projectId,
+            chunk_index: index,
+            content
+          }))
+        )
+        .select("id, content");
       if (chunkError) throw chunkError;
+      embedded = await embedChunksForFile(supabase, {
+        userId: user.id,
+        fileId: fileRecord.id,
+        projectId,
+        chunks: insertedChunks || []
+      });
     }
 
-    return NextResponse.json({ file: fileRecord, chunks: chunks.length });
+    return NextResponse.json({ file: fileRecord, chunks: chunks.length, embedded });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed" }, { status: 500 });
+    const message = serializeError(error);
+    console.error("[upload]", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
