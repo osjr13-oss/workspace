@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send } from "lucide-react";
 import { brand } from "@/lib/brand";
 
 export function SupportContactForm({
   defaultName = "",
-  defaultEmail = "",
-  authenticated = false
+  defaultEmail = ""
 }: {
   defaultName?: string;
   defaultEmail?: string;
-  authenticated?: boolean;
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
@@ -20,6 +18,14 @@ export function SupportContactForm({
   const [company, setCompany] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (defaultName) setName(defaultName);
+  }, [defaultName]);
+
+  useEffect(() => {
+    if (defaultEmail) setEmail(defaultEmail);
+  }, [defaultEmail]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -61,30 +67,41 @@ export function SupportContactForm({
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Name</label>
+          <label htmlFor="support-name" className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+            Name
+          </label>
           <input
+            id="support-name"
             className="input-premium mt-2 w-full px-5"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
             required
-            disabled={authenticated && Boolean(defaultName)}
+            autoComplete="name"
           />
         </div>
         <div>
-          <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Email</label>
+          <label htmlFor="support-email" className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+            Email
+          </label>
           <input
+            id="support-email"
             className="input-premium mt-2 w-full px-5"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
             required
-            disabled={authenticated && Boolean(defaultEmail)}
+            autoComplete="email"
           />
         </div>
       </div>
       <div>
-        <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Subject</label>
+        <label htmlFor="support-subject" className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+          Subject
+        </label>
         <input
+          id="support-subject"
           className="input-premium mt-2 w-full px-5"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
@@ -93,9 +110,12 @@ export function SupportContactForm({
         />
       </div>
       <div>
-        <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Message</label>
+        <label htmlFor="support-message" className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+          Message
+        </label>
         <textarea
-          className="input-premium mt-2 min-h-[160px] w-full resize-y px-5 py-4"
+          id="support-message"
+          className="input-premium mt-2 min-h-[160px] w-full resize-y rounded-[18px] px-5 py-4"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="How can we help?"

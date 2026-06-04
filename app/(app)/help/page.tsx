@@ -58,7 +58,7 @@ export default function HelpPage() {
         </div>
       </section>
 
-      <SupportContactForm defaultName={name} defaultEmail={email} authenticated />
+      <SupportContactForm defaultName={name} defaultEmail={email} />
 
       <div className="flex flex-wrap gap-3 text-sm font-bold">
         <Link href={brand.urls.security} className="btn-secondary" target="_blank" rel="noopener noreferrer">
