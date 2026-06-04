@@ -1,185 +1,147 @@
 # Selrano setup guide
 
-Your production domain: **https://selrano.com**
-
-Work through these steps in order. Each step unlocks part of the app. You already have Supabase + Groq + Vercel working for the core app; this wires up everything we added later (auth callback, RAG, usage limits, email, support).
+Production: **https://selrano.com**
 
 ---
 
-## Step 1 — Database (Supabase) ~10 min
+## Step 1 — Database (Supabase)
 
-1. Open [Supabase Dashboard](https://supabase.com/dashboard) → your project → **SQL Editor**.
-2. Click **New query**.
-3. Open this file in the repo and paste the entire contents:
+1. Supabase → **SQL Editor** → paste all of `supabase/migrations/002_through_004_combined.sql` → **Run**.
+2. If `vector` fails: **Database → Extensions** → enable **vector** → run again.
 
-   `supabase/migrations/002_through_004_combined.sql`
-
-4. Click **Run**. You should see “Success” with no errors.
-
-**Verify:** Table Editor should show new tables:
-
-- `file_chunk_embeddings`
-- `ai_usage_events`
-- `user_limits`
-- `support_requests`
-- `audit_logs`
-
-**If you get an error on `vector`:** Supabase → **Database → Extensions** → enable **vector** → run the script again.
+New tables include **`support_requests`** (every support form submission is stored here).
 
 ---
 
-## Step 2 — Auth redirect URLs (Supabase) ~3 min
+## Step 2 — Auth redirect URLs (Supabase)
 
-1. Supabase → **Authentication** → **URL Configuration**.
-2. Set **Site URL** to:
+**Authentication → URL Configuration**
 
-   ```txt
-   https://selrano.com
-   ```
-
-3. Under **Redirect URLs**, add (one per line):
-
-   ```txt
-   https://selrano.com/auth/callback
-   http://localhost:3000/auth/callback
-   ```
-
-4. Save.
-
-**Verify:** Request password reset from `/reset-password` → email link should land on `/auth/update-password` after clicking (not a dead page).
+- **Site URL:** `https://selrano.com`
+- **Redirect URLs:**
+  - `https://selrano.com/auth/callback`
+  - `http://localhost:3000/auth/callback`
 
 ---
 
-## Step 3 — Vercel environment variables ~15 min
+## Step 3 — Vercel environment variables
 
-1. [Vercel Dashboard](https://vercel.com) → your **workspace** project → **Settings** → **Environment Variables**.
-2. Add or update for **Production** (and **Preview** if you use preview deploys).
+**Settings → Environment Variables → Production**
 
-### Already required (you likely have these)
+### Core (you should already have these)
 
-| Name | Example / notes |
+| Name | Where to get it |
 |------|-----------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From Supabase → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Same page (secret — never expose client-side) |
-| `GROQ_API_KEY` | From [console.groq.com](https://console.groq.com) |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
+| `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
+| `GROQ_API_KEY` | console.groq.com |
+| `GROQ_MODEL` | e.g. `llama-3.3-70b-versatile` |
 
-### Branding (add these)
+### Add these
 
-| Name | Value for you |
-|------|----------------|
+| Name | Value |
+|------|--------|
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
-| `NEXT_PUBLIC_LEGAL_NAME` | `Selrano` |
-| `NEXT_PUBLIC_HELLO_EMAIL` | `hello@selrano.com` |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | `support@selrano.com` |
-| `NEXT_PUBLIC_SECURITY_EMAIL` | `security@selrano.com` |
-| `NEXT_PUBLIC_PRIVACY_EMAIL` | `privacy@selrano.com` |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | `support@selrano.com` (shown on site; optional if you use default) |
 
-### Email — Resend (Step 4; add keys after Resend is ready)
+Save → **Redeploy**.
 
-| Name | Value for you |
-|------|----------------|
-| `RESEND_API_KEY` | `re_...` from Resend |
-| `EMAIL_FROM` | `Selrano <noreply@selrano.com>` |
-| `SUPPORT_INBOX` | `support@selrano.com` |
+---
 
-### Optional
+## Step 4 — Resend (sending email) + where YOU read messages
 
-| Name | When to add |
+You finished Resend through **4.3** (API key). Finish with the env vars below, then pick how you want to **read** support mail.
+
+### 4.4 — Vercel (only 3 email variables)
+
+| Name | What to put |
 |------|-------------|
-| `EMBEDDING_API_KEY` | OpenAI key for smarter project chat over files |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` |
-| `AI_DAILY_LIMIT` | Default `100` if omitted |
+| `RESEND_API_KEY` | Your `re_...` key from Resend |
+| `EMAIL_FROM` | `Selrano <noreply@selrano.com>` (domain must be verified in Resend) |
+| `SUPPORT_INBOX` | **Your real inbox** — see below |
 
-3. **Redeploy** after saving env vars: Deployments → ⋯ on latest → **Redeploy** (env only applies on new builds).
+**Important:** `SUPPORT_INBOX` does **not** have to be `support@selrano.com`. It is only “where Resend forwards the alert when someone submits the form.” While you are setting up, use **your normal email** (e.g. `you@gmail.com`). You can switch to `support@selrano.com` later.
 
-**Local dev:** Copy `.env.example` → `.env.local`, fill the same values, use `http://localhost:3000` only where noted for redirects (not for `NEXT_PUBLIC_APP_URL` — keep production URL for email links or use localhost for local-only testing).
-
----
-
-## Step 4 — Resend + DNS (selrano.com) ~30 min
-
-1. Sign up at [resend.com](https://resend.com).
-2. **Domains** → **Add Domain** → `selrano.com`.
-3. Resend shows DNS records (SPF, DKIM, etc.). Add them at your domain registrar (where you bought selrano.com).
-4. Wait until Resend shows the domain as **Verified** (often 5–30 minutes).
-5. **API Keys** → Create key → copy `re_...`.
-6. Put in Vercel:
-   - `RESEND_API_KEY` = your key
-   - `EMAIL_FROM` = `Selrano <noreply@selrano.com>`
-   - `SUPPORT_INBOX` = `support@selrano.com`
-7. Redeploy Vercel.
-
-**Create inboxes at your email provider** (Google Workspace, Zoho, etc.):
-
-- `support@selrano.com` — receives support form + replies
-- `hello@`, `security@`, `privacy@` — forward to you or aliases
-
-**Verify email works:**
-
-1. Sign up a test account → should receive **Welcome** email.
-2. Submit form at `https://selrano.com/support` → confirmation email + ticket in Supabase `support_requests`.
+Redeploy after adding these.
 
 ---
 
-## Step 5 — Supabase auth emails (optional but recommended) ~20 min
+### Where support messages show up (two places)
 
-Password-reset emails still come from Supabase until you customize SMTP.
+#### A) Supabase — always works, no inbox setup
 
-1. Supabase → **Authentication** → **SMTP Settings** → enable custom SMTP.
-2. Use Resend SMTP (Resend docs: host `smtp.resend.com`, port `465`, user `resend`, password = your API key).
-3. Sender: `noreply@selrano.com`.
-4. **Authentication** → **Email Templates** — add logo + link to `https://selrano.com/support` in footer.
+Every submission is saved even if email fails.
 
----
+1. [Supabase Dashboard](https://supabase.com/dashboard) → your project  
+2. **Table Editor** → **`support_requests`**  
+3. Each row has: `ticket_id`, `name`, `email`, `subject`, `message`, `created_at`
 
-## Step 6 — Semantic search (optional) ~5 min
+**Use this as your inbox today** if you have not configured `support@` yet. Sort by `created_at` descending.
 
-Only if you want AI chat to pull the *most relevant* file chunks per project:
+#### B) Email — optional alert to your phone/desktop
 
-1. Create an [OpenAI API key](https://platform.openai.com/api-keys).
-2. Vercel → `EMBEDDING_API_KEY` = that key.
-3. Redeploy.
-4. Re-upload a PDF on a project (embeddings generate on upload).
+When someone submits `/support`, Resend sends **you** one email (to `SUPPORT_INBOX`) with the full message. The user gets a confirmation email too.
 
-Without this key, chat still works using notes + sequential file excerpts.
+To actually **read** those emails, `SUPPORT_INBOX` must be an address you already open (Gmail, Outlook, etc.) **or** you set up forwarding below.
 
 ---
 
-## Step 7 — Check everything
+### How to set up `support@selrano.com` (only if you want that address)
+
+You only need this if you want a branded address instead of your personal Gmail in `SUPPORT_INBOX`.
+
+**Option 1 — Free forwarding (domain on Cloudflare)**  
+Best if `selrano.com` DNS is on Cloudflare:
+
+1. Cloudflare → your domain → **Email** → **Email Routing**  
+2. Create address `support@selrano.com` → forward to **your Gmail**  
+3. Cloudflare will show DNS records to add (MX, etc.)  
+4. In Vercel set `SUPPORT_INBOX=support@selrano.com` (mail arrives in Gmail via forward)
+
+**Option 2 — Google Workspace (~$7/mo)**  
+Real mailbox at Google:
+
+1. [workspace.google.com](https://workspace.google.com) → add domain `selrano.com`  
+2. Verify domain (TXT record at registrar)  
+3. Create user **support@selrano.com**  
+4. Log in at gmail.com with that account (or add to Gmail “Send mail as”)  
+5. `SUPPORT_INBOX=support@selrano.com`
+
+**Option 3 — Skip custom support@ for now (recommended)**  
+
+- `SUPPORT_INBOX=your.personal@gmail.com`  
+- `NEXT_PUBLIC_SUPPORT_EMAIL=support@selrano.com` (what users see on the site is fine; mail still goes to Gmail)  
+- Read tickets in **Supabase** + Gmail alerts  
+
+You do **not** need `hello@`, `security@`, or `privacy@` mailboxes. Legal pages all point to the same support address.
+
+---
+
+### 4.5 — Verify
+
+1. Open `https://selrano.com/support` → submit a test message.  
+2. **Supabase** → `support_requests` → new row.  
+3. **Gmail** (or whatever you put in `SUPPORT_INBOX`) → email subject like `[Support] ...`.  
+4. Optional: sign up → welcome email from `noreply@selrano.com`.
+
+---
+
+## Step 5 — Optional later
+
+- **Supabase custom SMTP** — branded password-reset emails (Resend SMTP in Supabase auth settings).  
+- **`EMBEDDING_API_KEY`** — smarter file search in project chat.  
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Form works but no email | Check `RESEND_API_KEY`, `EMAIL_FROM` domain verified, redeploy; still read Supabase table |
+| No row in `support_requests` | Run Step 1 SQL |
+| Emails go to wrong place | Change `SUPPORT_INBOX` in Vercel → redeploy |
 
 ```bash
-# After .env.local exists (optional)
 npm run setup:check
 ```
-
-| Test | Expected |
-|------|----------|
-| Visit `/support`, submit form | Success message + row in `support_requests` |
-| Sign up | Welcome email (if Resend configured) |
-| Reset password | Lands on `/auth/update-password` |
-| Project chat with uploaded PDF | Works; better with `EMBEDDING_API_KEY` |
-| 100+ AI messages same day | 429 with daily limit message |
-
----
-
-## Quick troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| Support form 500 / permission denied | Run Step 1 SQL migration |
-| Password reset link goes nowhere | Step 2 redirect URLs |
-| No welcome / support emails | Step 4 Resend + redeploy |
-| Chat works but “dumb” file context | Step 6 embedding key + re-upload files |
-| `AI_DAILY_LIMIT` errors immediately | Run migration 003; table `ai_usage_events` must exist |
-
----
-
-## What you can skip for now
-
-- `NEXT_PUBLIC_STATUS_URL` — add when you have a status page
-- `EMBEDDING_*` — add when you want RAG
-- Custom Supabase SMTP — auth emails still work on Supabase default until Step 5
-
-For ongoing ops (SLAs, enterprise checklist): [OPERATIONS.md](./OPERATIONS.md).

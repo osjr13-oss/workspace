@@ -46,10 +46,8 @@ Central config: [`lib/brand.ts`](../lib/brand.ts)
 |----------|---------|
 | `NEXT_PUBLIC_APP_URL` | Canonical site URL (OG tags, email links) |
 | `NEXT_PUBLIC_LEGAL_NAME` | Footer / legal entity name |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | Public support address |
-| `NEXT_PUBLIC_HELLO_EMAIL` | General contact |
-| `NEXT_PUBLIC_SECURITY_EMAIL` | Vulnerability reports |
-| `NEXT_PUBLIC_PRIVACY_EMAIL` | Privacy / DSR requests |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | Public contact (legal + support pages) |
+| `SUPPORT_INBOX` | Where Resend delivers support alerts (can be personal Gmail) |
 | `NEXT_PUBLIC_STATUS_URL` | Optional status page (e.g. Instatus, Better Stack) |
 | `NEXT_PUBLIC_DOCS_URL` | Optional external docs |
 

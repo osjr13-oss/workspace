@@ -49,9 +49,9 @@ export default function HelpPage() {
             <h2 className="text-base font-extrabold">We are here to help</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
               Typical response time: <strong>{brand.support.responseSla}</strong> ({brand.support.hours}).
-              Security issues:{" "}
-              <a href={`mailto:${brand.emails.security}`} className="font-bold text-[var(--text)]">
-                {brand.emails.security}
+              Email us at{" "}
+              <a href={`mailto:${brand.emails.support}`} className="font-bold text-[var(--text)]">
+                {brand.emails.support}
               </a>
             </p>
           </div>

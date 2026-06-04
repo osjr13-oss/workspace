@@ -47,10 +47,8 @@ export default function SupportPage() {
         </div>
         <div className="glass-card p-5">
           <HelpCircle size={20} />
-          <p className="mt-4 text-sm font-extrabold">Security issues</p>
-          <a href={`mailto:${brand.emails.security}`} className="mt-2 block text-sm font-bold text-[var(--text)]">
-            {brand.emails.security}
-          </a>
+          <p className="mt-4 text-sm font-extrabold">All inquiries</p>
+          <p className="mt-2 text-sm text-[var(--muted-strong)]">Privacy, security, and account questions — same address.</p>
         </div>
       </div>
 

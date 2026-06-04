@@ -37,10 +37,7 @@ const required = [
   "GROQ_MODEL"
 ];
 
-const branding = [
-  "NEXT_PUBLIC_APP_URL",
-  "NEXT_PUBLIC_SUPPORT_EMAIL"
-];
+const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM", "SUPPORT_INBOX"];
 
