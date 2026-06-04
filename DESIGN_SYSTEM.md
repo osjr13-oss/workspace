@@ -1,4 +1,4 @@
-﻿# Selrano Design System
+# Selrano Design System
 
 A warm, glass-morphic design language built for focus and productivity. Translucent surfaces, soft shadows, and tight typography create a premium feel that keeps users engaged without distraction.
 

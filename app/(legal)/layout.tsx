@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { SelranoLogo } from "@/components/selrano-logo";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {

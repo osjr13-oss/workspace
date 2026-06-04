@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Files, MessageSquare, Sparkles } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { callGroq } from "@/lib/groq";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
