@@ -36,6 +36,14 @@ SUPPORT_INBOX=
 | `/terms`, `/privacy` | Legal |
 | `/help` | In-app support (authenticated) |
 
+## First-time setup (env, DB, email)
+
+**Start here if features are not wired yet:** **[docs/SETUP.md](docs/SETUP.md)** — step-by-step for Supabase migrations, Vercel env, Resend on selrano.com, and auth redirects.
+
+```bash
+npm run setup:check   # after copying .env.example → .env.local
+```
+
 ## Operations
 
 Enterprise email, branding, support SLAs, and Fortune-500-style checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**
