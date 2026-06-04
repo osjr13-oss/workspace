@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Meridian",
+  title: "Selrano",
   description: "A premium AI workspace for organizing study, writing, and research."
 };
 

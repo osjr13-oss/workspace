@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -146,7 +146,7 @@ function ChatsContent() {
           ) : (
             <div className="grid h-full place-items-center text-center">
               <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Ask Meridian anything.</h2>
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Ask Selrano anything.</h2>
                 <p className="mt-2 text-sm text-[var(--muted)]">Use a project to include its notes, files, and flashcards.</p>
               </div>
             </div>

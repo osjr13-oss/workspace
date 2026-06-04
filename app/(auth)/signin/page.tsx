@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MeridianLogo } from "@/components/meridian-logo";
+import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function SignInPage() {
@@ -51,7 +51,7 @@ function AuthFrame({ title, copy, children }: { title: string; copy: string; chi
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
-        <MeridianLogo />
+        <SelranoLogo />
         <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{copy}</p>
         <div className="mt-7">{children}</div>

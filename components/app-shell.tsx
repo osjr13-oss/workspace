@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import {
   Settings,
   Sparkles
 } from "lucide-react";
-import { MeridianLogo } from "@/components/meridian-logo";
+import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="layout-grid">
       <aside className="sticky top-0 hidden h-screen border-r border-[var(--border)] bg-[rgba(255,255,255,0.42)] px-5 py-6 backdrop-blur-xl lg:flex lg:flex-col">
-        <MeridianLogo href="/dashboard" />
+        <SelranoLogo href="/dashboard" />
         <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
           New chat
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-w-0">
         <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(247,245,240,0.84)] backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-5 py-4">
-            <MeridianLogo href="/dashboard" />
+            <SelranoLogo href="/dashboard" />
             <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
               <Plus size={17} />
               Chat

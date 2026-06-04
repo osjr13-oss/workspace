@@ -1,4 +1,4 @@
-# Meridian Design System
+﻿# Selrano Design System
 
 A warm, glass-morphic design language built for focus and productivity. Translucent surfaces, soft shadows, and tight typography create a premium feel that keeps users engaged without distraction.
 
@@ -98,19 +98,19 @@ body {
 ### Prose Styles
 
 ```css
-.prose-meridian {
+.prose-Selrano {
   color: var(--muted-strong);
   font-size: 14px;
   line-height: 1.7;
 }
-.prose-meridian h1, h2, h3 { color: var(--text); font-weight: 800; }
-.prose-meridian code {
+.prose-Selrano h1, h2, h3 { color: var(--text); font-weight: 800; }
+.prose-Selrano code {
   border-radius: 8px;
   background: var(--surface-subtle);
   padding: 2px 6px;
   color: var(--text);
 }
-.prose-meridian pre {
+.prose-Selrano pre {
   border-radius: 14px;
   background: #15181f;
   padding: 16px;

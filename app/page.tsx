@@ -1,13 +1,13 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Files, MessageSquare, Sparkles } from "lucide-react";
-import { MeridianLogo } from "@/components/meridian-logo";
+import { SelranoLogo } from "@/components/selrano-logo";
 
 export default function LandingPage() {
   return (
     <main>
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(247,245,240,0.82)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6">
-          <MeridianLogo />
+          <SelranoLogo />
           <nav className="hidden items-center gap-6 text-sm font-bold text-[var(--muted)] sm:flex">
             <a href="#features">Features</a>
             <a href="#workspace">Workspace</a>
@@ -28,7 +28,7 @@ export default function LandingPage() {
             A workspace for thinking, writing, and studying.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
-            Meridian brings projects, notes, files, flashcards, study review, and project-aware AI chat into one calm workspace.
+            Selrano brings projects, notes, files, flashcards, study review, and project-aware AI chat into one calm workspace.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/signup" className="btn-primary">
@@ -118,7 +118,7 @@ export default function LandingPage() {
 
       <footer className="mx-auto max-w-7xl border-t border-[var(--border)] px-5 py-8 sm:px-6">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-sm text-[var(--muted)]">© {new Date().getFullYear()} Meridian. All rights reserved.</p>
+          <p className="text-sm text-[var(--muted)]">© {new Date().getFullYear()} Selrano. All rights reserved.</p>
           <nav className="flex gap-6 text-sm font-bold text-[var(--muted)]">
             <Link href="/terms" className="hover:text-[var(--text)] transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="hover:text-[var(--text)] transition-colors">Privacy Policy</Link>

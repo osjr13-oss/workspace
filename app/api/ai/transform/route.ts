@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { callGroq } from "@/lib/groq";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "You are Meridian, a calm academic workspace assistant. Transform the user's text exactly as requested. Preserve meaning, avoid hype, and return only the transformed content."
+          "You are Selrano, a calm academic workspace assistant. Transform the user's text exactly as requested. Preserve meaning, avoid hype, and return only the transformed content."
       },
       {
         role: "user",

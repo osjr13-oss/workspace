@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -200,27 +200,27 @@ select {
   padding: 15px 16px;
 }
 
-.prose-meridian {
+.prose-Selrano {
   color: var(--muted-strong);
   font-size: 14px;
   line-height: 1.7;
 }
 
-.prose-meridian h1,
-.prose-meridian h2,
-.prose-meridian h3 {
+.prose-Selrano h1,
+.prose-Selrano h2,
+.prose-Selrano h3 {
   color: var(--text);
   font-weight: 800;
 }
 
-.prose-meridian code {
+.prose-Selrano code {
   border-radius: 8px;
   background: var(--surface-subtle);
   padding: 2px 6px;
   color: var(--text);
 }
 
-.prose-meridian pre {
+.prose-Selrano pre {
   overflow: auto;
   border-radius: 14px;
   background: #15181f;

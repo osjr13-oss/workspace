@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Meridian",
-  description: "Read Meridian's Privacy Policy.",
+  title: "Privacy Policy — Selrano",
+  description: "Read Selrano's Privacy Policy.",
 };
 
 export default function PrivacyPage() {
   return (
-    <article className="prose-meridian">
+    <article className="prose-Selrano">
       <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
-        This Privacy Policy explains how Meridian (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
+        This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
       </p>
 
       <Section title="1. Information We Collect">
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), and Groq (AI inference) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
-          <li><strong>Business transfers:</strong> If Meridian is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
+          <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
       </Section>
 
@@ -98,17 +98,17 @@ export default function PrivacyPage() {
           <li><strong>Portability:</strong> request your data in a portable, machine-readable format.</li>
           <li><strong>Objection:</strong> object to certain uses of your data.</li>
         </ul>
-        <p>To exercise any of these rights, contact us at <strong>support@meridian.app</strong>. We will respond within 30 days.</p>
+        <p>To exercise any of these rights, contact us at <strong>support@selrano.app</strong>. We will respond within 30 days.</p>
         <p><strong>California residents:</strong> under the California Consumer Privacy Act (CCPA), you have the right to know what personal information we collect, request deletion, and opt out of any sale of personal information (we do not sell personal information). To submit a CCPA request, contact us at the email above.</p>
       </Section>
 
       <Section title="8. Cookies">
-        <p>Meridian uses only essential cookies necessary to operate the Service, specifically session authentication cookies set by Supabase to keep you logged in. We do not use advertising cookies, tracking pixels, or analytics cookies from third parties.</p>
+        <p>Selrano uses only essential cookies necessary to operate the Service, specifically session authentication cookies set by Supabase to keep you logged in. We do not use advertising cookies, tracking pixels, or analytics cookies from third parties.</p>
         <p>You can disable cookies in your browser settings, but doing so will prevent you from logging in to the Service.</p>
       </Section>
 
       <Section title="9. Children&apos;s Privacy">
-        <p>Meridian is intended for users who are 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <strong>support@meridian.app</strong> and we will delete that information promptly.</p>
+        <p>Selrano is intended for users who are 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <strong>support@selrano.app</strong> and we will delete that information promptly.</p>
       </Section>
 
       <Section title="10. Links to Third-Party Sites">
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
 
       <Section title="12. Contact Us">
         <p>If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
-        <p><strong>Email:</strong> support@meridian.app</p>
+        <p><strong>Email:</strong> support@selrano.app</p>
         <p>We aim to respond to all privacy-related inquiries within 5 business days.</p>
       </Section>
     </article>

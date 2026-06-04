@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { MeridianLogo } from "@/components/meridian-logo";
+import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function ResetPasswordPage() {
@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
-        <MeridianLogo />
+        <SelranoLogo />
         <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Reset password</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Enter your email and Supabase will send a secure reset link.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">

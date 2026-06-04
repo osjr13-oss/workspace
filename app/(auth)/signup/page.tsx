@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MeridianLogo } from "@/components/meridian-logo";
+import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function SignUpPage() {
@@ -37,7 +37,7 @@ export default function SignUpPage() {
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
-        <MeridianLogo />
+        <SelranoLogo />
         <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Create your workspace</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Start with email and password. No billing is required.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
