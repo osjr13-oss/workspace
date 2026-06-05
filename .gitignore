@@ -5,5 +5,4 @@ out
 .env.local
 .env.*.local
 *.tsbuildinfo
-vercel.json
 meridian-*-qa.png

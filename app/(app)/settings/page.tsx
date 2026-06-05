@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lifecycleEmails, setLifecycleEmails] = useState(true);
+  const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
@@ -22,10 +24,37 @@ export default function SettingsPage() {
       setEmail(data.user?.email || "");
       const metadataName = data.user?.user_metadata?.full_name || "";
       if (!data.user) return;
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", data.user.id).single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, lifecycle_emails")
+        .eq("id", data.user.id)
+        .single();
       setFullName(profile?.full_name || metadataName);
+      setLifecycleEmails(profile?.lifecycle_emails !== false);
     });
   }, []);
+
+  async function toggleLifecycleEmails(enabled: boolean) {
+    setSavingEmailPrefs(true);
+    const supabase = createSupabaseBrowserClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setMessage("You must be signed in.");
+      setSavingEmailPrefs(false);
+      return;
+    }
+
+    const { error } = await supabase.from("profiles").update({ lifecycle_emails: enabled }).eq("id", user.id);
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setLifecycleEmails(enabled);
+      setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
+    }
+    setSavingEmailPrefs(false);
+  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -75,6 +104,23 @@ export default function SettingsPage() {
         </button>
         {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
       </form>
+
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Occasional tips about features and things to try in your workspace. Welcome and support emails are always sent when relevant.
+        </p>
+        <label className="mt-5 flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-[var(--border)]"
+            checked={lifecycleEmails}
+            disabled={savingEmailPrefs}
+            onChange={(event) => toggleLifecycleEmails(event.target.checked)}
+          />
+          <span className="text-sm font-semibold">Send tips & feature reminders</span>
+        </label>
+      </section>
 
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Help & support</h2>

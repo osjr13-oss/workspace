@@ -6,6 +6,8 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 2. `migrations/002_ai_embeddings.sql` — pgvector + semantic file search
 3. `migrations/003_usage_limits.sql` — AI usage tracking + per-user limits row
 4. `migrations/004_ops_support.sql` — support tickets + audit logs
+5. `migrations/005_billing.sql` — Stripe billing columns on `user_limits`
+6. `migrations/006_lifecycle_emails.sql` — tip email preferences + send log
 
 ## Auth redirect URLs
 
@@ -34,5 +36,5 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 - `EMBEDDING_MODEL` (optional, default `text-embedding-3-small`)
 - `EMBEDDING_BASE_URL` (optional, default OpenAI)
 - `AI_DAILY_LIMIT` (optional, default `100`)
-- `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX` (transactional email — see `docs/OPERATIONS.md`)
+- `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, `CRON_SECRET` (email — see `docs/OPERATIONS.md`)
 - `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPPORT_EMAIL` (optional)

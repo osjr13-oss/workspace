@@ -13,6 +13,7 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 | Welcome | After signup (`/api/email/welcome`) |
 | Support confirmation | User submits support form |
 | Support notification | Inbox alert to `SUPPORT_INBOX` |
+| Tips & reminders | Daily cron (`/api/cron/lifecycle-emails`) — see below |
 
 **Vercel environment variables:**
 
@@ -21,7 +22,31 @@ RESEND_API_KEY=
 EMAIL_FROM=Selrano <noreply@yourdomain.com>
 SUPPORT_INBOX=support@yourdomain.com
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
+CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <CRON_SECRET>
 ```
+
+### Lifecycle tips (cron)
+
+Once per day (14:00 UTC), the app checks new users and sends **at most one** contextual tip email per person — only if they have not used a feature yet:
+
+| Email key | When (days after signup) | Condition |
+|-----------|--------------------------|-----------|
+| `tip_projects` | 2–4 | No projects |
+| `tip_chat` | 3–6 | No chat threads |
+| `tip_upload` | 4–8 | No files |
+| `tip_flashcards` | 7–14 | No flashcard decks |
+| `tip_study` | 10–21 | Has decks, no study reviews |
+| `nudge_inactive` | 14–90 | No AI usage in last 7 days |
+
+Users can opt out in **Settings → Email preferences**. Each campaign is logged in `lifecycle_email_log` so nobody gets the same tip twice.
+
+**Setup:**
+
+1. Run migration `006_lifecycle_emails.sql` in Supabase.
+2. Add `CRON_SECRET` in Vercel (generate a long random string).
+3. Deploy — `vercel.json` registers the cron job automatically on Vercel.
+
+Templates: [`lib/email/lifecycle-templates.ts`](../lib/email/lifecycle-templates.ts). Logic: [`lib/lifecycle-emails.ts`](../lib/lifecycle-emails.ts).
 
 **Resend setup:**
 
@@ -51,7 +76,7 @@ Central config: [`lib/brand.ts`](../lib/brand.ts)
 | `NEXT_PUBLIC_STATUS_URL` | Optional status page (e.g. Instatus, Better Stack) |
 | `NEXT_PUBLIC_DOCS_URL` | Optional external docs |
 
-Email HTML templates: [`lib/email/templates.ts`](../lib/email/templates.ts)
+Email HTML: shared layout [`lib/email/layout.ts`](../lib/email/layout.ts); transactional [`lib/email/templates.ts`](../lib/email/templates.ts); lifecycle tips [`lib/email/lifecycle-templates.ts`](../lib/email/lifecycle-templates.ts)
 
 ## 3. Support operations
 
@@ -85,7 +110,8 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 - [ ] Resend domain verified (SPF/DKIM/DMARC)
 - [ ] `NEXT_PUBLIC_APP_URL` set to production domain
 - [ ] Supabase redirect URLs include `/auth/callback`
-- [ ] Run migrations 001–004 in production
+- [ ] Run migrations 001–006 in production
+- [ ] `CRON_SECRET` set for lifecycle tip emails
 - [ ] Optional: public status page (`NEXT_PUBLIC_STATUS_URL`)
 - [ ] Optional: SOC 2 / penetration test vendor
 - [ ] Bug bounty or responsible disclosure policy (email `security@`)
@@ -96,6 +122,8 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 2. `002_ai_embeddings.sql`
 3. `003_usage_limits.sql`
 4. `004_ops_support.sql`
+5. `005_billing.sql`
+6. `006_lifecycle_emails.sql`
 
 ## 6. What large companies add later
 
