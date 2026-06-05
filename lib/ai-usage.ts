@@ -1,10 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-function getDailyLimit() {
-  const raw = process.env.AI_DAILY_LIMIT;
-  const parsed = raw ? Number.parseInt(raw, 10) : 100;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
-}
+import { dailyAiLimit, effectiveTier, getUserLimits } from "@/lib/tier";
 
 function startOfUtcDay() {
   const now = new Date();
@@ -12,7 +7,11 @@ function startOfUtcDay() {
 }
 
 export async function assertWithinLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const limits = await getUserLimits(supabase, userId);
+  const tier = effectiveTier(limits);
+  const limit = dailyAiLimit(limits);
   const since = startOfUtcDay();
+
   const { count, error } = await supabase
     .from("ai_usage_events")
     .select("id", { count: "exact", head: true })
@@ -24,9 +23,10 @@ export async function assertWithinLimit(supabase: SupabaseClient, userId: string
     return null;
   }
 
-  const limit = getDailyLimit();
   if ((count || 0) >= limit) {
-    return `Daily AI limit reached (${limit} requests). Try again tomorrow.`;
+    return `Daily AI limit reached (${limit} requests on ${tier === "pro" ? "Pro" : "Free"}). ${
+      tier === "pro" ? "Try again tomorrow." : "Upgrade to Pro for 500/day."
+    }`;
   }
 
   return null;
@@ -48,4 +48,14 @@ export async function recordUsage(
   if (error) {
     console.error("[ai-usage] record failed", error);
   }
+}
+
+export async function getTodayUsageCount(supabase: SupabaseClient, userId: string) {
+  const since = startOfUtcDay();
+  const { count } = await supabase
+    .from("ai_usage_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", since);
+  return count || 0;
 }

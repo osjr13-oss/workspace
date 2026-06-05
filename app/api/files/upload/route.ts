@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { embedChunksForFile } from "@/lib/embeddings";
 import { chunkText } from "@/lib/chunk";
 import { serializeError } from "@/lib/serialize-error";
+import { assertFileSizeLimit, getUserLimits } from "@/lib/tier";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -17,6 +18,10 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
+
+    const limits = await getUserLimits(supabase, user.id);
+    const sizeError = assertFileSizeLimit(file.size, limits);
+    if (sizeError) return NextResponse.json({ error: sizeError, code: "plan_limit" }, { status: 403 });
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const safeName = file.name.replace(/[^\w.\-]+/g, "_");

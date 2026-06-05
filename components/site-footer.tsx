@@ -2,6 +2,7 @@ import Link from "next/link";
 import { brand } from "@/lib/brand";
 
 const links = [
+  { href: "/pricing", label: "Pricing" },
   { href: brand.urls.support, label: "Support" },
   { href: brand.urls.security, label: "Security" },
   { href: brand.urls.terms, label: "Terms" },

@@ -15,6 +15,7 @@ export default function ProjectsPage() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -27,13 +28,19 @@ export default function ProjectsPage() {
   async function createProject(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
-    const supabase = createSupabaseBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("projects").insert({ name, description: description || null, user_id: user.id });
+    setError("");
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, description: description || null })
+    });
+    const payload = await res.json();
+    if (res.ok) {
       setName("");
       setDescription("");
       await load();
+    } else {
+      setError(payload.error || "Could not create project.");
     }
     setLoading(false);
   }
@@ -59,6 +66,14 @@ export default function ProjectsPage() {
           <Plus size={18} />
           {loading ? "Creating…" : "Create project"}
         </button>
+        {error ? (
+          <p className="w-full text-sm font-bold text-[var(--critical)]">
+            {error}{" "}
+            <Link href="/pricing" className="text-[var(--text)] underline">
+              View plans
+            </Link>
+          </p>
+        ) : null}
       </form>
 
       {projects.length ? (

@@ -69,18 +69,20 @@ function FlashcardsContent() {
   async function createDeck(event: React.FormEvent) {
     event.preventDefault();
     if (!deckName.trim()) return;
-    const supabase = createSupabaseBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from("flashcard_decks")
-      .insert({ name: deckName, project_id: projectId || null, user_id: user.id })
-      .select("*")
-      .single();
+    const res = await fetch("/api/flashcard-decks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: deckName, projectId: projectId || null })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      alert(payload.error || "Could not create deck.");
+      return;
+    }
     setDeckName("");
-    if (data) {
-      setDeckId(data.id);
-      deckIdRef.current = data.id;
+    if (payload.deck) {
+      setDeckId(payload.deck.id);
+      deckIdRef.current = payload.deck.id;
     }
     await load();
   }

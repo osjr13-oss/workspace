@@ -35,6 +35,11 @@ SUPPORT_INBOX=
 | `/security` | Security practices & disclosure |
 | `/terms`, `/privacy` | Legal |
 | `/help` | In-app support (authenticated) |
+| `/pricing` | Free vs Pro plans |
+
+## Billing
+
+Stripe Free + Pro tiers: **[docs/BILLING.md](docs/BILLING.md)**
 
 ## First-time setup (env, DB, email)
 
