@@ -1,6 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { PwaProvider } from "@/components/pwa-provider";
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: brand.colors.background,
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
+};
 
 export const metadata: Metadata = {
   title: {
@@ -23,6 +31,15 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: absoluteUrl("/")
+  },
+  appleWebApp: {
+    capable: true,
+    title: brand.name,
+    statusBarStyle: "default"
+  },
+  applicationName: brand.name,
+  formatDetection: {
+    telephone: false
   }
 };
 
@@ -33,7 +50,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaProvider />
+      </body>
     </html>
   );
 }
