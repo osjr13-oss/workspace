@@ -8,6 +8,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 4. `migrations/004_ops_support.sql` — support tickets + audit logs
 5. `migrations/005_billing.sql` — Stripe billing columns on `user_limits`
 6. `migrations/006_lifecycle_emails.sql` — tip email preferences + send log
+7. `migrations/007_pro_waitlist.sql` — Pro plan waitlist signups
 
 ## Auth redirect URLs
 

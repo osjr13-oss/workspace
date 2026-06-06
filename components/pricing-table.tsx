@@ -38,8 +38,8 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
             {showCta ? (
               <div className="mt-8">
                 {isPro ? (
-                  <Link href="/signup" className="btn-primary w-full justify-center">
-                    Start with Pro
+                  <Link href="/pro/waitlist" className="btn-primary w-full justify-center">
+                    Join Pro waitlist
                   </Link>
                 ) : (
                   <Link href="/signup" className="btn-secondary w-full justify-center">

@@ -124,6 +124,17 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 4. `004_ops_support.sql`
 5. `005_billing.sql`
 6. `006_lifecycle_emails.sql`
+7. `007_pro_waitlist.sql`
+
+### Pro waitlist
+
+- Public page: **`/pro/waitlist`**
+- Signups stored in **`pro_waitlist`** (Supabase Table Editor)
+- CSV export (set `WAITLIST_EXPORT_SECRET` in Vercel):
+
+```bash
+curl -H "Authorization: Bearer YOUR_SECRET" https://selrano.com/api/waitlist/export -o waitlist.csv
+```
 
 ## 6. What large companies add later
 

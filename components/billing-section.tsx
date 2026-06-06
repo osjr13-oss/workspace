@@ -132,20 +132,25 @@ export function BillingSection() {
             <CreditCard size={18} />
             {actionLoading ? "Opening…" : "Manage subscription"}
           </button>
-        ) : (
-          <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading || !status.stripeConfigured}>
+        ) : status.stripeConfigured ? (
+          <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading}>
             <Sparkles size={18} />
             {actionLoading ? "Redirecting…" : `Upgrade to Pro — $${PLANS.pro.priceMonthly}/mo`}
           </button>
+        ) : (
+          <Link href="/pro/waitlist" className="btn-primary">
+            <Sparkles size={18} />
+            Join Pro waitlist
+          </Link>
         )}
         <Link href="/pricing" className="btn-secondary">
           Compare plans
         </Link>
       </div>
 
-      {!status.stripeConfigured ? (
-        <p className="mt-4 text-sm font-bold text-[var(--critical)]">
-          Billing is not configured yet (Stripe env vars missing).
+      {!status.stripeConfigured && !isPro ? (
+        <p className="mt-4 text-sm text-[var(--muted-strong)]">
+          Pro checkout opens soon — join the waitlist and we&apos;ll email you when it&apos;s ready.
         </p>
       ) : null}
 
