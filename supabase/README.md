@@ -9,6 +9,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 5. `migrations/005_billing.sql` — Stripe billing columns on `user_limits`
 6. `migrations/006_lifecycle_emails.sql` — tip email preferences + send log
 7. `migrations/007_pro_waitlist.sql` — Pro plan waitlist signups
+8. `migrations/010_remove_voice_study.sql` — drop voice experiment tables and storage (only if 008/009 were run)
 
 ## Auth redirect URLs
 
