@@ -30,11 +30,11 @@ export default function TermsPage() {
       </Section>
 
       <Section title="3. Description of Service">
-        <p>Selrano is an AI-powered academic workspace that allows users to create projects, write and organize notes, upload files, generate flashcards, and interact with an AI assistant. Features include but are not limited to:</p>
+        <p>Selrano is an AI-powered client workspace that allows users to create client workspaces, write and organize notes, upload files, generate brief cards, review saved context, and interact with an AI assistant. Features include but are not limited to:</p>
         <ul>
           <li>AI-assisted chat powered by third-party large language model providers.</li>
           <li>Document upload, text extraction, and storage.</li>
-          <li>Flashcard generation and spaced-repetition study tools.</li>
+          <li>Brief card generation and review tools.</li>
           <li>Markdown note editing with AI transformations.</li>
         </ul>
         <p>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with or without notice.</p>
@@ -50,23 +50,23 @@ export default function TermsPage() {
           <li>Reverse-engineer, decompile, or disassemble any part of the Service.</li>
           <li>Use automated bots, scrapers, or scripts to access the Service without our express written permission.</li>
           <li>Circumvent or attempt to circumvent any authentication or security mechanism.</li>
-          <li>Use the AI features to generate academic work intended to deceive educational institutions in violation of their academic integrity policies — we are a study aid, not a cheating tool.</li>
+          <li>Use the AI features to deceive clients, misrepresent your work, violate professional obligations, or generate unlawful content.</li>
         </ul>
         <p>Violation of this section may result in immediate termination of your account.</p>
       </Section>
 
       <Section title="5. User Content">
-        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, flashcards, and chat messages.</p>
+        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, brief cards, and chat messages.</p>
         <p><strong>License to us.</strong> By using the Service, you grant Selrano a limited, non-exclusive, royalty-free license to access, store, process, and transmit your User Content solely as necessary to provide and improve the Service. We do not claim ownership of your content and do not sell it to third parties.</p>
         <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
         <p><strong>Your responsibility.</strong> You are solely responsible for the legality, accuracy, and appropriateness of your User Content. We have no obligation to monitor content but reserve the right to remove any content that violates these Terms.</p>
       </Section>
 
       <Section title="6. AI-Generated Content Disclaimer">
-        <p>Selrano&apos;s AI features are powered by third-party large language models. AI-generated responses are provided for informational and educational purposes only. You acknowledge that:</p>
+        <p>Selrano&apos;s AI features are powered by third-party large language models. AI-generated responses are provided for informational purposes only. You acknowledge that:</p>
         <ul>
           <li>AI outputs may be inaccurate, incomplete, outdated, or misleading.</li>
-          <li>AI outputs do not constitute professional legal, medical, financial, or academic advice.</li>
+          <li>AI outputs do not constitute professional legal, medical, financial, tax, or business advice.</li>
           <li>You are solely responsible for verifying and evaluating any AI-generated content before relying on it.</li>
           <li>We make no warranties regarding the accuracy or reliability of AI-generated content.</li>
         </ul>

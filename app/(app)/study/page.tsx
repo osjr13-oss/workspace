@@ -45,7 +45,7 @@ export default function StudyPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title="Study mode" eyebrow="Review">
+      <WorkspaceHeader title="Review" eyebrow="Client memory">
         <button type="button" onClick={load} className="btn-secondary">
           <RotateCcw size={18} />
           Refresh
@@ -53,28 +53,28 @@ export default function StudyPage() {
       </WorkspaceHeader>
 
       {!cards.length ? (
-        <EmptyState title="No cards due" description="Create flashcards or come back when cards are due for review." />
+        <EmptyState title="No cards due" description="Create brief cards or come back when cards are due for review." />
       ) : finished ? (
-        <EmptyState title="Study session complete" description="You reviewed every card that was due." />
+        <EmptyState title="Review complete" description="You reviewed every client memory card that was due." />
       ) : current ? (
         <section className="panel p-7">
           <div className="flex items-center justify-between">
             <span className="status-pill">{index + 1} of {cards.length}</span>
-            <span className="status-pill">{revealed ? "Answer shown" : "Question"}</span>
+            <span className="status-pill">{revealed ? "Detail shown" : "Prompt"}</span>
           </div>
           <div className="grid min-h-[360px] place-items-center text-center">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{revealed ? "Back" : "Front"}</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{revealed ? "Detail" : "Prompt"}</p>
               <h2 className="mt-4 text-4xl font-extrabold tracking-[-0.04em] text-balance">{revealed ? current.back : current.front}</h2>
             </div>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             {!revealed ? (
-              <button type="button" onClick={() => setRevealed(true)} className="btn-primary">Reveal answer</button>
+              <button type="button" onClick={() => setRevealed(true)} className="btn-primary">Reveal detail</button>
             ) : (
               <>
-                <button type="button" onClick={() => review(false)} className="btn-secondary">Incorrect</button>
-                <button type="button" onClick={() => review(true)} className="btn-primary">Correct</button>
+                <button type="button" onClick={() => review(false)} className="btn-secondary">Needs review</button>
+                <button type="button" onClick={() => review(true)} className="btn-primary">Got it</button>
               </>
             )}
           </div>

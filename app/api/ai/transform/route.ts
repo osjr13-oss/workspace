@@ -13,7 +13,9 @@ const allowedActions = new Set([
   "Sharpen",
   "Turn into outline",
   "Turn into bullet points",
-  "Turn into study notes",
+  "Extract action items",
+  "Draft follow-up email",
+  "Turn into client brief",
   "Turn into email"
 ]);
 
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "You are Selrano, a calm academic workspace assistant. Transform the user's text exactly as requested. Preserve meaning, avoid hype, and return only the transformed content."
+          "You are Selrano, a calm client-work assistant for independent consultants. Transform the user's text exactly as requested. Preserve meaning, avoid hype, keep it client-ready, and return only the transformed content."
       },
       {
         role: "user",

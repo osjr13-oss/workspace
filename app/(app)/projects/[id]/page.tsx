@@ -42,7 +42,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   async function deleteProject() {
-    if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
+    if (!confirm("Delete this client workspace? Notes, files, and briefs linked to it will be unlinked but not deleted.")) return;
     setDeleting(true);
     const supabase = createSupabaseBrowserClient();
     await supabase.from("projects").delete().eq("id", id);
@@ -57,19 +57,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     { key: "notes", label: "Notes", icon: <BookOpen size={16} />, count: notes.length },
     { key: "files", label: "Files", icon: <Files size={16} />, count: files.length },
     { key: "chats", label: "Chats", icon: <MessageSquare size={16} />, count: threads.length },
-    { key: "flashcards", label: "Flashcards", icon: <Brain size={16} />, count: decks.length },
+    { key: "flashcards", label: "Briefs", icon: <Brain size={16} />, count: decks.length },
   ];
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title={project.name} eyebrow="Project">
+      <WorkspaceHeader title={project.name} eyebrow="Client workspace">
         <Link className="btn-secondary" href={`/chats?project=${id}`}>
           <MessageSquare size={16} /> Open chat
         </Link>
         <Link className="btn-primary" href={`/notes?project=${id}`}>
           <Plus size={16} /> New note
         </Link>
-        <button type="button" onClick={deleteProject} disabled={deleting} title="Delete project" className="btn-secondary text-[var(--critical)]">
+        <button type="button" onClick={deleteProject} disabled={deleting} title="Delete client workspace" className="btn-secondary text-[var(--critical)]">
           <Trash2 size={16} />
         </button>
       </WorkspaceHeader>
@@ -172,7 +172,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {tab === "flashcards" && (
         <section className="space-y-4">
           <div className="flex justify-end">
-            <Link href={`/flashcards?project=${id}`} className="btn-primary"><Plus size={16} /> New deck</Link>
+            <Link href={`/flashcards?project=${id}`} className="btn-primary"><Plus size={16} /> New brief deck</Link>
           </div>
           {decks.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -184,7 +184,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               ))}
             </div>
           ) : (
-            <Empty label="No flashcard decks yet" action={{ href: `/flashcards?project=${id}`, label: "Create first deck" }} />
+            <Empty label="No brief decks yet" action={{ href: `/flashcards?project=${id}`, label: "Create first deck" }} />
           )}
         </section>
       )}

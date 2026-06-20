@@ -47,7 +47,7 @@ export default function ProjectsPage() {
 
   async function deleteProject(event: React.MouseEvent, id: string) {
     event.preventDefault();
-    if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
+    if (!confirm("Delete this client workspace? Notes, files, and briefs linked to it will be unlinked but not deleted.")) return;
     setDeletingId(id);
     const supabase = createSupabaseBrowserClient();
     await supabase.from("projects").delete().eq("id", id);
@@ -57,14 +57,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title="Projects" eyebrow="Workspace" />
+      <WorkspaceHeader title="Clients" eyebrow="Client workspaces" />
 
       <form onSubmit={createProject} className="panel flex flex-wrap items-center gap-3 p-5">
-        <input aria-label="Project name" className="input-premium min-w-0 flex-1 px-5" placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input aria-label="Project description" className="input-premium min-w-[200px] flex-[2] px-5" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <input aria-label="Client workspace name" className="input-premium min-w-0 flex-1 px-5" placeholder="Client or project name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <input aria-label="Client workspace description" className="input-premium min-w-[200px] flex-[2] px-5" placeholder="Scope, retainer, or context (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <button type="submit" className="btn-primary shrink-0" disabled={loading}>
           <Plus size={18} />
-          {loading ? "Creating…" : "Create project"}
+          {loading ? "Creating..." : "Create workspace"}
         </button>
         {error ? (
           <p className="w-full text-sm font-bold text-[var(--critical)]">
@@ -98,7 +98,7 @@ export default function ProjectsPage() {
           ))}
         </section>
       ) : (
-        <EmptyState title="No projects yet" description="Create a project to group notes, files, chats, and flashcards around one class or thesis." />
+        <EmptyState title="No client workspaces yet" description="Create one workspace per client, retainer, or project to keep notes, files, chats, and briefs together." />
       )}
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Wand2 } from "lucide-react";
 
-const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Turn into bullet points", "Turn into study notes", "Turn into email"];
+const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Extract action items", "Draft follow-up email", "Turn into client brief"];
 
 export function QuickActions({ initialText = "" }: { initialText?: string }) {
   const [text, setText] = useState(initialText);
@@ -43,14 +43,14 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
         </span>
         <div>
           <h2 className="text-base font-extrabold tracking-[-0.01em]">Quick actions</h2>
-          <p className="text-sm text-[var(--muted)]">Transform pasted text without leaving the workspace.</p>
+          <p className="text-sm text-[var(--muted)]">Turn messy client notes into usable drafts without leaving the workspace.</p>
         </div>
       </div>
       <textarea
         aria-label="Text to transform"
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Paste a paragraph, note, or draft..."
+        placeholder="Paste meeting notes, client feedback, research, or a rough draft..."
         className="mt-5 min-h-32 w-full rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6 outline-none focus:border-[var(--border-strong)]"
       />
       <div className="mt-4 flex flex-wrap gap-2">

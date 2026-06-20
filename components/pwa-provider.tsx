@@ -76,7 +76,7 @@ export function PwaProvider() {
           <p className="mt-1 text-sm leading-6 text-[var(--muted-strong)]">
             {iosHint ? (
               <>
-                Tap <Share size={14} className="inline align-text-bottom" /> Share, then <strong>Add to Home Screen</strong> for quick access between classes.
+                Tap <Share size={14} className="inline align-text-bottom" /> Share, then <strong>Add to Home Screen</strong> for quick access between client calls.
               </>
             ) : (
               "Add Selrano to your home screen for a full-screen app experience."

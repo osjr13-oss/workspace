@@ -71,7 +71,7 @@ export function ProWaitlistForm({ defaultEmail = "" }: { defaultEmail?: string }
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@school.edu"
+          placeholder="you@example.com"
           required
           autoComplete="email"
         />

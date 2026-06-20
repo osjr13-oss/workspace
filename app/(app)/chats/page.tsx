@@ -137,7 +137,7 @@ function ChatsContent() {
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div>
             <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Client workspace context enabled" : "Global workspace chat"}</p>
           </div>
           {threadId ? (
             <button
@@ -173,7 +173,7 @@ function ChatsContent() {
             <div className="grid h-full place-items-center text-center">
               <div>
                 <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Ask Selrano anything.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Use a project to include its notes, files, and flashcards.</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">Choose a client workspace to include its notes, files, and briefs.</p>
               </div>
             </div>
           )}
@@ -181,7 +181,7 @@ function ChatsContent() {
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
-            <input aria-label="Chat message" className="min-h-11 flex-1 bg-transparent px-4 text-sm outline-none" value={text} onChange={(event) => setText(event.target.value)} placeholder="Ask anything, or paste text to transform..." />
+            <input aria-label="Chat message" className="min-h-11 flex-1 bg-transparent px-4 text-sm outline-none" value={text} onChange={(event) => setText(event.target.value)} placeholder="Ask about a client, draft a deliverable, or paste notes..." />
             <button type="submit" className="btn-primary min-h-11 px-4" disabled={loading}>
               <Send size={18} />
             </button>

@@ -140,8 +140,8 @@ function NotesContent() {
         <section className="space-y-4">
           <div className="panel grid gap-3 p-4 lg:grid-cols-[1fr_220px_auto]">
             <input aria-label="Note title" className="input-premium px-5" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Note title" />
-            <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-              <option value="">No project</option>
+            <select aria-label="Client workspace" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+              <option value="">No client workspace</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
@@ -152,7 +152,7 @@ function NotesContent() {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {["Summarize", "Rewrite", "Turn into outline", "Turn into study notes"].map((action) => (
+            {["Summarize", "Rewrite", "Turn into outline", "Extract action items", "Draft follow-up email", "Turn into client brief"].map((action) => (
               <button key={action} type="button" onClick={() => transform(action)} className="btn-secondary min-h-10 text-sm">
                 <Wand2 size={16} />
                 {action}
