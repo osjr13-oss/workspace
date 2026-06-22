@@ -89,6 +89,14 @@ export async function POST(request: Request) {
         if (userId) await setUserFree(userId);
         break;
       }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+        if (!customerId) break;
+        const userId = await userIdFromCustomer(customerId);
+        if (userId) await setUserFree(userId);
+        break;
+      }
       default:
         break;
     }
