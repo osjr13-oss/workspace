@@ -28,6 +28,7 @@ Stripe > Developers > Webhooks > Add endpoint
   - `checkout.session.completed`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
+  - `invoice.payment_failed`
 
 Copy the signing secret to `STRIPE_WEBHOOK_SECRET`.
 
