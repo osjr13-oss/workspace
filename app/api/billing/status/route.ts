@@ -37,6 +37,6 @@ export async function GET() {
       projects: projects.count || 0,
       decks: decks.count || 0
     },
-    stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRO_PRICE_ID)
+    stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRO_PRICE_ID && process.env.STRIPE_WEBHOOK_SECRET)
   });
 }
