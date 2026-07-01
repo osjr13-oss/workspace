@@ -16,7 +16,7 @@ export const PLANS = {
     id: "pro" as const,
     name: "Pro",
     tagline: "For heavy coursework and daily deep work",
-    priceMonthly: 10,
+    priceMonthly: 19.99,
     dailyAiRequests: 500,
     maxProjects: null as number | null,
     maxFileMb: 100,
