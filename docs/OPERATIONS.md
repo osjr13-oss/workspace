@@ -13,7 +13,7 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 | Welcome | After signup (`/api/email/welcome`) |
 | Support confirmation | User submits support form |
 | Support notification | Inbox alert to `SUPPORT_INBOX` |
-| Tips & reminders | Daily cron (`/api/cron/lifecycle-emails`) — see below |
+| Tips & reminders | Optional lifecycle cron (`/api/cron/lifecycle-emails`) — see below |
 
 **Vercel environment variables:**
 
@@ -27,7 +27,7 @@ CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <
 
 ### Lifecycle tips (cron)
 
-Once per day (14:00 UTC), the app checks new users and sends **at most one** contextual tip email per person — only if they have not used a feature yet:
+Once per day (14:00 UTC), the app checks opted-in users and sends **at most one** contextual tip email per person per 7 days — only if they have not used a feature yet:
 
 | Email key | When (days after signup) | Condition |
 |-----------|--------------------------|-----------|
@@ -38,11 +38,11 @@ Once per day (14:00 UTC), the app checks new users and sends **at most one** con
 | `tip_study` | 10–21 | Has decks, no study reviews |
 | `nudge_inactive` | 14–90 | No AI usage in last 7 days |
 
-Users can opt out in **Settings → Email preferences**. Each campaign is logged in `lifecycle_email_log` so nobody gets the same tip twice.
+Users must opt in from **Settings → Email preferences**. Each campaign is logged in `lifecycle_email_log` so nobody gets the same tip twice, and the sender skips users who do not have `lifecycle_emails = true`.
 
 **Setup:**
 
-1. Run migration `006_lifecycle_emails.sql` in Supabase.
+1. Run migrations `006_lifecycle_emails.sql` and `011_email_preferences_opt_in.sql` in Supabase.
 2. Add `CRON_SECRET` in Vercel (generate a long random string).
 3. Deploy — `vercel.json` registers the cron job automatically on Vercel.
 
@@ -125,6 +125,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 5. `005_billing.sql`
 6. `006_lifecycle_emails.sql`
 7. `007_pro_waitlist.sql`
+8. `011_email_preferences_opt_in.sql`
 
 ### Pro waitlist
 

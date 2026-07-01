@@ -30,7 +30,7 @@ export default function SettingsPage() {
         .eq("id", data.user.id)
         .single();
       setFullName(profile?.full_name || metadataName);
-      setLifecycleEmails(profile?.lifecycle_emails !== false);
+      setLifecycleEmails(profile?.lifecycle_emails === true);
     });
   }, []);
 
@@ -46,9 +46,15 @@ export default function SettingsPage() {
       return;
     }
 
-    const { error } = await supabase.from("profiles").update({ lifecycle_emails: enabled }).eq("id", user.id);
-    if (error) {
-      setMessage(error.message);
+    const response = await fetch("/api/account/email-preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lifecycleEmails: enabled })
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      setMessage(payload.error || "Could not update email preferences.");
     } else {
       setLifecycleEmails(enabled);
       setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");

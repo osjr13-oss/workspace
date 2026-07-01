@@ -28,6 +28,8 @@ const CAMPAIGNS: Campaign[] = [
   { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 }
 ];
 
+const MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS = 7;
+
 function daysSince(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -64,6 +66,18 @@ async function alreadySent(admin: SupabaseClient, userId: string, key: string) {
   return Boolean(data);
 }
 
+async function lastLifecycleEmailSentAt(admin: SupabaseClient, userId: string) {
+  const { data } = await admin
+    .from("lifecycle_email_log")
+    .select("sent_at")
+    .eq("user_id", userId)
+    .order("sent_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.sent_at as string | undefined;
+}
+
 export async function runLifecycleEmailBatch() {
   if (!isEmailConfigured()) {
     return { sent: 0, skipped: 0, reason: "email_not_configured" };
@@ -91,7 +105,13 @@ export async function runLifecycleEmailBatch() {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile?.lifecycle_emails === false) {
+      if (profile?.lifecycle_emails !== true) {
+        skipped += 1;
+        continue;
+      }
+
+      const lastSentAt = await lastLifecycleEmailSentAt(admin, user.id);
+      if (lastSentAt && daysSince(lastSentAt) < MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS) {
         skipped += 1;
         continue;
       }
