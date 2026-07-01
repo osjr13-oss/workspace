@@ -1,12 +1,12 @@
 # Selrano
 
-Selrano is a production-oriented AI client workspace for independent consultants: client workspaces, notes, files, brief cards, review, and Groq-powered client-aware chat.
+Selrano is a production-oriented AI workspace for projects, notes, files, flashcards, study review, and Groq-powered project-aware chat.
 
 ## Local Setup
 
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env.local` and fill in Supabase and Groq values.
-3. Run SQL migrations in order from `supabase/migrations/` (001-007).
+3. Run SQL migrations in order from `supabase/migrations/` (001–004).
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
 5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
 6. Start the app with `npm run dev`.
@@ -41,22 +41,22 @@ SUPPORT_INBOX=
 
 Stripe Free + Pro tiers: **[docs/BILLING.md](docs/BILLING.md)**
 
-## First-time setup
+## First-time setup (env, DB, email)
 
-Start here if features are not wired yet: **[docs/SETUP.md](docs/SETUP.md)**.
+**Start here if features are not wired yet:** **[docs/SETUP.md](docs/SETUP.md)** — step-by-step for Supabase migrations, Vercel env, Resend on selrano.com, and auth redirects.
 
 ```bash
-npm run setup:check
+npm run setup:check   # after copying .env.example → .env.local
 ```
 
 ## Operations
 
-Email, branding, support, and trust checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**
+Enterprise email, branding, support SLAs, and Fortune-500-style checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**
 
 ## Auth routes
 
-- `/auth/callback` exchanges Supabase email links for a session
-- `/auth/update-password` sets a new password after reset email
+- `/auth/callback` — exchanges Supabase email links for a session
+- `/auth/update-password` — set a new password after reset email
 
 ## Checks
 

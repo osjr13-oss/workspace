@@ -4,7 +4,7 @@ export const PLANS = {
   free: {
     id: "free" as const,
     name: "Free",
-    tagline: "Everything you need to try Selrano with a few clients",
+    tagline: "Everything you need to try Selrano",
     priceMonthly: 0,
     dailyAiRequests: 20,
     maxProjects: 3,
@@ -15,8 +15,8 @@ export const PLANS = {
   pro: {
     id: "pro" as const,
     name: "Pro",
-    tagline: "For independent consultants running client work every day",
-    priceMonthly: 19,
+    tagline: "For heavy coursework and daily deep work",
+    priceMonthly: 10,
     dailyAiRequests: 500,
     maxProjects: null as number | null,
     maxFileMb: 100,

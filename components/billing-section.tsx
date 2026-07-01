@@ -109,7 +109,7 @@ export function BillingSection() {
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <UsageStat label="AI today" value={`${status.usage.aiToday} / ${status.limits.dailyAiRequests}`} />
         <UsageStat
-          label="Clients"
+          label="Projects"
           value={
             status.limits.maxProjects === null
               ? String(status.usage.projects)
@@ -117,7 +117,7 @@ export function BillingSection() {
           }
         />
         <UsageStat
-          label="Briefs"
+          label="Decks"
           value={
             status.limits.maxDecks === null ? String(status.usage.decks) : `${status.usage.decks} / ${status.limits.maxDecks}`
           }

@@ -124,7 +124,7 @@ function FlashcardsContent() {
       if (!res.ok) {
         setGenerateError(payload.error || "Generation failed. Please try again.");
       } else {
-        setGenerateSuccess(`Generated ${payload.cards} brief cards successfully.`);
+        setGenerateSuccess(`Generated ${payload.cards} cards successfully!`);
         await load();
       }
     } catch {
@@ -134,7 +134,7 @@ function FlashcardsContent() {
   }
 
   async function removeDeck(id: string) {
-    if (!confirm("Delete this brief deck and all its cards?")) return;
+    if (!confirm("Delete this deck and all its cards?")) return;
     const supabase = createSupabaseBrowserClient();
     await supabase.from("flashcard_decks").delete().eq("id", id);
     if (deckId === id) {
@@ -155,26 +155,26 @@ function FlashcardsContent() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title="Briefs" eyebrow="Client memory" />
+      <WorkspaceHeader title="Flashcards" eyebrow="Study system" />
 
       {/* Top row: create deck + generate */}
       <section className="grid gap-5 lg:grid-cols-2">
         <form onSubmit={createDeck} className="panel flex flex-wrap items-center gap-3 p-5">
           <input
-            aria-label="Brief deck name"
+            aria-label="Deck name"
             className="input-premium min-w-0 flex-1 px-5"
-            placeholder="New brief deck name"
+            placeholder="New deck name"
             value={deckName}
             onChange={(e) => setDeckName(e.target.value)}
             required
           />
           <select
-            aria-label="Client workspace"
+            aria-label="Project"
             className="input-premium w-44 shrink-0 px-5"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
           >
-            <option value="">No client workspace</option>
+            <option value="">No project</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <button className="btn-primary shrink-0" type="submit">
@@ -190,7 +190,7 @@ function FlashcardsContent() {
               value={source}
               onChange={(e) => setSource(e.target.value)}
             >
-              <option value="">Choose a note or file to generate brief cards from</option>
+              <option value="">Choose a note or file to generate from</option>
               {notes.map((n) => <option key={n.id} value={`note:${n.id}`}>Note: {n.title}</option>)}
               {files.map((f) => <option key={f.id} value={`file:${f.id}`}>File: {f.name}</option>)}
             </select>
@@ -226,10 +226,10 @@ function FlashcardsContent() {
       <section className="grid gap-6 xl:grid-cols-[280px_1fr]">
         <aside className="panel p-4">
           <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
-            Brief decks ({decks.length})
+            Decks ({decks.length})
           </p>
           {decks.length === 0 && (
-            <p className="text-sm text-[var(--muted)]">No brief decks yet. Create one above.</p>
+            <p className="text-sm text-[var(--muted)]">No decks yet. Create one above.</p>
           )}
           {decks.map((deck) => {
             const isSelected = deckId === deck.id;
@@ -252,7 +252,7 @@ function FlashcardsContent() {
                 <button
                   type="button"
                   onClick={() => removeDeck(deck.id)}
-                  title="Delete brief deck"
+                  title="Delete deck"
                   className={`shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${isSelected ? "text-white/60 hover:text-white" : "text-[var(--muted)] hover:text-[var(--critical)]"}`}
                 >
                   <Trash2 size={14} />
@@ -265,17 +265,17 @@ function FlashcardsContent() {
         <main className="space-y-5">
           <form onSubmit={createCard} className="panel flex flex-wrap items-center gap-3 p-5">
             <input
-              aria-label="Brief card front"
+              aria-label="Card front"
               className="input-premium min-w-0 flex-1 px-5"
-              placeholder="Prompt, fact, or decision"
+              placeholder="Front (question)"
               value={front}
               onChange={(e) => setFront(e.target.value)}
               required
             />
             <input
-              aria-label="Brief card detail"
+              aria-label="Card back"
               className="input-premium min-w-0 flex-1 px-5"
-              placeholder="Client-ready detail"
+              placeholder="Back (answer)"
               value={back}
               onChange={(e) => setBack(e.target.value)}
               required
@@ -287,7 +287,7 @@ function FlashcardsContent() {
 
           {selectedDeck && (
             <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
-              {selectedDeck.name} - {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
+              {selectedDeck.name} — {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
             </p>
           )}
 
@@ -312,7 +312,7 @@ function FlashcardsContent() {
             </div>
           ) : (
             <EmptyState
-              title={deckId ? "No brief cards in this deck" : "Select a brief deck to see its cards"}
+              title={deckId ? "No cards in this deck" : "Select a deck to see its cards"}
               description={deckId ? "Add cards manually or generate them from a note or file." : "Click a deck on the left to view and add cards."}
             />
           )}

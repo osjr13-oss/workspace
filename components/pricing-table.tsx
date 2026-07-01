@@ -4,11 +4,11 @@ import { PLANS } from "@/lib/plans";
 
 const rows = [
   { label: "AI messages per day", free: String(PLANS.free.dailyAiRequests), pro: String(PLANS.pro.dailyAiRequests) },
-  { label: "Client workspaces", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
+  { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
   { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
-  { label: "Brief decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
+  { label: "Flashcard decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
   { label: "Semantic file search in chat", free: "Yes", pro: "Yes" },
-  { label: "Notes, briefs, and review", free: "Yes", pro: "Yes" }
+  { label: "Notes, study mode, flashcards", free: "Yes", pro: "Yes" }
 ] as const;
 
 export function PricingTable({ showCta = true }: { showCta?: boolean }) {

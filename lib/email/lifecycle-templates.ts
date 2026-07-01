@@ -18,54 +18,54 @@ export function lifecycleEmail(key: LifecycleEmailKey, name: string): { subject:
 
   const templates: Record<LifecycleEmailKey, { subject: string; body: string; preview: string }> = {
     tip_projects: {
-      subject: "Start with one client workspace",
-      preview: "Organize your work by client, retainer, or project",
+      subject: "Start with one project",
+      preview: "Organize your work by course or topic",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">The fastest way to get value from ${brand.name} is a <strong>client workspace</strong> - one home for a client, retainer, or project.</p>
-        <p style="margin:0 0 16px;">Notes, files, chats, and briefs all attach to it. When you chat with a workspace selected, AI can use the materials you saved there.</p>
-        <p style="margin:0 0 24px;">${cta("/projects", "Create your first workspace")}</p>
+        <p style="margin:0 0 16px;">The fastest way to get value from ${brand.name} is a <strong>project</strong> — one folder for a class, paper, or exam.</p>
+        <p style="margin:0 0 16px;">Notes, files, chats, and flashcards all attach to it. When you chat with a project selected, the AI reads your actual materials.</p>
+        <p style="margin:0 0 24px;">${cta("/projects", "Create your first project")}</p>
         <p style="margin:0;font-size:13px;">Takes about 30 seconds.</p>
       `
     },
     tip_upload: {
-      subject: "Upload a client file",
+      subject: "Upload a PDF — then ask it anything",
       preview: "Your files become searchable context for AI chat",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">Drop a brief, transcript, PDF, or research doc into ${brand.name}. We extract the text and use it in client-aware chat.</p>
+        <p style="margin:0 0 16px;">Drop a syllabus, article, or lecture PDF into ${brand.name}. We extract the text and use it in project chat — including quotes from the right pages.</p>
         <p style="margin:0 0 24px;">${cta("/files", "Upload a file")}</p>
-        <p style="margin:0;font-size:13px;">PDF, DOCX, Markdown, images, and plain text supported.</p>
+        <p style="margin:0;font-size:13px;">PDF, DOCX, and plain text supported.</p>
       `
     },
     tip_chat: {
-      subject: "Try client-aware chat",
-      preview: "Ask questions with client notes and files as context",
+      subject: "Try project-aware chat",
+      preview: "Ask questions with your notes and files as context",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">Global chat is fine - <strong>client workspace chat</strong> is where ${brand.name} shines. Select a workspace and ask anything about the materials inside it.</p>
-        <p style="margin:0 0 16px;">Summarize a transcript, draft a follow-up email, or turn rough notes into a client brief.</p>
+        <p style="margin:0 0 16px;">Global chat is fine — <strong>project chat</strong> is where ${brand.name} shines. Select a project and ask anything about your materials.</p>
+        <p style="margin:0 0 16px;">Summarize a chapter, clarify a concept, or draft an outline from what you uploaded.</p>
         <p style="margin:0 0 24px;">${cta("/chats", "Open chat")}</p>
       `
     },
     tip_flashcards: {
-      subject: "Turn notes into brief cards",
-      preview: "AI-generated brief decks from notes or files",
+      subject: "Turn your notes into flashcards",
+      preview: "AI-generated decks from notes or files",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">Pick a note or uploaded file and let ${brand.name} generate a brief deck with facts, decisions, risks, action items, and open questions.</p>
-        <p style="margin:0 0 16px;">Then use <strong>Review</strong> to keep important client context close across the engagement.</p>
-        <p style="margin:0 0 24px;">${cta("/flashcards", "Create a brief deck")}</p>
+        <p style="margin:0 0 16px;">Pick a note or uploaded file and let ${brand.name} generate a flashcard deck in seconds.</p>
+        <p style="margin:0 0 16px;">Then use <strong>Study mode</strong> for spaced repetition review before exams.</p>
+        <p style="margin:0 0 24px;">${cta("/flashcards", "Create a deck")}</p>
       `
     },
     tip_study: {
-      subject: "Brief cards are ready",
-      preview: "Review due brief cards",
+      subject: "Cards are ready — start studying",
+      preview: "Review due flashcards in Study mode",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">You have brief cards waiting. <strong>Review</strong> walks you through due cards and schedules the next pass.</p>
-        <p style="margin:0 0 24px;">${cta("/study", "Start review")}</p>
-        <p style="margin:0;font-size:13px;">Even five minutes helps before the next client call.</p>
+        <p style="margin:0 0 16px;">You have flashcards waiting. <strong>Study mode</strong> walks you through due cards and schedules the next review.</p>
+        <p style="margin:0 0 24px;">${cta("/study", "Start studying")}</p>
+        <p style="margin:0;font-size:13px;">Even five minutes helps retention.</p>
       `
     },
     nudge_inactive: {
@@ -73,8 +73,8 @@ export function lifecycleEmail(key: LifecycleEmailKey, name: string): { subject:
       preview: "Pick up where you left off",
       body: `
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
-        <p style="margin:0 0 16px;">It has been a little while since you used ${brand.name}. Your notes, files, and client workspaces are saved - jump back in anytime.</p>
-        <p style="margin:0 0 16px;">Quick wins: add one client note, upload one file, or ask one question in chat.</p>
+        <p style="margin:0 0 16px;">It has been a little while since you used ${brand.name}. Your notes, files, and projects are saved — jump back in anytime.</p>
+        <p style="margin:0 0 16px;">Quick wins: add one note, upload one PDF, or ask one question in chat.</p>
         <p style="margin:0 0 24px;">${cta("/dashboard", "Open dashboard")}</p>
         <p style="margin:0;font-size:13px;">Turn off tips anytime in <a href="${absoluteUrl("/settings")}" style="color:${brand.colors.text};">Settings</a>.</p>
       `

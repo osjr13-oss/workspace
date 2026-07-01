@@ -66,10 +66,10 @@ export default function DashboardPage() {
       </Link>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <Stat icon={<FolderOpen size={20} />} label="Clients" value={projects.length.toString()} />
+        <Stat icon={<FolderOpen size={20} />} label="Projects" value={projects.length.toString()} />
         <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
         <Stat icon={<Files size={20} />} label="Files" value={files.length.toString()} />
-        <Stat icon={<Brain size={20} />} label="Brief cards" value={counts.flashcards.toString()} />
+        <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -81,7 +81,7 @@ export default function DashboardPage() {
             </Link>
           ))}
         </PanelList>
-        <PanelList title="Client workspaces" href="/projects" empty="No client workspaces yet">
+        <PanelList title="Projects" href="/projects" empty="No projects yet">
           {projects.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
               <span className="font-bold">{project.name}</span>

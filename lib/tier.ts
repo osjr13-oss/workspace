@@ -58,7 +58,7 @@ export async function assertProjectLimit(supabase: SupabaseClient, userId: strin
   }
 
   if ((count || 0) >= plan.maxProjects) {
-    return `Free plan allows up to ${plan.maxProjects} client workspaces. Upgrade to Pro for unlimited workspaces.`;
+    return `Free plan allows up to ${plan.maxProjects} projects. Upgrade to Pro for unlimited projects.`;
   }
 
   return null;
@@ -80,7 +80,7 @@ export async function assertDeckLimit(supabase: SupabaseClient, userId: string):
   }
 
   if ((count || 0) >= plan.maxDecks) {
-    return `Free plan allows up to ${plan.maxDecks} brief decks. Upgrade to Pro for unlimited decks.`;
+    return `Free plan allows up to ${plan.maxDecks} flashcard decks. Upgrade to Pro for unlimited decks.`;
   }
 
   return null;

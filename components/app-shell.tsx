@@ -21,11 +21,11 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 const nav = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/chats", label: "Chats", icon: MessageSquare },
-  { href: "/projects", label: "Clients", icon: FolderOpen },
+  { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/files", label: "Files", icon: Files },
   { href: "/notes", label: "Notes", icon: BookOpen },
-  { href: "/flashcards", label: "Briefs", icon: Brain },
-  { href: "/study", label: "Review", icon: Sparkles }
+  { href: "/flashcards", label: "Flashcards", icon: Brain },
+  { href: "/study", label: "Study", icon: Sparkles }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
-          <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), brief cards, brief decks, client workspace names and descriptions, and chat messages you create within the Service.</li>
+          <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
         <h3 className="mt-4 font-extrabold text-[var(--text)]">b. Information collected automatically</h3>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features (chat, brief card generation, text transformations), relevant portions of your User Content are transmitted to <strong>Groq, Inc.</strong> for AI inference processing. This is necessary to generate AI responses.</p>
+        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content are transmitted to <strong>Groq, Inc.</strong> for AI inference processing. This is necessary to generate AI responses.</p>
         <ul>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>

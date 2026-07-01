@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          'Create 8 to 12 concise brief cards for an independent consultant. Capture client facts, decisions, risks, action items, open questions, and useful reusable context. Return strict JSON only with this shape: {"cards":[{"front":"short prompt or label","back":"client-ready detail"}]}.'
+          'Create 8 to 12 concise study flashcards. Return strict JSON only with this shape: {"cards":[{"front":"question","back":"answer"}]}.'
       },
       { role: "user", content: sourceText.slice(0, 12000) }
     ]);

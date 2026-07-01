@@ -22,8 +22,8 @@ export default function SecurityPage() {
       <p className="text-sm font-bold text-[var(--muted)]">Trust &amp; security</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Security at {brand.name}</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
-        We design {brand.name} with security appropriate for sensitive client and personal work. This page summarizes
-        our practices.
+        We design {brand.name} with security appropriate for sensitive academic and personal work. This page summarizes
+        our practices; enterprise customers may request additional documentation.
       </p>
 
       <Section title="Infrastructure">

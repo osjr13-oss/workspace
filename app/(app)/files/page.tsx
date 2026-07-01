@@ -82,8 +82,8 @@ function FilesContent() {
           />
           {file ? file.name : "Choose PDF, DOCX, TXT, Markdown, or image"}
         </label>
-        <select aria-label="Client workspace" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-          <option value="">No client workspace</option>
+        <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+          <option value="">No project</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
           ))}
@@ -128,7 +128,7 @@ function FilesContent() {
           </table>
         </section>
       ) : (
-        <EmptyState title="No files uploaded" description="Upload briefs, transcripts, brand docs, PDFs, or research so Selrano can use them in client-aware chat and briefs." />
+        <EmptyState title="No files uploaded" description="Upload source material to make it available for project-aware chat and flashcard generation." />
       )}
     </div>
   );

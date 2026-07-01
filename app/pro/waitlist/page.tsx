@@ -9,16 +9,16 @@ import { PLANS } from "@/lib/plans";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: `Pro waitlist - ${brand.name}`,
-  description: `Join the ${brand.name} Pro waitlist for unlimited client workspaces, larger uploads, and ${PLANS.pro.dailyAiRequests} AI messages per day.`
+  title: `Pro waitlist — ${brand.name}`,
+  description: `Join the ${brand.name} Pro waitlist for unlimited projects, larger uploads, and ${PLANS.pro.dailyAiRequests} AI messages per day.`
 };
 
 const perks = [
   `${PLANS.pro.dailyAiRequests} AI messages per day`,
-  "Unlimited client workspaces and brief decks",
+  "Unlimited projects and flashcard decks",
   `${PLANS.pro.maxFileMb} MB file uploads`,
-  "Semantic search across your client materials",
-  "Same notes, review, and client-aware chat"
+  "Semantic search across your course materials",
+  "Same notes, study mode, and project-aware chat"
 ];
 
 export default async function ProWaitlistPage() {
@@ -45,18 +45,18 @@ export default async function ProWaitlistPage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
               <Sparkles size={14} />
-              Pro waitlist - ${PLANS.pro.priceMonthly}/mo
+              Pro waitlist · ${PLANS.pro.priceMonthly}/mo
             </p>
             <h1 className="mt-6 max-w-xl text-4xl font-extrabold leading-[1.05] tracking-[-0.04em] text-balance sm:text-5xl">
-              Client work without hitting your limits.
+              Study without hitting your limits.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
-              {brand.name} brings client files, notes, briefs, decisions, and AI chat into one calm workspace so you can
-              keep every engagement moving.
+              {brand.name} brings your syllabi, notes, PDFs, flashcards, and AI chat into one calm workspace — so you can
+              actually keep up when coursework piles up.
             </p>
             <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--muted)]">
-              Pro is opening soon. Join the waitlist and we&apos;ll let you know when you can upgrade for heavier client
-              loads and bigger files.
+              Pro is opening soon. Join the waitlist and we&apos;ll let you know when you can upgrade for heavier exam
+              seasons and bigger files.
             </p>
 
             <ul className="mt-8 space-y-3">
