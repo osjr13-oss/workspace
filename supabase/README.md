@@ -13,6 +13,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 9. `migrations/011_email_preferences_opt_in.sql` — make lifecycle tips opt-in
 10. `migrations/012_restore_support_request_insert.sql` — restore public support form ticket creation
 11. `migrations/013_atomic_ai_quota.sql` — fix + enable atomic AI daily-limit reservation
+12. `migrations/014_file_search_fts.sql` — free full-text keyword search over uploaded files
 
 ## Auth redirect URLs
 

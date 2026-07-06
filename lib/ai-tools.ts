@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { features } from "@/lib/features";
+import { searchChunksFullText } from "@/lib/retrieve-context";
 
 /**
  * Tools the chat AI can invoke when the "AI actions" feature is enabled.
@@ -91,19 +93,30 @@ async function searchWorkspace(ctx: ToolContext, query: string): Promise<string>
   if (!trimmed) return "No search query was provided.";
 
   const like = `%${trimmed.slice(0, 120)}%`;
-  const [notes, chunks] = await Promise.all([
+  const [notes, chunkExcerpts] = await Promise.all([
     ctx.supabase.from("notes").select("title, content").eq("user_id", ctx.userId).ilike("content", like).limit(4),
-    ctx.supabase.from("file_chunks").select("content").eq("user_id", ctx.userId).ilike("content", like).limit(4)
+    searchFileChunks(ctx, trimmed, like)
   ]);
 
   const parts = [
     ...((notes.data ?? []) as Array<{ title: string; content: string }>).map(
       (note) => `Note "${note.title}": ${note.content.slice(0, 600)}`
     ),
-    ...((chunks.data ?? []) as Array<{ content: string }>).map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`)
+    ...chunkExcerpts
   ];
 
   return parts.length ? parts.join("\n\n") : "No matching notes or files were found.";
+}
+
+async function searchFileChunks(ctx: ToolContext, query: string, like: string): Promise<string[]> {
+  // Prefer ranked full-text search when enabled; otherwise fall back to a substring match.
+  if (features.hybridSearch) {
+    const results = await searchChunksFullText(ctx.supabase, query, { projectId: null, limit: 4 });
+    return results.map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`);
+  }
+
+  const { data } = await ctx.supabase.from("file_chunks").select("content").eq("user_id", ctx.userId).ilike("content", like).limit(4);
+  return ((data ?? []) as Array<{ content: string }>).map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`);
 }
 
 async function createNote(ctx: ToolContext, title: string, content: string): Promise<string> {

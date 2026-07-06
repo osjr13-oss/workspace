@@ -33,6 +33,7 @@ open the preview URL, and check it there. Production stays off until you flip it
 |----------|---------|---------|
 | `NEXT_PUBLIC_FEATURE_STREAMING_CHAT` | Chat replies appear word-by-word as they're written, instead of waiting for the full answer. | `false` (hidden) |
 | `NEXT_PUBLIC_FEATURE_AI_ACTIONS` | Chat can take actions on request — search the user's notes/files, create a note, or create a flashcard deck. | `false` (hidden) |
+| `NEXT_PUBLIC_FEATURE_HYBRID_SEARCH` | Better file search — ranked full-text keyword matching over uploaded files (free, no embedding API). Requires migration `014_file_search_fts.sql`. | `false` (hidden) |
 
 _The list grows as new features are built. The source of truth is
 [`lib/features.ts`](../lib/features.ts)._

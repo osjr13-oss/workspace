@@ -3,7 +3,7 @@ import { reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions } from "@/lib/ai-tools";
 import { features } from "@/lib/features";
 import { callGroq, callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
-import { searchProjectChunks } from "@/lib/retrieve-context";
+import { searchChunksFullText, searchProjectChunks } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
@@ -210,19 +210,31 @@ async function loadProjectContext(
 ) {
   if (!projectId) return "";
 
-  const semanticChunks = query?.trim() ? await searchProjectChunks(supabase, projectId, query, 6) : [];
+  const trimmedQuery = query?.trim() || "";
+  const semanticChunks = trimmedQuery ? await searchProjectChunks(supabase, projectId, trimmedQuery, 6) : [];
+
+  // Best available file retrieval: vector search (if embeddings are configured) →
+  // free full-text keyword search (if enabled) → the project's first chunks.
+  const ftsChunks =
+    !semanticChunks.length && features.hybridSearch && trimmedQuery
+      ? await searchChunksFullText(supabase, trimmedQuery, { projectId, limit: 6 })
+      : [];
+
+  const needsFallbackChunks = !semanticChunks.length && !ftsChunks.length;
 
   const [notes, chunks, cards] = await Promise.all([
     supabase.from("notes").select("title, content").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(6),
-    semanticChunks.length
-      ? Promise.resolve({ data: [] as Array<{ content: string }> })
-      : supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10),
+    needsFallbackChunks
+      ? supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10)
+      : Promise.resolve({ data: [] as Array<{ content: string }> }),
     supabase.from("flashcards").select("front, back").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(12)
   ]);
 
   const fileExcerpts = semanticChunks.length
     ? semanticChunks.map((chunk) => `File excerpt (relevant):\n${chunk.content}`)
-    : ((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`);
+    : ftsChunks.length
+      ? ftsChunks.map((chunk) => `File excerpt (relevant):\n${chunk.content}`)
+      : ((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`);
 
   const parts = [
     ...((notes.data || []) as Array<{ title: string; content: string }>).map((note) => `Note: ${note.title}\n${note.content.slice(0, 1800)}`),

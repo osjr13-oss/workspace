@@ -20,7 +20,9 @@ export const features = {
   /** Word-by-word streaming replies in chat (vs. waiting for the full answer). */
   streamingChat: flag(process.env.NEXT_PUBLIC_FEATURE_STREAMING_CHAT),
   /** Let chat take actions — search the workspace, create notes, make flashcard decks. */
-  aiActions: flag(process.env.NEXT_PUBLIC_FEATURE_AI_ACTIONS)
+  aiActions: flag(process.env.NEXT_PUBLIC_FEATURE_AI_ACTIONS),
+  /** Full-text (keyword) search over uploaded files — free, no embedding API needed. */
+  hybridSearch: flag(process.env.NEXT_PUBLIC_FEATURE_HYBRID_SEARCH)
 };
 
 export type FeatureName = keyof typeof features;

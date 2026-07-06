@@ -30,3 +30,35 @@ export async function searchProjectChunks(
     return [];
   }
 }
+
+/**
+ * Free keyword (full-text) search over the user's uploaded file chunks, ranked by
+ * relevance. Needs no embedding provider — it uses the search_chunks_fts() Postgres
+ * function backed by a tsvector index. Pass projectId to scope to one project, or
+ * null to search all of the user's files.
+ */
+export async function searchChunksFullText(
+  supabase: Supabase,
+  query: string,
+  options: { projectId?: string | null; limit?: number } = {}
+): Promise<Array<{ content: string; rank: number }>> {
+  if (!query.trim()) return [];
+
+  try {
+    const { data, error } = await supabase.rpc("search_chunks_fts", {
+      p_query: query,
+      p_project_id: options.projectId ?? null,
+      p_match_count: options.limit ?? 6
+    });
+
+    if (error) {
+      console.error("[retrieve-context] fts", error);
+      return [];
+    }
+
+    return ((data || []) as Array<{ content: string; rank: number }>).filter((row) => row.content);
+  } catch (error) {
+    console.error("[retrieve-context] fts", error);
+    return [];
+  }
+}
