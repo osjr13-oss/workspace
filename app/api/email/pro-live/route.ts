@@ -7,6 +7,8 @@ import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
+const fallbackAdminEmails = ["onosman36@gmail.com"];
+
 function emailFromAddress(value?: string | null) {
   const raw = value?.trim().toLowerCase();
   if (!raw) return "";
@@ -20,7 +22,8 @@ async function authorize(request: Request) {
 
   const { user } = await getAuthenticatedUser();
   const adminEmail = emailFromAddress(process.env.PRO_LAUNCH_ADMIN_EMAIL || process.env.SUPPORT_INBOX || process.env.NEXT_PUBLIC_SUPPORT_EMAIL);
-  return Boolean(user?.email && adminEmail && user.email.toLowerCase() === adminEmail);
+  const userEmail = user?.email?.toLowerCase();
+  return Boolean(userEmail && (fallbackAdminEmails.includes(userEmail) || userEmail === adminEmail));
 }
 
 export async function POST(request: Request) {
