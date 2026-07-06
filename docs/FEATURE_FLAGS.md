@@ -32,6 +32,7 @@ open the preview URL, and check it there. Production stays off until you flip it
 | Variable | Feature | Default |
 |----------|---------|---------|
 | `NEXT_PUBLIC_FEATURE_STREAMING_CHAT` | Chat replies appear word-by-word as they're written, instead of waiting for the full answer. | `false` (hidden) |
+| `NEXT_PUBLIC_FEATURE_AI_ACTIONS` | Chat can take actions on request — search the user's notes/files, create a note, or create a flashcard deck. | `false` (hidden) |
 
 _The list grows as new features are built. The source of truth is
 [`lib/features.ts`](../lib/features.ts)._

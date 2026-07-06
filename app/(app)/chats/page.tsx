@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Send, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { features } from "@/lib/features";
 import { formatRelative } from "@/lib/format";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
@@ -93,8 +92,9 @@ function ChatsContent() {
         return;
       }
 
-      if (!features.streamingChat) {
-        // Streaming OFF: single JSON reply with the full answer.
+      // A streaming reply arrives as plain text; everything else is a single JSON reply.
+      const isStreaming = (response.headers.get("content-type") || "").includes("text/plain");
+      if (!isStreaming) {
         const payload = await response.json();
         setThreadId(payload.threadId);
         await Promise.all([loadThreads(), loadMessages(payload.threadId)]);

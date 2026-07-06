@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
+import { executeTool, toolDefinitions } from "@/lib/ai-tools";
 import { features } from "@/lib/features";
-import { callGroq, streamGroq } from "@/lib/groq";
+import { callGroq, callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
 import { searchProjectChunks } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -69,6 +70,28 @@ export async function POST(request: Request) {
 
     if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
     const finalThreadId = threadId;
+
+    // Feature-flagged: when AI actions are ON, run a tool-calling loop so the model
+    // can search the workspace and create notes/flashcards before answering.
+    if (features.aiActions) {
+      const answer = await runToolLoop(messages, {
+        supabase,
+        userId: user.id,
+        projectId: body.projectId || null
+      });
+
+      const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
+        user_id: user.id,
+        thread_id: finalThreadId,
+        role: "assistant",
+        content: answer
+      });
+      if (assistantMessageError) throw assistantMessageError;
+
+      await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+
+      return NextResponse.json({ threadId: finalThreadId, answer });
+    }
 
     // Feature-flagged: when streaming is OFF, keep the original behavior —
     // generate the full answer, save it, and return it as JSON in one response.
@@ -138,6 +161,46 @@ export async function POST(request: Request) {
     console.error("[chat]", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+async function runToolLoop(
+  baseMessages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+  ctx: { supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"]; userId: string; projectId: string | null }
+): Promise<string> {
+  const actionGuide = {
+    role: "system" as const,
+    content:
+      "You can take actions in the user's workspace with the provided tools: search their notes and files, create a note, or create a flashcard deck. When the user asks you to do one of these, call the matching tool rather than describing how. Only create content when the user clearly asks for it. After using tools, briefly confirm what you did in plain prose."
+  };
+
+  const messages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];
+  const MAX_STEPS = 5;
+
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const reply = await callGroqWithTools(messages, toolDefinitions, { temperature: 0.4 });
+
+    if (reply.tool_calls?.length) {
+      messages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });
+
+      for (const call of reply.tool_calls) {
+        let result: string;
+        try {
+          const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+          result = await executeTool(call.function.name, args, ctx);
+        } catch (error) {
+          result = `Error running ${call.function.name}: ${serializeError(error)}`;
+        }
+        messages.push({ role: "tool", tool_call_id: call.id, content: result });
+      }
+      continue;
+    }
+
+    const answer = (reply.content || "").trim();
+    if (answer) return answer;
+    break;
+  }
+
+  return "I wasn't able to complete that. Please try rephrasing your request.";
 }
 
 async function loadProjectContext(

@@ -18,7 +18,9 @@ function flag(value: string | undefined): boolean {
 
 export const features = {
   /** Word-by-word streaming replies in chat (vs. waiting for the full answer). */
-  streamingChat: flag(process.env.NEXT_PUBLIC_FEATURE_STREAMING_CHAT)
+  streamingChat: flag(process.env.NEXT_PUBLIC_FEATURE_STREAMING_CHAT),
+  /** Let chat take actions — search the workspace, create notes, make flashcard decks. */
+  aiActions: flag(process.env.NEXT_PUBLIC_FEATURE_AI_ACTIONS)
 };
 
 export type FeatureName = keyof typeof features;

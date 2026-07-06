@@ -5,6 +5,57 @@ type GroqMessage = {
   content: string;
 };
 
+export type GroqToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+/** Message shape used during a tool-calling loop (superset of GroqMessage). */
+export type GroqChatMessage =
+  | { role: "system" | "user"; content: string }
+  | { role: "assistant"; content: string | null; tool_calls?: GroqToolCall[] }
+  | { role: "tool"; tool_call_id: string; content: string };
+
+export type GroqAssistantMessage = { role: "assistant"; content: string | null; tool_calls?: GroqToolCall[] };
+
+/**
+ * Call Groq with a set of tools the model may invoke. Returns the raw assistant
+ * message, which either contains `tool_calls` (the model wants to run a tool) or
+ * `content` (its final text answer). The caller runs the tool loop.
+ */
+export async function callGroqWithTools(
+  messages: GroqChatMessage[],
+  tools: unknown[],
+  options?: { temperature?: number }
+): Promise<GroqAssistantMessage> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requireEnv("GROQ_API_KEY")}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: requireEnv("GROQ_MODEL"),
+      messages,
+      tools,
+      tool_choice: "auto",
+      temperature: options?.temperature ?? 0.4
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Groq tool request failed: ${detail}`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: GroqAssistantMessage }>;
+  };
+
+  return payload.choices?.[0]?.message ?? { role: "assistant", content: "" };
+}
+
 /**
  * Stream a Groq chat completion token-by-token.
  *
