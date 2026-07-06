@@ -127,6 +127,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 7. `007_pro_waitlist.sql`
 8. `010_security_hardening.sql`
 9. `011_email_preferences_opt_in.sql`
+10. `012_restore_support_request_insert.sql`
 
 ### Historical Pro waitlist
 

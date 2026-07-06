@@ -4,7 +4,6 @@ import { brand } from "@/lib/brand";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { supportConfirmationEmail, supportTeamNotificationEmail } from "@/lib/email/templates";
 import { serializeError } from "@/lib/serialize-error";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -56,11 +55,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Message is too long." }, { status: 400 });
     }
 
-    const { user } = await getAuthenticatedUser();
-    const admin = createSupabaseAdminClient();
+    const { supabase, user } = await getAuthenticatedUser();
     const id = ticketId();
 
-    const { error: insertError } = await admin.from("support_requests").insert({
+    const { error: insertError } = await supabase.from("support_requests").insert({
       ticket_id: id,
       user_id: user?.id || null,
       name,
@@ -71,7 +69,7 @@ export async function POST(request: Request) {
 
     if (insertError) throw insertError;
 
-    await logAudit(admin, {
+    await logAudit(supabase, {
       user_id: user?.id || null,
       action: "support.contact",
       metadata: { ticket_id: id, subject },
