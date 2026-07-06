@@ -1,5 +1,5 @@
--- Run after 009. Moves security-sensitive writes behind server routes and
--- makes AI quota reservation and voice-session claiming atomic.
+-- Moves security-sensitive writes behind server routes and makes AI quota
+-- reservation atomic.
 drop policy if exists "support_requests insert authenticated" on public.support_requests;
 drop policy if exists "support_requests insert anon" on public.support_requests;
 revoke insert on public.support_requests from anon, authenticated;
@@ -27,18 +27,6 @@ begin
   return true;
 end $$;
 grant execute on function public.reserve_ai_usage(text) to authenticated;
-
-drop policy if exists "voice_sessions all own" on public.voice_sessions;
-create policy "voice_sessions select own" on public.voice_sessions for select using (auth.uid()=user_id);
-
-create or replace function public.claim_voice_session(p_session_id uuid)
-returns boolean language plpgsql security definer set search_path = public as $$
-begin
-  update public.voice_sessions set status='structuring',error_message=null
-  where id=p_session_id and user_id=auth.uid() and status='transcribed' and raw_transcription is not null;
-  return found;
-end $$;
-grant execute on function public.claim_voice_session(uuid) to authenticated;
 
 create table if not exists public.request_rate_limits(
   scope text not null, key_hash text not null, window_start timestamptz not null,
@@ -102,7 +90,7 @@ begin
   return new;
 end $$;
 do $$ declare t text; begin
-  foreach t in array array['notes','files','file_chunks','chat_threads','chat_messages','flashcard_decks','flashcards','voice_sessions']
+  foreach t in array array['notes','files','file_chunks','chat_threads','chat_messages','flashcard_decks','flashcards']
   loop
     execute format('drop trigger if exists owned_references on public.%I',t);
     execute format('create trigger owned_references before insert or update on public.%I for each row execute function public.enforce_owned_references()',t);

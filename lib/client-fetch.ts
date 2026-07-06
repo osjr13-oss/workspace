@@ -19,7 +19,7 @@ export async function fetchJsonWithTimeout<T>(
         data: null,
         error:
           response.status === 504 || response.status === 502
-            ? "Server timed out. Try a shorter recording (under 2 minutes) or retry in a moment."
+            ? "Server timed out. Please retry in a moment."
             : "Unexpected server response. Please try again."
       };
     }
@@ -37,44 +37,11 @@ export async function fetchJsonWithTimeout<T>(
         ok: false,
         status: 408,
         data: null,
-        error: "Request timed out. Long recordings can take a few minutes — we are improving this. Try under 2 minutes for now."
+        error: "Request timed out. Please retry in a moment."
       };
     }
     return { ok: false, status: 0, data: null, error: "Network error. Check your connection and try again." };
   } finally {
     clearTimeout(timer);
   }
-}
-
-export async function pollTranscriptionStatus(sessionId: string, options?: { maxWaitMs?: number; intervalMs?: number }) {
-  const maxWaitMs = options?.maxWaitMs ?? 600_000;
-  const intervalMs = options?.intervalMs ?? 2000;
-  const started = Date.now();
-
-  while (Date.now() - started < maxWaitMs) {
-    const result = await fetchJsonWithTimeout<{
-      status: string;
-      transcription?: string;
-      error?: string;
-    }>(`/api/ai/transcribe/status?sessionId=${encodeURIComponent(sessionId)}`, { timeoutMs: 15_000 });
-
-    if (!result.ok || !result.data) {
-      return { ok: false as const, error: result.error || "Could not check transcription status." };
-    }
-
-    if (result.data.status === "transcribed") {
-      return { ok: true as const, transcription: result.data.transcription || "", sessionId };
-    }
-
-    if (result.data.status === "failed") {
-      return { ok: false as const, error: result.data.error || "Transcription failed." };
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  return {
-    ok: false as const,
-    error: "Transcription is taking longer than expected. It may still be processing — refresh and check Notes later, or retry with a shorter clip."
-  };
 }
