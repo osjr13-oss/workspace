@@ -1,6 +1,5 @@
 import { absoluteUrl, brand } from "@/lib/brand";
 import { cta, emailLayout } from "@/lib/email/layout";
-import { PLANS } from "@/lib/plans";
 
 function escapeHtml(value: string) {
   return value
@@ -24,25 +23,6 @@ export function welcomeEmail(params: { name: string }) {
 
   return {
     subject: `Welcome to ${brand.name}`,
-    html
-  };
-}
-
-export function proLaunchEmail() {
-  const html = emailLayout(
-    `
-      <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">Pro is live</p>
-      <p style="margin:0 0 16px;">Thanks for joining the ${brand.name} Pro waitlist. Billing is now open, and you can upgrade to Pro for $19/month.</p>
-      <p style="margin:0 0 16px;">Pro includes ${PLANS.pro.dailyAiRequests} AI messages per day, unlimited projects and flashcard decks, and larger file uploads.</p>
-      <p style="margin:0 0 24px;">${cta("/pricing", "Upgrade to Pro")}</p>
-      <p style="margin:0;">Questions? Reply to this email or reach us at <a href="mailto:${brand.emails.support}" style="color:${brand.colors.text};">${brand.emails.support}</a>.</p>
-    `,
-    `${brand.name} Pro is live`,
-    { showUnsubscribe: true }
-  );
-
-  return {
-    subject: `${brand.name} Pro is live`,
     html
   };
 }
