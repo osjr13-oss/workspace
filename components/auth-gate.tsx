@@ -15,7 +15,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       const supabase = createSupabaseBrowserClient();
       supabase.auth.getUser().then(({ data }) => {
         if (!data.user) {
-          router.replace("/signin");
+          const next = `${window.location.pathname}${window.location.search}`;
+          router.replace(`/signin?next=${encodeURIComponent(next)}`);
           return;
         }
         setUser(data.user);
@@ -25,7 +26,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         data: { subscription }
       } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session?.user) {
-          router.replace("/signin");
+          const next = `${window.location.pathname}${window.location.search}`;
+          router.replace(`/signin?next=${encodeURIComponent(next)}`);
           return;
         }
         setUser(session.user);
