@@ -24,6 +24,7 @@ export const brand = {
     privacy: "/privacy",
     security: "/security",
     support: "/support",
+    changelog: "/changelog",
     status: process.env.NEXT_PUBLIC_STATUS_URL || "",
     docs: process.env.NEXT_PUBLIC_DOCS_URL || ""
   },
