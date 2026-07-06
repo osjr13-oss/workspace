@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { ProCheckoutButton } from "@/components/pro-checkout-button";
 import { PLANS } from "@/lib/plans";
 
 const rows = [
@@ -38,9 +39,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
             {showCta ? (
               <div className="mt-8">
                 {isPro ? (
-                  <Link href="/pro/waitlist" className="btn-primary w-full justify-center">
-                    Join Pro waitlist
-                  </Link>
+                  <ProCheckoutButton />
                 ) : (
                   <Link href="/signup" className="btn-secondary w-full justify-center">
                     Get started free

@@ -11,6 +11,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 7. `migrations/007_pro_waitlist.sql` — Pro plan waitlist signups
 8. `migrations/010_security_hardening.sql` — lock down sensitive writes and add server-side rate limits
 9. `migrations/011_email_preferences_opt_in.sql` — make lifecycle tips opt-in
+10. `migrations/012_pro_waitlist_launch_email.sql` — tracks which legacy waitlist entries have received the Pro launch email
 
 ## Auth redirect URLs
 

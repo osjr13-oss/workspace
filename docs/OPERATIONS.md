@@ -127,12 +127,35 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 7. `007_pro_waitlist.sql`
 8. `010_security_hardening.sql`
 9. `011_email_preferences_opt_in.sql`
+10. `012_pro_waitlist_launch_email.sql`
 
-### Pro waitlist
+### Pro launch email
 
-- Public page: **`/pro/waitlist`**
-- Signups stored in **`pro_waitlist`** (Supabase Table Editor)
-- CSV export (set `WAITLIST_EXPORT_SECRET` in Vercel):
+The public Pro waitlist is closed now that billing is live. Historical signups remain in **`pro_waitlist`** so they can receive the launch email once.
+
+Set `WAITLIST_EXPORT_SECRET` in Vercel, run migration `012_pro_waitlist_launch_email.sql`, then preview a batch:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"dryRun":true,"limit":25}' \
+  https://selrano.com/api/email/pro-live
+```
+
+Send a batch:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"limit":25}' \
+  https://selrano.com/api/email/pro-live
+```
+
+Repeat until the response says `"remaining": 0`.
+
+CSV export for the historical list:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_SECRET" https://selrano.com/api/waitlist/export -o waitlist.csv

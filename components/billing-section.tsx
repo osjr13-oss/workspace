@@ -138,9 +138,9 @@ export function BillingSection() {
             {actionLoading ? "Redirecting…" : `Upgrade to Pro — $${PLANS.pro.priceMonthly}/mo`}
           </button>
         ) : (
-          <Link href="/pro/waitlist" className="btn-primary">
+          <Link href="/pricing" className="btn-primary">
             <Sparkles size={18} />
-            Join Pro waitlist
+            View Pro
           </Link>
         )}
         <Link href="/pricing" className="btn-secondary">
@@ -150,7 +150,7 @@ export function BillingSection() {
 
       {!status.stripeConfigured && !isPro ? (
         <p className="mt-4 text-sm text-[var(--muted-strong)]">
-          Pro checkout opens soon — join the waitlist and we&apos;ll email you when it&apos;s ready.
+          Pro checkout is live but not configured in this environment yet.
         </p>
       ) : null}
 
