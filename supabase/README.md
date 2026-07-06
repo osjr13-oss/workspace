@@ -12,6 +12,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 8. `migrations/010_security_hardening.sql` — lock down sensitive writes and add server-side rate limits
 9. `migrations/011_email_preferences_opt_in.sql` — make lifecycle tips opt-in
 10. `migrations/012_restore_support_request_insert.sql` — restore public support form ticket creation
+11. `migrations/013_atomic_ai_quota.sql` — fix + enable atomic AI daily-limit reservation
 
 ## Auth redirect URLs
 

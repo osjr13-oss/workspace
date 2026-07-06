@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Send, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { features } from "@/lib/features";
 import { formatRelative } from "@/lib/format";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
@@ -75,22 +76,60 @@ function ChatsContent() {
       { id: "pending-user", thread_id: threadId || "pending", user_id: "", role: "user", content: prompt, created_at: new Date().toISOString() }
     ]);
 
-    const response = await fetch("/api/ai/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt, threadId, projectId: projectId || null })
-    });
-    const payload = await response.json();
-    if (response.ok) {
-      setThreadId(payload.threadId);
-      await Promise.all([loadThreads(), loadMessages(payload.threadId)]);
-    } else {
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt, threadId, projectId: projectId || null })
+      });
+
+      if (!response.ok || !response.body) {
+        const payload = await response.json().catch(() => ({}));
+        setMessages((current) => [
+          ...current.filter((message) => message.id !== "pending-user"),
+          { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: payload.error || "Chat failed.", created_at: new Date().toISOString() }
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      if (!features.streamingChat) {
+        // Streaming OFF: single JSON reply with the full answer.
+        const payload = await response.json();
+        setThreadId(payload.threadId);
+        await Promise.all([loadThreads(), loadMessages(payload.threadId)]);
+        setLoading(false);
+        return;
+      }
+
+      const newThreadId = response.headers.get("X-Thread-Id") || threadId;
+
+      // Streaming ON: reply fills into an assistant bubble as tokens arrive.
+      setLoading(false);
       setMessages((current) => [
-        ...current.filter((message) => message.id !== "pending-user"),
-        { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: payload.error || "Chat failed.", created_at: new Date().toISOString() }
+        ...current,
+        { id: "streaming", thread_id: newThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
       ]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setMessages((current) => current.map((message) => (message.id === "streaming" ? { ...message, content: acc } : message)));
+      }
+
+      if (newThreadId) setThreadId(newThreadId);
+      await Promise.all([loadThreads(), loadMessages(newThreadId)]);
+    } catch {
+      setMessages((current) => [
+        ...current.filter((message) => message.id !== "pending-user" && message.id !== "streaming"),
+        { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: "Network error. Please try again.", created_at: new Date().toISOString() }
+      ]);
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function deleteThread() {

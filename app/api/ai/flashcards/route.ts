@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertWithinLimit, recordUsage } from "@/lib/ai-usage";
+import { reserveAiRequest } from "@/lib/ai-usage";
 import { callGroq } from "@/lib/groq";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -10,9 +10,6 @@ export async function POST(request: Request) {
   try {
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const limitError = await assertWithinLimit(supabase, user.id);
-    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const body = (await request.json()) as {
       deckId?: string;
@@ -26,6 +23,12 @@ export async function POST(request: Request) {
 
     const sourceText = await loadSourceText(supabase, body.sourceType, body.sourceId);
     if (!sourceText) return NextResponse.json({ error: "No source text found" }, { status: 400 });
+
+    const limitError = await reserveAiRequest(supabase, user.id, "flashcards", {
+      model: process.env.GROQ_MODEL || "groq",
+      input_chars: sourceText.length
+    });
+    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const result = await callGroq([
       {
@@ -53,11 +56,6 @@ export async function POST(request: Request) {
       }))
     );
     if (error) throw error;
-
-    await recordUsage(supabase, user.id, "flashcards", {
-      model: process.env.GROQ_MODEL || "groq",
-      input_chars: sourceText.length
-    });
 
     return NextResponse.json({ cards: parsed.length });
   } catch (error) {

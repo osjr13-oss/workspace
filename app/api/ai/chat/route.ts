@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { assertWithinLimit, recordUsage } from "@/lib/ai-usage";
-import { callGroq } from "@/lib/groq";
+import { reserveAiRequest } from "@/lib/ai-usage";
+import { features } from "@/lib/features";
+import { callGroq, streamGroq } from "@/lib/groq";
 import { searchProjectChunks } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -12,11 +13,14 @@ export async function POST(request: Request) {
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const limitError = await assertWithinLimit(supabase, user.id);
-    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
-
     const body = (await request.json()) as { message?: string; threadId?: string | null; projectId?: string | null };
     if (!body.message?.trim()) return NextResponse.json({ error: "Message is required" }, { status: 400 });
+
+    const limitError = await reserveAiRequest(supabase, user.id, "chat", {
+      model: process.env.GROQ_MODEL || "groq",
+      input_chars: body.message.length
+    });
+    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     let threadId = body.threadId || null;
     if (!threadId) {
@@ -63,24 +67,72 @@ export async function POST(request: Request) {
       }))
     ];
 
-    const answer = await callGroq(messages, { temperature: 0.6 });
+    if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
+    const finalThreadId = threadId;
 
-    const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
-      user_id: user.id,
-      thread_id: threadId,
-      role: "assistant",
-      content: answer
+    // Feature-flagged: when streaming is OFF, keep the original behavior —
+    // generate the full answer, save it, and return it as JSON in one response.
+    if (!features.streamingChat) {
+      const answer = await callGroq(messages, { temperature: 0.6 });
+
+      const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
+        user_id: user.id,
+        thread_id: finalThreadId,
+        role: "assistant",
+        content: answer
+      });
+      if (assistantMessageError) throw assistantMessageError;
+
+      await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+
+      return NextResponse.json({ threadId: finalThreadId, answer });
+    }
+
+    const encoder = new TextEncoder();
+
+    // Stream the model's answer to the browser token-by-token. Once the stream
+    // finishes we persist the complete assistant message and bump the thread.
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let answer = "";
+        try {
+          answer = await streamGroq(messages, {
+            temperature: 0.6,
+            onToken: (token) => controller.enqueue(encoder.encode(token))
+          });
+
+          // Persist the full answer BEFORE closing the stream, so the browser's
+          // post-stream reload is guaranteed to see the saved assistant message.
+          if (answer) {
+            const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
+              user_id: user.id,
+              thread_id: finalThreadId,
+              role: "assistant",
+              content: answer
+            });
+            if (assistantMessageError) {
+              console.error("[chat] persist assistant message failed", assistantMessageError);
+            }
+            await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+          }
+        } catch (error) {
+          console.error("[chat] stream failed", serializeError(error), error);
+          if (!answer) {
+            controller.enqueue(encoder.encode("Sorry — something went wrong generating that response. Please try again."));
+          }
+        } finally {
+          controller.close();
+        }
+      }
     });
-    if (assistantMessageError) throw assistantMessageError;
 
-    await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
-
-    await recordUsage(supabase, user.id, "chat", {
-      model: process.env.GROQ_MODEL || "groq",
-      input_chars: body.message.length
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Thread-Id": finalThreadId
+      }
     });
-
-    return NextResponse.json({ threadId, answer });
   } catch (error) {
     const message = serializeError(error);
     console.error("[chat]", message, error);

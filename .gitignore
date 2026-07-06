@@ -6,3 +6,4 @@ out
 .env.*.local
 *.tsbuildinfo
 meridian-*-qa.png
+.DS_Store
