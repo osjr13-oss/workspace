@@ -3,17 +3,28 @@ import { proLaunchEmail } from "@/lib/email/templates";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
 import { serializeError } from "@/lib/serialize-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-function authorize(request: Request) {
+function emailFromAddress(value?: string | null) {
+  const raw = value?.trim().toLowerCase();
+  if (!raw) return "";
+  const match = raw.match(/<([^>]+)>/);
+  return (match?.[1] || raw).trim();
+}
+
+async function authorize(request: Request) {
   const secret = process.env.WAITLIST_EXPORT_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  if (secret && request.headers.get("authorization") === `Bearer ${secret}`) return true;
+
+  const { user } = await getAuthenticatedUser();
+  const adminEmail = emailFromAddress(process.env.PRO_LAUNCH_ADMIN_EMAIL || process.env.SUPPORT_INBOX || process.env.NEXT_PUBLIC_SUPPORT_EMAIL);
+  return Boolean(user?.email && adminEmail && user.email.toLowerCase() === adminEmail);
 }
 
 export async function POST(request: Request) {
-  if (!authorize(request)) {
+  if (!(await authorize(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
