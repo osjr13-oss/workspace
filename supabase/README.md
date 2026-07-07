@@ -15,6 +15,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 11. `migrations/013_atomic_ai_quota.sql` — fix + enable atomic AI daily-limit reservation
 12. `migrations/014_file_search_fts.sql` — free full-text keyword search over uploaded files
 13. `migrations/015_fix_service_role_grants.sql` — fix missing service_role grants (email preferences, audit logs, waitlist export were failing)
+14. `migrations/016_block_placeholder_email_domains.sql` — reject signups on always-fake domains like @example.com (bot/spam mitigation)
 
 ## Auth redirect URLs
 
