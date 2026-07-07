@@ -92,7 +92,10 @@ function FlashcardsContent() {
     if (!deckId) return;
     const supabase = createSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      alert("Your session has expired. Please refresh the page and sign in again.");
+      return;
+    }
     const { error } = await supabase.from("flashcards").insert({
       front,
       back,
@@ -101,11 +104,13 @@ function FlashcardsContent() {
       user_id: user.id,
       due_at: new Date().toISOString()
     });
-    if (!error) {
-      setFront("");
-      setBack("");
-      await load();
+    if (error) {
+      alert(error.message || "Could not create the card. Please try again.");
+      return;
     }
+    setFront("");
+    setBack("");
+    await load();
   }
 
   async function generate() {
