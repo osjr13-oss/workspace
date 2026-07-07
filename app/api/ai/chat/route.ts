@@ -177,7 +177,16 @@ async function runToolLoop(
   const MAX_STEPS = 5;
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    const reply = await callGroqWithTools(messages, toolDefinitions, { temperature: 0.4 });
+    let reply;
+    try {
+      reply = await callGroqWithTools(messages, toolDefinitions, { temperature: 0.4 });
+    } catch (error) {
+      // The model occasionally malforms a tool call (Groq returns tool_use_failed).
+      // Fall back to a normal, tool-less answer instead of surfacing a 500 to the user.
+      console.error("[chat] tool call failed, falling back to plain answer", serializeError(error));
+      const fallback = await callGroq(baseMessages, { temperature: 0.6 });
+      return fallback || "I ran into an issue completing that. Could you try rephrasing?";
+    }
 
     if (reply.tool_calls?.length) {
       messages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });

@@ -8,10 +8,10 @@ export const runtime = "nodejs";
 
 export async function DELETE(request: Request) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    await logAudit(supabase, {
+    await logAudit({
       user_id: user.id,
       action: "account.delete",
       ip: clientIp(request)

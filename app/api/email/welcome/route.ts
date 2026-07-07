@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = (await request.json()) as { name?: string };
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       replyTo: process.env.SUPPORT_INBOX || undefined
     });
 
-    await logAudit(supabase, {
+    await logAudit({
       user_id: user.id,
       action: "email.welcome",
       ip: clientIp(request)

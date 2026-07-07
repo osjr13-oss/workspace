@@ -14,6 +14,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 10. `migrations/012_restore_support_request_insert.sql` — restore public support form ticket creation
 11. `migrations/013_atomic_ai_quota.sql` — fix + enable atomic AI daily-limit reservation
 12. `migrations/014_file_search_fts.sql` — free full-text keyword search over uploaded files
+13. `migrations/015_fix_service_role_grants.sql` — fix missing service_role grants (email preferences, audit logs, waitlist export were failing)
 
 ## Auth redirect URLs
 

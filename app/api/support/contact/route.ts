@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
     if (insertError) throw insertError;
 
-    await logAudit(supabase, {
+    await logAudit({
       user_id: user?.id || null,
       action: "support.contact",
       metadata: { ticket_id: id, subject },
