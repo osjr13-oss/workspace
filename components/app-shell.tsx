@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   BookOpen,
   Brain,
@@ -31,16 +32,26 @@ const nav = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
 
   async function signOut() {
+    setSigningOut(true);
+    setSignOutError("");
     const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setSignOutError(error.message || "Could not sign out. Please try again.");
+      setSigningOut(false);
+      return;
+    }
     router.replace("/signin");
+    router.refresh();
   }
 
   return (
     <div className="layout-grid">
-      <aside className="sticky top-0 hidden h-screen border-r border-[var(--border)] bg-[rgba(255,255,255,0.42)] px-5 py-6 backdrop-blur-xl lg:flex lg:flex-col">
+      <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-[var(--border)] bg-[rgba(255,255,255,0.42)] px-5 py-6 backdrop-blur-xl lg:flex lg:flex-col">
         <SelranoLogo href="/dashboard" />
         <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
@@ -88,11 +99,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={signOut}
+            disabled={signingOut}
             className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-2xl px-4 text-left text-sm font-bold text-[var(--muted)] hover:bg-[var(--surface-subtle)]"
           >
             <LogOut size={18} />
-            Sign out
+            {signingOut ? "Signing out…" : "Sign out"}
           </button>
+          {signOutError ? <p className="mt-2 text-xs font-bold text-[var(--critical)]">{signOutError}</p> : null}
         </div>
       </aside>
 
@@ -100,11 +113,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(247,245,240,0.84)] backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-5 py-4">
             <SelranoLogo href="/dashboard" />
-            <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
-              <Plus size={17} />
-              Chat
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
+                <Plus size={17} />
+                Chat
+              </Link>
+              <button
+                type="button"
+                onClick={signOut}
+                disabled={signingOut}
+                aria-label={signingOut ? "Signing out" : "Sign out"}
+                title={signingOut ? "Signing out" : "Sign out"}
+                className="btn-secondary min-h-10 px-3"
+              >
+                <LogOut size={17} />
+              </button>
+            </div>
           </div>
+          {signOutError ? <p className="px-5 pb-3 text-xs font-bold text-[var(--critical)]">{signOutError}</p> : null}
           <nav className="flex gap-2 overflow-x-auto px-5 pb-4">
             {nav.map((item) => (
               <Link key={item.href} href={item.href} className="status-pill shrink-0">
