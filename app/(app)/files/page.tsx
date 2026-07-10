@@ -179,7 +179,7 @@ function uploadFileResumable(file: File, storagePath: string, token: string, onP
 
   return new Promise<void>((resolve, reject) => {
     const upload = new TusUpload(file, {
-      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`,
+      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable/sign`,
       headers: { "x-signature": token },
       chunkSize: 6 * 1024 * 1024,
       retryDelays: [0, 3000, 5000, 10000, 20000],
