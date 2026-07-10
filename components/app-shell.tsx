@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSigningOut(true);
     setSignOutError("");
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
       setSignOutError(error.message || "Could not sign out. Please try again.");
       setSigningOut(false);
