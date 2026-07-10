@@ -1,0 +1,115 @@
+# Selrano production handoff
+
+Last updated: **July 10, 2026**
+
+## Current state
+
+- Production: `https://selrano.com` (redirects to `https://www.selrano.com`)
+- Repository: `osjr13-oss/workspace`
+- Production branch: `main`
+- Supabase project ref: `ucuppqutbzbwekyxrkwr`
+- AI provider: Groq, through its OpenAI-compatible Chat Completions API
+- Billing: Stripe Free + Pro at $19/month
+- Email: Resend for application mail; Supabase Auth for confirmation/reset mail
+- Product feature flags: **none**. Shipped capabilities are always enabled.
+
+## Confirmed production journeys
+
+The July 10 authenticated production audit confirmed:
+
+- authentication and protected routes
+- project creation
+- note creation and persistence
+- project-aware AI chat
+- normal AI chat streaming through repeated incremental UI updates
+- authenticated AI workspace actions with streamed confirmation
+- signed resumable TXT upload, extraction, and ready status
+- AI flashcard generation from an uploaded file
+- manual flashcard creation
+- study review persistence through `record_study_review`
+- Free-plan usage counters
+- logout and protected-route redirect
+
+Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and **`E2E AI Action Check — Jul 10`**. Do not remove it without owner approval.
+
+## Launch-hardening work deployed
+
+- Ownership validation was added across project-linked records and AI routes.
+- Free project/deck limits are enforced transactionally in Postgres.
+- Study reviews use an atomic RPC.
+- Dashboard counts are exact instead of truncated client estimates.
+- UI writes report failures instead of silently ignoring them.
+- Account deletion cancels an active Stripe subscription and removes Storage objects.
+- Checkout prevents duplicate upgrades; billing UI waits for webhook truth.
+- `invoice.paid` restores subscription state; payment failure does not revoke access prematurely.
+- Welcome email delivery happens after confirmed signup and is tracked once per user.
+- Files upload directly to Supabase with signed TUS, then process server-side.
+- Chat/project/deck/source ownership is verified server-side.
+- Normal chat streams incrementally and persists complete or partial responses before closing.
+- Explicit workspace requests can search materials, create notes, and create flashcard decks; the final response streams.
+- Ranked full-text file search is always enabled, with substring and first-chunk fallbacks.
+- All product feature flags and their environment variables were removed.
+- Desktop/mobile logout is accessible and uses local-session scope.
+- CI blocks on typecheck, lint, production dependency audit, and build.
+
+## Production database
+
+The tracked production migration history observed during the audit was:
+
+1. `20260706160103_pro_waitlist_launch_email`
+2. `20260706163345_restore_support_request_insert`
+3. `20260710214928_reconcile_launch_contracts`
+
+The production schema also contains objects from older numbered SQL files that were applied outside migration tracking. The reconciliation migration is intentionally idempotent. Never assume `supabase db push` is safe without comparing remote history and schema.
+
+Key live contracts verified after reconciliation:
+
+- lifecycle emails default to opt-out
+- welcome-email delivery tracking exists
+- 7 ownership triggers exist
+- 2 plan-limit triggers exist
+- `record_study_review` is available to authenticated users
+- trigger-only privileged functions are not executable through the public API
+
+## AI request lifecycle
+
+1. Authenticate the user and resolve owned thread/project context.
+2. Reserve daily AI usage atomically.
+3. Persist the user message.
+4. Load recent conversation history and project context.
+5. Route explicit workspace requests through authenticated tools.
+6. Stream Groq SSE text through the Next.js route.
+7. Persist the assistant response before closing the browser stream.
+8. Reload the thread from database truth.
+
+Do not reintroduce an environment switch for streaming, AI actions, or full-text search.
+
+## Validation and release
+
+```bash
+npm install
+npm run setup:check
+npm run typecheck
+npm run lint
+npm audit --omit=dev --audit-level=high
+npm run build
+```
+
+Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, and verify the real production flow. A passing Next.js build does not validate Supabase migrations, Storage, Stripe webhooks, Groq streaming, or Resend delivery.
+
+## Known limitations and next priorities
+
+1. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
+2. Address Supabase performance-advisor warnings: missing foreign-key indexes and RLS policies that call `auth.uid()` without a scalar subquery.
+3. Supabase leaked-password protection is unavailable on the current plan; email confirmation remains enabled.
+4. Add production error tracking and product analytics before scaling paid acquisition.
+5. Add automated browser regression coverage for signup, notes, upload, chat streaming, flashcard generation, study, billing state, and logout.
+
+## Recent release commits
+
+- `028906f` — ship all product capabilities by default
+- `6d51a27` — stream AI chat responses by default
+- `610a977` — use reliable local sign out
+- `f90120b` — make sign out reliably accessible
+- `a9a4eb8` — fix signed resumable uploads
+- `e8aa14c` — harden launch-critical product flows

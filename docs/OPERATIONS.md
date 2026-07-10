@@ -193,7 +193,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 - [ ] Resend domain verified (SPF/DKIM/DMARC)
 - [ ] `NEXT_PUBLIC_APP_URL` set to production domain
 - [ ] Supabase redirect URLs include `/auth/callback`
-- [ ] Run migrations 001–006 in production
+- [ ] Confirm production schema and tracked migration history match the intended release
 - [ ] `CRON_SECRET` set for lifecycle tip emails
 - [ ] Optional: public status page (`NEXT_PUBLIC_STATUS_URL`)
 - [ ] Optional: SOC 2 / penetration test vendor
@@ -211,6 +211,13 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 8. `010_security_hardening.sql`
 9. `011_email_preferences_opt_in.sql`
 10. `012_restore_support_request_insert.sql`
+11. `013_atomic_ai_quota.sql`
+12. `014_file_search_fts.sql`
+13. `015_fix_service_role_grants.sql`
+14. `016_block_placeholder_email_domains.sql`
+15. `20260710214928_reconcile_launch_contracts.sql`
+
+Production historically received some numbered migrations outside tracked migration history. Compare the remote schema and migration list before applying anything; prefer a focused idempotent reconciliation over replaying every file.
 
 ### Historical Pro waitlist
 

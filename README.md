@@ -53,6 +53,10 @@ npm run setup:check   # after copying .env.example → .env.local
 
 Enterprise email, branding, support SLAs, and Fortune-500-style checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**
 
+## Contributor handoff
+
+Before continuing product work, read **[AGENTS.md](AGENTS.md)** and **[docs/HANDOFF.md](docs/HANDOFF.md)** for the current production architecture, deployed fixes, migration-history caution, verification workflow, and next priorities.
+
 ## Auth routes
 
 - `/auth/callback` — exchanges Supabase email links for a session
@@ -62,5 +66,7 @@ Enterprise email, branding, support SLAs, and Fortune-500-style checklist: **[do
 
 ```txt
 npm run typecheck
+npm run lint
+npm audit --omit=dev --audit-level=high
 npm run build
 ```

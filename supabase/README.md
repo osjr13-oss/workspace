@@ -16,6 +16,11 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 12. `migrations/014_file_search_fts.sql` — free full-text keyword search over uploaded files
 13. `migrations/015_fix_service_role_grants.sql` — fix missing service_role grants (email preferences, audit logs, waitlist export were failing)
 14. `migrations/016_block_placeholder_email_domains.sql` — reject signups on always-fake domains like @example.com (bot/spam mitigation)
+15. `migrations/20260710214928_reconcile_launch_contracts.sql` — reconcile production ownership triggers, plan limits, review RPC, welcome tracking, grants, defaults, and indexes
+
+## Existing production environments
+
+Production historically received some numbered migrations outside the migration-history table. Do not replay the entire list against an existing database. Compare remote migration history and schema first, then apply a focused, idempotent reconciliation migration.
 
 ## Auth redirect URLs
 
