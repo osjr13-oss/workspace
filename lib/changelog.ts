@@ -15,6 +15,12 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-10",
+    title: "Real-time streaming replies",
+    description: "Chat answers now appear word-by-word as they're written, instead of waiting for the full response.",
+    tag: "Improved"
+  },
+  {
     date: "2026-07-08",
     title: "AI actions in chat",
     description:
@@ -28,13 +34,6 @@ export const changelog: ChangelogEntry[] = [
     description: "Answers pulled from your uploaded files are now ranked by relevance, so Selrano finds the right passage even in long documents.",
     tag: "Improved",
     feature: "hybridSearch"
-  },
-  {
-    date: "2026-07-06",
-    title: "Real-time streaming replies",
-    description: "Chat answers now appear word-by-word as they're written, instead of waiting for the full response.",
-    tag: "Improved",
-    feature: "streamingChat"
   },
   {
     date: "2026-07-07",

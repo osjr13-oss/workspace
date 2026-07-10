@@ -8,7 +8,7 @@ schedule (e.g. alongside an announcement on X).
 ## How to turn a feature ON (launch day)
 
 1. Go to **Vercel → your project → Settings → Environment Variables**.
-2. Find the feature's variable (e.g. `NEXT_PUBLIC_FEATURE_STREAMING_CHAT`).
+2. Find the feature's variable (e.g. `NEXT_PUBLIC_FEATURE_AI_ACTIONS`).
    - If it isn't there yet, click **Add** and create it.
 3. Set its value to `true`, scoped to **Production**.
 4. Click **Save**.
@@ -31,7 +31,6 @@ open the preview URL, and check it there. Production stays off until you flip it
 
 | Variable | Feature | Default |
 |----------|---------|---------|
-| `NEXT_PUBLIC_FEATURE_STREAMING_CHAT` | Chat replies appear word-by-word as they're written, instead of waiting for the full answer. | `false` (hidden) |
 | `NEXT_PUBLIC_FEATURE_AI_ACTIONS` | Chat can take actions on request — search the user's notes/files, create a note, or create a flashcard deck. | `false` (hidden) |
 | `NEXT_PUBLIC_FEATURE_HYBRID_SEARCH` | Better file search — ranked full-text keyword matching over uploaded files (free, no embedding API). Requires migration `014_file_search_fts.sql`. | `false` (hidden) |
 

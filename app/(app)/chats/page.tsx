@@ -98,7 +98,7 @@ function ChatsContent() {
         return;
       }
 
-      // A streaming reply arrives as plain text; everything else is a single JSON reply.
+      // Tool-action replies currently arrive as JSON; normal chat replies stream.
       const isStreaming = (response.headers.get("content-type") || "").includes("text/plain");
       if (!isStreaming) {
         const payload = await response.json();
@@ -111,7 +111,6 @@ function ChatsContent() {
       const newThreadId = response.headers.get("X-Thread-Id") || threadId;
 
       // Streaming ON: reply fills into an assistant bubble as tokens arrive.
-      setLoading(false);
       setMessages((current) => [
         ...current,
         { id: "streaming", thread_id: newThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
@@ -129,6 +128,7 @@ function ChatsContent() {
 
       if (newThreadId) setThreadId(newThreadId);
       await Promise.all([loadThreads(), loadMessages(newThreadId)]);
+      setLoading(false);
     } catch {
       setMessages((current) => [
         ...current.filter((message) => message.id !== "pending-user" && message.id !== "streaming"),
@@ -223,7 +223,7 @@ function ChatsContent() {
               </div>
             </div>
           )}
-          {loading ? <div className="status-pill">Thinking</div> : null}
+          {loading && !messages.some((message) => message.id === "streaming") ? <div className="status-pill">Thinking</div> : null}
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">

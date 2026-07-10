@@ -116,24 +116,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ threadId: finalThreadId, answer });
     }
 
-    // Feature-flagged: when streaming is OFF, keep the original behavior —
-    // generate the full answer, save it, and return it as JSON in one response.
-    if (!features.streamingChat) {
-      const answer = await callGroq(messages, { temperature: 0.6 });
-
-      const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
-        user_id: user.id,
-        thread_id: finalThreadId,
-        role: "assistant",
-        content: answer
-      });
-      if (assistantMessageError) throw assistantMessageError;
-
-      await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
-
-      return NextResponse.json({ threadId: finalThreadId, answer });
-    }
-
     const encoder = new TextEncoder();
 
     // Stream the model's answer to the browser token-by-token. Once the stream
@@ -142,31 +124,34 @@ export async function POST(request: Request) {
       async start(controller) {
         let answer = "";
         try {
-          answer = await streamGroq(messages, {
+          await streamGroq(messages, {
             temperature: 0.6,
-            onToken: (token) => controller.enqueue(encoder.encode(token))
+            onToken: (token) => {
+              answer += token;
+              controller.enqueue(encoder.encode(token));
+            }
           });
-
-          // Persist the full answer BEFORE closing the stream, so the browser's
-          // post-stream reload is guaranteed to see the saved assistant message.
+        } catch (error) {
+          console.error("[chat] stream failed", serializeError(error), error);
+          if (!answer) {
+            answer = "Sorry — something went wrong generating that response. Please try again.";
+            controller.enqueue(encoder.encode(answer));
+          }
+        } finally {
+          // Persist before closing so the browser's post-stream reload is
+          // guaranteed to find the same complete (or partial) assistant reply.
           if (answer) {
             const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
               user_id: user.id,
               thread_id: finalThreadId,
               role: "assistant",
-              content: answer
+              content: answer.trim()
             });
             if (assistantMessageError) {
               console.error("[chat] persist assistant message failed", assistantMessageError);
             }
             await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
           }
-        } catch (error) {
-          console.error("[chat] stream failed", serializeError(error), error);
-          if (!answer) {
-            controller.enqueue(encoder.encode("Sorry — something went wrong generating that response. Please try again."));
-          }
-        } finally {
           controller.close();
         }
       }
