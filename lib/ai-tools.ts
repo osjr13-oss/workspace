@@ -1,9 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { features } from "@/lib/features";
 import { searchChunksFullText } from "@/lib/retrieve-context";
 
 /**
- * Tools the chat AI can invoke when the "AI actions" feature is enabled.
+ * Tools the chat AI can invoke for explicit workspace action requests.
  *
  * Every tool runs through the caller's authenticated Supabase client, so row-level
  * security and ownership triggers guarantee a user can only ever read or write
@@ -109,11 +108,10 @@ async function searchWorkspace(ctx: ToolContext, query: string): Promise<string>
 }
 
 async function searchFileChunks(ctx: ToolContext, query: string, like: string): Promise<string[]> {
-  // Prefer ranked full-text search when enabled; otherwise fall back to a substring match.
-  if (features.hybridSearch) {
-    const results = await searchChunksFullText(ctx.supabase, query, { projectId: null, limit: 4 });
-    return results.map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`);
-  }
+  // Prefer ranked full-text search, then fall back to a substring match when
+  // the query has no ranked results.
+  const ranked = await searchChunksFullText(ctx.supabase, query, { projectId: null, limit: 4 });
+  if (ranked.length) return ranked.map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`);
 
   const { data } = await ctx.supabase.from("file_chunks").select("content").eq("user_id", ctx.userId).ilike("content", like).limit(4);
   return ((data ?? []) as Array<{ content: string }>).map((chunk) => `File excerpt: ${chunk.content.slice(0, 600)}`);

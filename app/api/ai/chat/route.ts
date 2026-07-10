@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions } from "@/lib/ai-tools";
-import { features } from "@/lib/features";
-import { callGroq, callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
+import { callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
 import { searchChunksFullText, searchProjectChunks } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -94,27 +93,13 @@ export async function POST(request: Request) {
     if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
     const finalThreadId = threadId;
 
-    // Feature-flagged: when AI actions are ON, run a tool-calling loop so the model
-    // can search the workspace and create notes/flashcards before answering.
-    if (features.aiActions) {
-      const answer = await runToolLoop(messages, {
+    const streamMessages = shouldUseWorkspaceTools(body.message)
+      ? await prepareToolMessages(messages, {
         supabase,
         userId: user.id,
         projectId
-      });
-
-      const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
-        user_id: user.id,
-        thread_id: finalThreadId,
-        role: "assistant",
-        content: answer
-      });
-      if (assistantMessageError) throw assistantMessageError;
-
-      await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
-
-      return NextResponse.json({ threadId: finalThreadId, answer });
-    }
+      })
+      : messages;
 
     const encoder = new TextEncoder();
 
@@ -124,7 +109,7 @@ export async function POST(request: Request) {
       async start(controller) {
         let answer = "";
         try {
-          await streamGroq(messages, {
+          await streamGroq(streamMessages, {
             temperature: 0.6,
             onToken: (token) => {
               answer += token;
@@ -171,53 +156,49 @@ export async function POST(request: Request) {
   }
 }
 
-async function runToolLoop(
+function shouldUseWorkspaceTools(message: string): boolean {
+  const mentionsOwnedMaterial = /\b(?:my|this)\s+(?:notes?|files?|documents?|materials?|workspace|project)\b/i;
+  const requestsCreation = /\b(?:create|make|draft|save|add|generate|build|turn)\b[\s\S]{0,80}\b(?:notes?|flashcards?|study cards?|decks?)\b/i;
+  const requestsSearch = /\b(?:search|find|look up|look for)\b[\s\S]{0,80}\b(?:notes?|files?|documents?|materials?|workspace|project)\b/i;
+  return mentionsOwnedMaterial.test(message) || requestsCreation.test(message) || requestsSearch.test(message);
+}
+
+async function prepareToolMessages(
   baseMessages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   ctx: { supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"]; userId: string; projectId: string | null }
-): Promise<string> {
+): Promise<GroqChatMessage[]> {
   const actionGuide = {
     role: "system" as const,
     content:
       "You can take actions in the user's workspace with the provided tools: search their notes and files, create a note, or create a flashcard deck. When the user asks you to do one of these, call the matching tool rather than describing how. Only create content when the user clearly asks for it. After using tools, briefly confirm what you did in plain prose."
   };
 
-  const messages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];
-  const MAX_STEPS = 5;
-
-  for (let step = 0; step < MAX_STEPS; step++) {
-    let reply;
-    try {
-      reply = await callGroqWithTools(messages, toolDefinitions, { temperature: 0.4 });
-    } catch (error) {
-      // The model occasionally malforms a tool call (Groq returns tool_use_failed).
-      // Fall back to a normal, tool-less answer instead of surfacing a 500 to the user.
-      console.error("[chat] tool call failed, falling back to plain answer", serializeError(error));
-      const fallback = await callGroq(baseMessages, { temperature: 0.6 });
-      return fallback || "I ran into an issue completing that. Could you try rephrasing?";
-    }
-
-    if (reply.tool_calls?.length) {
-      messages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });
-
-      for (const call of reply.tool_calls) {
-        let result: string;
-        try {
-          const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
-          result = await executeTool(call.function.name, args, ctx);
-        } catch (error) {
-          result = `Error running ${call.function.name}: ${serializeError(error)}`;
-        }
-        messages.push({ role: "tool", tool_call_id: call.id, content: result });
-      }
-      continue;
-    }
-
-    const answer = (reply.content || "").trim();
-    if (answer) return answer;
-    break;
+  const toolMessages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];
+  let reply;
+  try {
+    reply = await callGroqWithTools(toolMessages, toolDefinitions, { temperature: 0.4 });
+  } catch (error) {
+    // A malformed or unavailable tool request should never prevent a normal
+    // streamed answer from reaching the user.
+    console.error("[chat] tool call failed, falling back to streamed answer", serializeError(error));
+    return baseMessages;
   }
 
-  return "I wasn't able to complete that. Please try rephrasing your request.";
+  if (!reply.tool_calls?.length) return baseMessages;
+
+  toolMessages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });
+  for (const call of reply.tool_calls) {
+    let result: string;
+    try {
+      const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+      result = await executeTool(call.function.name, args, ctx);
+    } catch (error) {
+      result = `Error running ${call.function.name}: ${serializeError(error)}`;
+    }
+    toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
+  }
+
+  return toolMessages;
 }
 
 async function loadProjectContext(
@@ -231,9 +212,9 @@ async function loadProjectContext(
   const semanticChunks = trimmedQuery ? await searchProjectChunks(supabase, projectId, trimmedQuery, 6) : [];
 
   // Best available file retrieval: vector search (if embeddings are configured) →
-  // free full-text keyword search (if enabled) → the project's first chunks.
+  // free full-text keyword search → the project's first chunks.
   const ftsChunks =
-    !semanticChunks.length && features.hybridSearch && trimmedQuery
+    !semanticChunks.length && trimmedQuery
       ? await searchChunksFullText(supabase, trimmedQuery, { projectId, limit: 6 })
       : [];
 

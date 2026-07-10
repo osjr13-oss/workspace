@@ -1,16 +1,13 @@
-import type { FeatureName } from "@/lib/features";
-
 /**
  * Changelog entries, newest first. Add a new entry here whenever a feature ships
- * (or a feature flag gets flipped on) — this file is the only thing the
- * /changelog page reads, so no other code changes are needed to post an update.
+ * — this file is the only thing the /changelog page reads, so no other code
+ * changes are needed to post an update.
  */
 export type ChangelogEntry = {
   date: string; // e.g. "2026-07-08"
   title: string;
   description: string;
   tag?: "New" | "Improved" | "Fixed";
-  feature?: FeatureName;
 };
 
 export const changelog: ChangelogEntry[] = [
@@ -21,19 +18,17 @@ export const changelog: ChangelogEntry[] = [
     tag: "Improved"
   },
   {
-    date: "2026-07-08",
+    date: "2026-07-10",
     title: "AI actions in chat",
     description:
       "Ask Selrano to do things, not just answer — \"make me 10 flashcards on this chapter\" or \"draft a note summarizing this\" and it does it, using your own notes and files as context.",
-    tag: "New",
-    feature: "aiActions"
+    tag: "New"
   },
   {
-    date: "2026-07-08",
+    date: "2026-07-10",
     title: "Smarter file search",
     description: "Answers pulled from your uploaded files are now ranked by relevance, so Selrano finds the right passage even in long documents.",
-    tag: "Improved",
-    feature: "hybridSearch"
+    tag: "Improved"
   },
   {
     date: "2026-07-07",

@@ -64,7 +64,7 @@ export async function callGroqWithTools(
  * the UI can render the reply progressively instead of waiting for the whole thing.
  */
 export async function streamGroq(
-  messages: GroqMessage[],
+  messages: GroqChatMessage[],
   options: { temperature?: number; onToken: (token: string) => void }
 ): Promise<string> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {

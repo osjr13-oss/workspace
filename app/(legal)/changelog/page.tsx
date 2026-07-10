@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { brand } from "@/lib/brand";
 import { changelog } from "@/lib/changelog";
-import { features } from "@/lib/features";
 
 export const metadata: Metadata = {
   title: `Changelog — ${brand.name}`,
@@ -24,8 +23,6 @@ function formatDate(value: string) {
 }
 
 export default function ChangelogPage() {
-  const shippedEntries = changelog.filter((entry) => !entry.feature || features[entry.feature]);
-
   return (
     <article className="prose-meridian">
       <p className="text-sm font-bold text-[var(--muted)]">Changelog</p>
@@ -35,7 +32,7 @@ export default function ChangelogPage() {
       </p>
 
       <div className="mt-12 space-y-10">
-        {shippedEntries.map((entry, index) => (
+        {changelog.map((entry, index) => (
           <section key={`${entry.date}-${index}`} className="border-b border-[var(--border)] pb-10 last:border-none">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm font-bold text-[var(--muted)]">{formatDate(entry.date)}</p>
