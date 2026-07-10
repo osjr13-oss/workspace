@@ -1,3 +1,5 @@
+import type { FeatureName } from "@/lib/features";
+
 /**
  * Changelog entries, newest first. Add a new entry here whenever a feature ships
  * (or a feature flag gets flipped on) — this file is the only thing the
@@ -8,6 +10,7 @@ export type ChangelogEntry = {
   title: string;
   description: string;
   tag?: "New" | "Improved" | "Fixed";
+  feature?: FeatureName;
 };
 
 export const changelog: ChangelogEntry[] = [
@@ -16,18 +19,27 @@ export const changelog: ChangelogEntry[] = [
     title: "AI actions in chat",
     description:
       "Ask Selrano to do things, not just answer — \"make me 10 flashcards on this chapter\" or \"draft a note summarizing this\" and it does it, using your own notes and files as context.",
-    tag: "New"
+    tag: "New",
+    feature: "aiActions"
   },
   {
     date: "2026-07-08",
     title: "Smarter file search",
     description: "Answers pulled from your uploaded files are now ranked by relevance, so Selrano finds the right passage even in long documents.",
-    tag: "Improved"
+    tag: "Improved",
+    feature: "hybridSearch"
   },
   {
     date: "2026-07-06",
     title: "Real-time streaming replies",
     description: "Chat answers now appear word-by-word as they're written, instead of waiting for the full response.",
-    tag: "Improved"
+    tag: "Improved",
+    feature: "streamingChat"
+  },
+  {
+    date: "2026-07-07",
+    title: "The Selrano workspace",
+    description: "Projects, notes, document uploads, project-aware chat, flashcards, and study review are available in one workspace.",
+    tag: "New"
   }
 ];

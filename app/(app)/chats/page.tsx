@@ -38,7 +38,8 @@ function ChatsContent() {
       supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }),
       supabase.from("projects").select("*").order("name")
     ]);
-    setThreads((threadResult.data as ChatThread[]) || []);
+    const loadedThreads = (threadResult.data as ChatThread[]) || [];
+    setThreads(loadedThreads);
     setProjects((projectResult.data as Project[]) || []);
   }
 
@@ -59,6 +60,11 @@ function ChatsContent() {
   useEffect(() => {
     loadMessages(threadId);
   }, [threadId]);
+
+  useEffect(() => {
+    const activeThread = threads.find((thread) => thread.id === threadId);
+    if (activeThread) setProjectId(activeThread.project_id || "");
+  }, [threadId, threads]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -151,12 +157,13 @@ function ChatsContent() {
         <button type="button" onClick={() => { setThreadId(null); setMessages([]); }} className="btn-primary mt-5">
           New conversation
         </button>
-        <select aria-label="Chat context" className="input-premium mt-3 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+        <select aria-label="Chat context" className="input-premium mt-3 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={Boolean(threadId)}>
           <option value="">Global chat</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
           ))}
         </select>
+        {threadId ? <p className="mt-2 px-2 text-xs text-[var(--muted)]">Start a new conversation to change project context.</p> : null}
         <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto">
           {threads.map((thread) => (
             <button

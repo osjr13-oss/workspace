@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { logAudit, clientIp } from "@/lib/audit";
-import { sendEmail, isEmailConfigured } from "@/lib/email/send";
-import { welcomeEmail } from "@/lib/email/templates";
+import { clientIp } from "@/lib/audit";
+import { sendWelcomeEmailOnce } from "@/lib/email/welcome";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
@@ -13,31 +12,8 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = (await request.json()) as { name?: string };
-    const name = body.name?.trim() || user.user_metadata?.full_name || "";
-
-    if (!isEmailConfigured()) {
-      return NextResponse.json({ success: true, emailSent: false });
-    }
-
-    if (!user.email) {
-      return NextResponse.json({ error: "No email on account" }, { status: 400 });
-    }
-
-    const template = welcomeEmail({ name });
-    await sendEmail({
-      to: user.email,
-      subject: template.subject,
-      html: template.html,
-      replyTo: process.env.SUPPORT_INBOX || undefined
-    });
-
-    await logAudit({
-      user_id: user.id,
-      action: "email.welcome",
-      ip: clientIp(request)
-    });
-
-    return NextResponse.json({ success: true, emailSent: true });
+    const emailSent = await sendWelcomeEmailOnce(user, { name: body.name, ip: clientIp(request) });
+    return NextResponse.json({ success: true, emailSent });
   } catch (error) {
     const msg = serializeError(error);
     console.error("[email/welcome]", msg, error);

@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2, Upload as UploadIcon } from "lucide-react";
+import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -26,6 +27,7 @@ function FilesContent() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function load() {
@@ -46,27 +48,63 @@ function FilesContent() {
   async function deleteFile(file: WorkspaceFile) {
     if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
     setDeletingId(file.id);
-    const supabase = createSupabaseBrowserClient();
-    await supabase.storage.from("workspace-files").remove([file.storage_path]);
-    await supabase.from("files").delete().eq("id", file.id);
-    await load();
-    setDeletingId(null);
+    setMessage("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: storageError } = await supabase.storage.from("workspace-files").remove([file.storage_path]);
+      if (storageError) throw storageError;
+      const { error: deleteError } = await supabase.from("files").delete().eq("id", file.id);
+      if (deleteError) throw deleteError;
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not delete the file.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function upload(event: React.FormEvent) {
     event.preventDefault();
     if (!file) return;
     setUploading(true);
+    setUploadProgress(0);
     setMessage("");
-    const form = new FormData();
-    form.append("file", file);
-    if (projectId) form.append("projectId", projectId);
-    const response = await fetch("/api/files/upload", { method: "POST", body: form });
-    const payload = await response.json();
-    setMessage(response.ok ? "File uploaded and processed." : payload.error || "Upload failed.");
-    setFile(null);
-    await load();
-    setUploading(false);
+    try {
+      const metadata = {
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        projectId: projectId || null
+      };
+      const signResponse = await fetch("/api/files/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(metadata)
+      });
+      const signed = await signResponse.json().catch(() => ({}));
+      if (!signResponse.ok || !signed.storagePath || !signed.token) {
+        throw new Error(signed.error || "Could not prepare the upload.");
+      }
+
+      await uploadFileResumable(file, signed.storagePath, signed.token, setUploadProgress);
+      setMessage("Upload complete. Extracting text…");
+
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...metadata, storagePath: signed.storagePath })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "File processing failed.");
+      setMessage("File uploaded and processed.");
+      setFile(null);
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   }
 
   return (
@@ -77,10 +115,10 @@ function FilesContent() {
           <input
             className="sr-only"
             type="file"
-            accept=".pdf,.docx,.txt,.md,.markdown,image/*"
+            accept=".pdf,.docx,.txt,.md,.markdown"
             onChange={(event) => setFile(event.target.files?.[0] || null)}
           />
-          {file ? file.name : "Choose PDF, DOCX, TXT, Markdown, or image"}
+          {file ? file.name : "Choose PDF, DOCX, TXT, or Markdown"}
         </label>
         <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
           <option value="">No project</option>
@@ -89,8 +127,8 @@ function FilesContent() {
           ))}
         </select>
         <button type="submit" className="btn-primary" disabled={!file || uploading}>
-          <Upload size={18} />
-          {uploading ? "Uploading" : "Upload"}
+          <UploadIcon size={18} />
+          {uploading ? (uploadProgress > 0 && uploadProgress < 100 ? `${uploadProgress}%` : "Processing") : "Upload"}
         </button>
       </form>
       {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
@@ -132,4 +170,40 @@ function FilesContent() {
       )}
     </div>
   );
+}
+
+function uploadFileResumable(file: File, storagePath: string, token: string, onProgress: (progress: number) => void) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return Promise.reject(new Error("Storage is not configured."));
+  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+
+  return new Promise<void>((resolve, reject) => {
+    const upload = new TusUpload(file, {
+      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`,
+      headers: { "x-signature": token },
+      chunkSize: 6 * 1024 * 1024,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: "workspace-files",
+        objectName: storagePath,
+        contentType: file.type || "application/octet-stream"
+      },
+      onError(error) {
+        reject(error);
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        onProgress(Math.round((bytesUploaded / bytesTotal) * 100));
+      },
+      onSuccess() {
+        resolve();
+      }
+    });
+
+    upload.findPreviousUploads().then((previousUploads) => {
+      if (previousUploads.length) upload.resumeFromPreviousUpload(previousUploads[0]);
+      upload.start();
+    }).catch(reject);
+  });
 }

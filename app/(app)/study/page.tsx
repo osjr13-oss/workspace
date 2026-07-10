@@ -18,12 +18,15 @@ export default function StudyPage() {
   const [totalDue, setTotalDue] = useState(0);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState("");
   const current = useMemo(() => cards[index] || null, [cards, index]);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
+    setError("");
     const dueFilter = `due_at.is.null,due_at.lte.${new Date().toISOString()}`;
-    const [{ data }, { count }] = await Promise.all([
+    const [cardsResult, countResult] = await Promise.all([
       supabase
         .from("flashcards")
         .select("*")
@@ -32,8 +35,16 @@ export default function StudyPage() {
         .limit(BATCH_SIZE),
       supabase.from("flashcards").select("id", { count: "exact", head: true }).or(dueFilter)
     ]);
-    setCards((data as Flashcard[]) || []);
-    setTotalDue(count || 0);
+    if (cardsResult.error) {
+      setError(cardsResult.error.message || "Could not load cards.");
+      return;
+    }
+    if (countResult.error) {
+      setError(countResult.error.message || "Could not load the study queue.");
+      return;
+    }
+    setCards((cardsResult.data as Flashcard[]) || []);
+    setTotalDue(countResult.count || 0);
     setIndex(0);
     setRevealed(false);
   }
@@ -44,13 +55,23 @@ export default function StudyPage() {
 
   async function review(correct: boolean) {
     if (!current) return;
-    const supabase = createSupabaseBrowserClient();
-    const due = new Date();
-    due.setDate(due.getDate() + (correct ? 3 : 1));
-    await supabase.from("study_reviews").insert({ flashcard_id: current.id, user_id: current.user_id, result: correct ? "correct" : "incorrect" });
-    await supabase.from("flashcards").update({ due_at: due.toISOString() }).eq("id", current.id);
-    setRevealed(false);
-    setIndex((value) => value + 1);
+    setWorking(true);
+    setError("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: saved, error: reviewError } = await supabase.rpc("record_study_review", {
+        p_flashcard_id: current.id,
+        p_correct: correct
+      });
+      if (reviewError) throw reviewError;
+      if (saved !== true) throw new Error("This card could not be found. Refresh the study queue and try again.");
+      setRevealed(false);
+      setIndex((value) => value + 1);
+    } catch (reviewFailure) {
+      setError(reviewFailure instanceof Error ? reviewFailure.message : "Could not save this review.");
+    } finally {
+      setWorking(false);
+    }
   }
 
   const finished = cards.length > 0 && index >= cards.length;
@@ -63,6 +84,8 @@ export default function StudyPage() {
           Refresh
         </button>
       </WorkspaceHeader>
+
+      {error ? <p className="text-sm font-bold text-[var(--critical)]">{error}</p> : null}
 
       {!cards.length ? (
         <EmptyState title="No cards due" description="Create flashcards or come back when cards are due for review." />
@@ -92,8 +115,8 @@ export default function StudyPage() {
               <button type="button" onClick={() => setRevealed(true)} className="btn-primary">Reveal answer</button>
             ) : (
               <>
-                <button type="button" onClick={() => review(false)} className="btn-secondary">Incorrect</button>
-                <button type="button" onClick={() => review(true)} className="btn-primary">Correct</button>
+                <button type="button" onClick={() => review(false)} className="btn-secondary" disabled={working}>Incorrect</button>
+                <button type="button" onClick={() => review(true)} className="btn-primary" disabled={working}>Correct</button>
               </>
             )}
           </div>

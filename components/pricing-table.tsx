@@ -8,7 +8,7 @@ const rows = [
   { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
   { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
   { label: "Flashcard decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
-  { label: "Semantic file search in chat", free: "Yes", pro: "Yes" },
+  { label: "Project file context in chat", free: "Yes", pro: "Yes" },
   { label: "Notes, study mode, flashcards", free: "Yes", pro: "Yes" }
 ] as const;
 

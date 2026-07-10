@@ -29,30 +29,39 @@ export default function ProjectsPage() {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description: description || null })
-    });
-    const payload = await res.json();
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description: description || null })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Could not create project.");
       setName("");
       setDescription("");
       await load();
-    } else {
-      setError(payload.error || "Could not create project.");
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Could not create project.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function deleteProject(event: React.MouseEvent, id: string) {
     event.preventDefault();
     if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
     setDeletingId(id);
-    const supabase = createSupabaseBrowserClient();
-    await supabase.from("projects").delete().eq("id", id);
-    await load();
-    setDeletingId(null);
+    setError("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
+      if (deleteError) throw deleteError;
+      await load();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete project.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (

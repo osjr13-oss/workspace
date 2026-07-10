@@ -32,42 +32,76 @@ export function BillingSection() {
   const [message, setMessage] = useState("");
 
   async function load() {
-    const res = await fetch("/api/billing/status");
-    if (res.ok) setStatus(await res.json());
-    setLoading(false);
+    try {
+      const res = await fetch("/api/billing/status");
+      if (!res.ok) return null;
+      const nextStatus = (await res.json()) as BillingStatus;
+      setStatus(nextStatus);
+      return nextStatus;
+    } catch {
+      return null;
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    load();
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("billing") === "success") {
-      setMessage("Welcome to Pro! Your limits are updated.");
+    let cancelled = false;
+    const checkoutCompleted = new URLSearchParams(window.location.search).get("billing") === "success";
+
+    async function refresh() {
+      const attempts = checkoutCompleted ? 5 : 1;
+      for (let attempt = 0; attempt < attempts && !cancelled; attempt++) {
+        const nextStatus = await load();
+        if (nextStatus?.tier === "pro") {
+          if (checkoutCompleted) setMessage("Welcome to Pro! Your limits are updated.");
+          return;
+        }
+        if (attempt < attempts - 1) await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      }
+      if (checkoutCompleted && !cancelled) {
+        setMessage("Payment completed. Pro access is still being finalized; refresh this page in a moment.");
+      }
     }
+
+    void refresh();
+    return () => { cancelled = true; };
   }, []);
 
   async function checkout() {
     setActionLoading(true);
     setMessage("");
-    const res = await fetch("/api/billing/checkout", { method: "POST" });
-    const payload = await res.json();
-    if (res.ok && payload.url) {
-      window.location.href = payload.url;
-      return;
+    try {
+      const res = await fetch("/api/billing/checkout", { method: "POST" });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload.url) {
+        window.location.href = payload.url;
+        return;
+      }
+      setMessage(payload.error || "Could not start checkout.");
+    } catch {
+      setMessage("Could not start checkout.");
+    } finally {
+      setActionLoading(false);
     }
-    setMessage(payload.error || "Could not start checkout.");
-    setActionLoading(false);
   }
 
   async function portal() {
     setActionLoading(true);
     setMessage("");
-    const res = await fetch("/api/billing/portal", { method: "POST" });
-    const payload = await res.json();
-    if (res.ok && payload.url) {
-      window.location.href = payload.url;
-      return;
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload.url) {
+        window.location.href = payload.url;
+        return;
+      }
+      setMessage(payload.error || "Could not open billing portal.");
+    } catch {
+      setMessage("Could not open billing portal.");
+    } finally {
+      setActionLoading(false);
     }
-    setMessage(payload.error || "Could not open billing portal.");
-    setActionLoading(false);
   }
 
   if (loading) {

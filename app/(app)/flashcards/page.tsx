@@ -38,6 +38,7 @@ function FlashcardsContent() {
   const [working, setWorking] = useState(false);
   const [generateError, setGenerateError] = useState("");
   const [generateSuccess, setGenerateSuccess] = useState("");
+  const [pageError, setPageError] = useState("");
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -140,8 +141,13 @@ function FlashcardsContent() {
 
   async function removeDeck(id: string) {
     if (!confirm("Delete this deck and all its cards?")) return;
+    setPageError("");
     const supabase = createSupabaseBrowserClient();
-    await supabase.from("flashcard_decks").delete().eq("id", id);
+    const { error } = await supabase.from("flashcard_decks").delete().eq("id", id);
+    if (error) {
+      setPageError(error.message || "Could not delete the deck.");
+      return;
+    }
     if (deckId === id) {
       setDeckId("");
       deckIdRef.current = "";
@@ -150,8 +156,13 @@ function FlashcardsContent() {
   }
 
   async function removeCard(id: string) {
+    setPageError("");
     const supabase = createSupabaseBrowserClient();
-    await supabase.from("flashcards").delete().eq("id", id);
+    const { error } = await supabase.from("flashcards").delete().eq("id", id);
+    if (error) {
+      setPageError(error.message || "Could not delete the card.");
+      return;
+    }
     await load();
   }
 
@@ -161,6 +172,8 @@ function FlashcardsContent() {
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Flashcards" eyebrow="Study system" />
+
+      {pageError ? <p className="text-sm font-bold text-[var(--critical)]">{pageError}</p> : null}
 
       {/* Top row: create deck + generate */}
       <section className="grid gap-5 lg:grid-cols-2">

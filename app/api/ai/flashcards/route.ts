@@ -21,7 +21,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "deckId, sourceType, and sourceId are required" }, { status: 400 });
     }
 
-    const sourceText = await loadSourceText(supabase, body.sourceType, body.sourceId);
+    if (!(["note", "file"] as const).includes(body.sourceType)) {
+      return NextResponse.json({ error: "Unsupported source type" }, { status: 400 });
+    }
+
+    const { data: deck, error: deckError } = await supabase
+      .from("flashcard_decks")
+      .select("id, project_id")
+      .eq("id", body.deckId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (deckError) throw deckError;
+    if (!deck) return NextResponse.json({ error: "Flashcard deck not found" }, { status: 404 });
+
+    const sourceText = await loadSourceText(supabase, user.id, body.sourceType, body.sourceId);
     if (!sourceText) return NextResponse.json({ error: "No source text found" }, { status: 400 });
 
     const limitError = await reserveAiRequest(supabase, user.id, "flashcards", {
@@ -47,7 +60,7 @@ export async function POST(request: Request) {
       parsed.map((card) => ({
         user_id: user.id,
         deck_id: body.deckId,
-        project_id: body.projectId || null,
+        project_id: deck.project_id,
         front: card.front,
         back: card.back,
         source_type: body.sourceType,
@@ -65,13 +78,20 @@ export async function POST(request: Request) {
   }
 }
 
-async function loadSourceText(supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"], sourceType: "note" | "file", sourceId: string) {
+async function loadSourceText(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
+  userId: string,
+  sourceType: "note" | "file",
+  sourceId: string
+) {
   if (sourceType === "note") {
-    const { data } = await supabase.from("notes").select("title, content").eq("id", sourceId).single();
+    const { data, error } = await supabase.from("notes").select("title, content").eq("id", sourceId).eq("user_id", userId).maybeSingle();
+    if (error) throw error;
     return data ? `${data.title}\n\n${data.content}` : "";
   }
 
-  const { data } = await supabase.from("files").select("name, extracted_text").eq("id", sourceId).single();
+  const { data, error } = await supabase.from("files").select("name, extracted_text").eq("id", sourceId).eq("user_id", userId).maybeSingle();
+  if (error) throw error;
   return data?.extracted_text ? `${data.name}\n\n${data.extracted_text}` : "";
 }
 

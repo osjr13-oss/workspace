@@ -17,18 +17,41 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { message?: string; threadId?: string | null; projectId?: string | null };
     if (!body.message?.trim()) return NextResponse.json({ error: "Message is required" }, { status: 400 });
 
+    let threadId = body.threadId || null;
+    let projectId = body.projectId || null;
+
+    if (threadId) {
+      const { data: thread, error: threadError } = await supabase
+        .from("chat_threads")
+        .select("id, project_id")
+        .eq("id", threadId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (threadError) throw threadError;
+      if (!thread) return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+      projectId = thread.project_id;
+    } else if (projectId) {
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (projectError) throw projectError;
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    }
+
     const limitError = await reserveAiRequest(supabase, user.id, "chat", {
       model: process.env.GROQ_MODEL || "groq",
       input_chars: body.message.length
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
-    let threadId = body.threadId || null;
     if (!threadId) {
       const title = body.message.slice(0, 72);
       const { data, error } = await supabase
         .from("chat_threads")
-        .insert({ user_id: user.id, project_id: body.projectId || null, title })
+        .insert({ user_id: user.id, project_id: projectId, title })
         .select("*")
         .single();
       if (error) throw error;
@@ -45,7 +68,7 @@ export async function POST(request: Request) {
 
     const [historyResult, context] = await Promise.all([
       supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(16),
-      loadProjectContext(supabase, body.projectId || null, body.message)
+      loadProjectContext(supabase, projectId, body.message)
     ]);
 
     const messages = [
@@ -77,7 +100,7 @@ export async function POST(request: Request) {
       const answer = await runToolLoop(messages, {
         supabase,
         userId: user.id,
-        projectId: body.projectId || null
+        projectId
       });
 
       const { error: assistantMessageError } = await supabase.from("chat_messages").insert({

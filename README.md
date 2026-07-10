@@ -6,7 +6,7 @@ Selrano is a production-oriented AI workspace for projects, notes, files, flashc
 
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env.local` and fill in Supabase and Groq values.
-3. Run SQL migrations in order from `supabase/migrations/` (001–004).
+3. Run the complete migration sequence in `supabase/migrations/`; later migrations contain required billing, security, quota, and search fixes.
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
 5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
 6. Start the app with `npm run dev`.

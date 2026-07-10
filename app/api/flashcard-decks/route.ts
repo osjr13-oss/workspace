@@ -16,6 +16,17 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { name?: string; projectId?: string | null };
     if (!body.name?.trim()) return NextResponse.json({ error: "Deck name is required" }, { status: 400 });
 
+    if (body.projectId) {
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", body.projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (projectError) throw projectError;
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("flashcard_decks")
       .insert({

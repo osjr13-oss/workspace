@@ -6,8 +6,16 @@ Production: **https://selrano.com**
 
 ## Step 1 — Database (Supabase)
 
-1. Supabase → **SQL Editor** → paste all of `supabase/migrations/002_through_004_combined.sql` → **Run**.
-2. If `vector` fails: **Database → Extensions** → enable **vector** → run again.
+For an existing environment, apply new migrations through a tracked migration workflow. Do not paste only the combined early migration into production; later migrations contain required billing, security, quota, and data-integrity fixes.
+
+For a brand-new database:
+
+1. Run `001_initial_schema.sql`.
+2. Run either `002_through_004_combined.sql` **or** the separate `002_ai_embeddings.sql`, `003_usage_limits.sql`, and `004_ops_support.sql` files. Do not run both paths.
+3. Run every later migration in version order, including the timestamped reconciliation migrations.
+4. If `vector` fails: **Database → Extensions** → enable **vector** → run the migration again.
+
+Before every deployment, confirm the production migration history matches the repository. A successful Next.js build does not verify the live database schema.
 
 New tables include **`support_requests`** (every support form submission is stored here).
 

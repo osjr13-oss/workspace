@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
+import { clientIp } from "@/lib/audit";
+import { sendWelcomeEmailOnce } from "@/lib/email/welcome";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -33,6 +35,13 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(`${origin}/signin?error=auth`);
+  }
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await sendWelcomeEmailOnce(user, { ip: clientIp(request) });
+  } catch (welcomeError) {
+    console.error("[auth/callback] welcome email failed", welcomeError);
   }
 
   return response;

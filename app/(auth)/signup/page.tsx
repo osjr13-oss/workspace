@@ -12,21 +12,30 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    setSuccess(false);
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } }
       });
       if (error) throw error;
-      fetch("/api/email/welcome", {
+
+      if (!data.session) {
+        setSuccess(true);
+        setMessage("Check your email to confirm your account, then sign in.");
+        return;
+      }
+
+      void fetch("/api/email/welcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: fullName })
@@ -52,7 +61,7 @@ export default function SignUpPage() {
           <button className="btn-primary w-full" type="submit" disabled={loading}>
             {loading ? "Creating" : "Create account"}
           </button>
-          {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
+          {message ? <p className={`text-sm font-bold ${success ? "text-[var(--low)]" : "text-[var(--critical)]"}`}>{message}</p> : null}
         </form>
         <p className="mt-6 text-sm text-[var(--muted)]">
           Already have an account?{" "}

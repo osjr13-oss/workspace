@@ -17,16 +17,6 @@ async function userIdFromSubscription(subscription: Stripe.Subscription) {
   return data?.user_id || null;
 }
 
-async function userIdFromCustomer(customerId: string) {
-  const admin = createSupabaseAdminClient();
-  const { data } = await admin
-    .from("user_limits")
-    .select("user_id")
-    .eq("stripe_customer_id", customerId)
-    .maybeSingle();
-  return data?.user_id || null;
-}
-
 export async function POST(request: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -89,12 +79,25 @@ export async function POST(request: Request) {
         if (userId) await setUserFree(userId);
         break;
       }
-      case "invoice.payment_failed": {
+      case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
-        if (!customerId) break;
-        const userId = await userIdFromCustomer(customerId);
-        if (userId) await setUserFree(userId);
+        const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+        if (!subscriptionId) break;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const userId = await userIdFromSubscription(subscription);
+        if (!userId || !["active", "trialing"].includes(subscription.status)) break;
+        await setUserPro({
+          userId,
+          stripeCustomerId: subscription.customer as string,
+          stripeSubscriptionId: subscription.id,
+          status: subscription.status,
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+        });
+        break;
+      }
+      case "invoice.payment_failed": {
+        // Subscription status updates determine access. Do not revoke access from
+        // this event alone because Stripe can still retry the invoice successfully.
         break;
       }
       default:

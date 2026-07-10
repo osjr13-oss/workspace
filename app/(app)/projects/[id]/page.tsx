@@ -21,6 +21,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -32,11 +34,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         supabase.from("chat_threads").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
         supabase.from("flashcard_decks").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
       ]);
+      const firstError = projectResult.error || notesResult.error || filesResult.error || threadsResult.error || decksResult.error;
+      if (firstError) {
+        setError(firstError.message || "Could not load this project.");
+        setLoaded(true);
+        return;
+      }
       setProject(projectResult.data as Project);
       setNotes((notesResult.data as Note[]) || []);
       setFiles((filesResult.data as WorkspaceFile[]) || []);
       setThreads((threadsResult.data as ChatThread[]) || []);
       setDecks((decksResult.data as FlashcardDeck[]) || []);
+      setLoaded(true);
     }
     load();
   }, [id]);
@@ -44,13 +53,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   async function deleteProject() {
     if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
     setDeleting(true);
-    const supabase = createSupabaseBrowserClient();
-    await supabase.from("projects").delete().eq("id", id);
-    router.push("/projects");
+    setError("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
+      if (deleteError) throw deleteError;
+      router.push("/projects");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this project.");
+      setDeleting(false);
+    }
   }
 
   if (!project) {
-    return <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6"><span className="status-pill">Loading…</span></div>;
+    return (
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
+        {error ? <p className="text-sm font-bold text-[var(--critical)]">{error}</p> : loaded ? <p className="text-sm font-bold text-[var(--muted)]">Project not found.</p> : <span className="status-pill">Loading…</span>}
+      </div>
+    );
   }
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
@@ -73,6 +93,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <Trash2 size={16} />
         </button>
       </WorkspaceHeader>
+
+      {error ? <p className="text-sm font-bold text-[var(--critical)]">{error}</p> : null}
 
       {project.description && (
         <p className="max-w-2xl text-sm leading-6 text-[var(--muted-strong)]">{project.description}</p>

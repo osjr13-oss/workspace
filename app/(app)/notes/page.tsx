@@ -28,6 +28,7 @@ function NotesContent() {
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
   const selected = useMemo(() => notes.find((note) => note.id === selectedId) || null, [notes, selectedId]);
 
   async function load() {
@@ -63,41 +64,67 @@ function NotesContent() {
 
   async function save() {
     setSaving(true);
-    const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const payload = { title, content, project_id: projectId || null, user_id: user.id, updated_at: new Date().toISOString() };
-    if (selectedId) {
-      await supabase.from("notes").update(payload).eq("id", selectedId);
-    } else {
-      const { data } = await supabase.from("notes").insert(payload).select("*").single();
-      if (data) setSelectedId(data.id);
+    setMessage("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("Your session has expired. Please sign in again.");
+      const payload = { title, content, project_id: projectId || null, user_id: user.id, updated_at: new Date().toISOString() };
+      if (selectedId) {
+        const { error } = await supabase.from("notes").update(payload).eq("id", selectedId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("notes").insert(payload).select("*").single();
+        if (error) throw error;
+        if (data) setSelectedId(data.id);
+      }
+      await load();
+      setMessage("Saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save the note.");
+    } finally {
+      setSaving(false);
     }
-    await load();
-    setSaving(false);
   }
 
   async function remove() {
     if (!selectedId) return;
+    if (!confirm("Delete this note? This cannot be undone.")) return;
+    setMessage("");
     const supabase = createSupabaseBrowserClient();
-    await supabase.from("notes").delete().eq("id", selectedId);
+    const { error } = await supabase.from("notes").delete().eq("id", selectedId);
+    if (error) {
+      setMessage(error.message || "Could not delete the note.");
+      return;
+    }
     newNote();
     await load();
+    setMessage("Note deleted.");
   }
 
   async function transform(action: string) {
     if (!content.trim()) return;
     setSaving(true);
-    const response = await fetch("/api/ai/transform", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, text: content })
-    });
-    const payload = await response.json();
-    if (response.ok) setContent(payload.result);
-    setSaving(false);
+    setMessage("");
+    try {
+      const response = await fetch("/api/ai/transform", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, text: content })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "AI action failed.");
+      setContent(payload.result);
+      setMessage("Transformation complete. Save to keep the changes.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "AI action failed.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -112,6 +139,8 @@ function NotesContent() {
           {saving ? "Saving" : "Save"}
         </button>
       </WorkspaceHeader>
+
+      {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
 
       <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
         <aside className="panel p-4">

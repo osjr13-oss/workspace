@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [chats, setChats] = useState<ChatThread[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
-  const [counts, setCounts] = useState({ notes: 0, flashcards: 0 });
+  const [counts, setCounts] = useState({ projects: 0, notes: 0, files: 0, flashcards: 0 });
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -28,17 +28,24 @@ export default function DashboardPage() {
         if (profile?.full_name) displayName = profile.full_name;
       }
       setName(displayName.split(" ")[0] || "there");
-      const [projectsResult, chatsResult, filesResult, notesResult, cardsResult] = await Promise.all([
+      const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("files").select("*").order("created_at", { ascending: false }).limit(3),
+        supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("notes").select("id", { count: "exact", head: true }),
+        supabase.from("files").select("id", { count: "exact", head: true }),
         supabase.from("flashcards").select("id", { count: "exact", head: true })
       ]);
       setProjects((projectsResult.data as Project[]) || []);
       setChats((chatsResult.data as ChatThread[]) || []);
       setFiles((filesResult.data as WorkspaceFile[]) || []);
-      setCounts({ notes: notesResult.count || 0, flashcards: cardsResult.count || 0 });
+      setCounts({
+        projects: projectCountResult.count || 0,
+        notes: notesResult.count || 0,
+        files: fileCountResult.count || 0,
+        flashcards: cardsResult.count || 0
+      });
     }
     load();
   }, []);
@@ -66,9 +73,9 @@ export default function DashboardPage() {
       </Link>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <Stat icon={<FolderOpen size={20} />} label="Projects" value={projects.length.toString()} />
+        <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />
         <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
-        <Stat icon={<Files size={20} />} label="Files" value={files.length.toString()} />
+        <Stat icon={<Files size={20} />} label="Files" value={counts.files.toString()} />
         <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
       </section>
 

@@ -76,4 +76,5 @@ export type Profile = {
   full_name: string | null;
   created_at: string;
   updated_at: string;
+  welcome_email_sent_at?: string | null;
 };

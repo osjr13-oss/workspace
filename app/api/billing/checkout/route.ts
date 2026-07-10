@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { absoluteUrl } from "@/lib/brand";
 import { serializeError } from "@/lib/serialize-error";
 import { getProPriceId, getStripe } from "@/lib/stripe";
-import { getUserLimits } from "@/lib/tier";
+import { getUserLimits, isProActive } from "@/lib/tier";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
@@ -15,6 +15,9 @@ export async function POST() {
     if (!user.email) return NextResponse.json({ error: "Email required for checkout" }, { status: 400 });
 
     const limits = await getUserLimits(supabase, user.id);
+    if (isProActive(limits)) {
+      return NextResponse.json({ error: "Your Pro subscription is already active." }, { status: 409 });
+    }
     const stripe = getStripe();
 
     let customerId = limits.stripe_customer_id;
@@ -25,10 +28,11 @@ export async function POST() {
       });
       customerId = customer.id;
       const admin = createSupabaseAdminClient();
-      await admin.from("user_limits").upsert(
+      const { error: customerSaveError } = await admin.from("user_limits").upsert(
         { user_id: user.id, tier: "free", daily_requests: 20, stripe_customer_id: customerId },
         { onConflict: "user_id" }
       );
+      if (customerSaveError) throw customerSaveError;
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -36,7 +40,7 @@ export async function POST() {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: getProPriceId(), quantity: 1 }],
-      success_url: absoluteUrl("/settings?billing=success"),
+      success_url: absoluteUrl("/settings?billing=success&session_id={CHECKOUT_SESSION_ID}"),
       cancel_url: absoluteUrl("/pricing?canceled=1"),
       client_reference_id: user.id,
       metadata: { user_id: user.id },
