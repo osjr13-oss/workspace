@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, Plus, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle, Copy, Link2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -39,6 +39,8 @@ function FlashcardsContent() {
   const [generateError, setGenerateError] = useState("");
   const [generateSuccess, setGenerateSuccess] = useState("");
   const [pageError, setPageError] = useState("");
+  const [sharingDeckId, setSharingDeckId] = useState("");
+  const [copiedDeckId, setCopiedDeckId] = useState("");
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -137,6 +139,40 @@ function FlashcardsContent() {
       setGenerateError("Network error. Please try again.");
     }
     setWorking(false);
+  }
+
+  async function toggleShare(deck: FlashcardDeck) {
+    setSharingDeckId(deck.id);
+    setPageError("");
+    try {
+      const res = await fetch(`/api/flashcard-decks/${deck.id}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: !deck.is_public })
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setPageError(payload.error || "Could not update sharing for this deck.");
+        return;
+      }
+      await load();
+    } catch {
+      setPageError("Network error. Please try again.");
+    } finally {
+      setSharingDeckId("");
+    }
+  }
+
+  async function copyShareLink(deck: FlashcardDeck) {
+    if (!deck.share_slug) return;
+    const url = `${window.location.origin}/d/${deck.share_slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedDeckId(deck.id);
+      window.setTimeout(() => setCopiedDeckId(""), 2000);
+    } catch {
+      setPageError("Could not copy the link. Copy it manually instead.");
+    }
   }
 
   async function removeDeck(id: string) {
@@ -304,9 +340,37 @@ function FlashcardsContent() {
           </form>
 
           {selectedDeck && (
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
-              {selectedDeck.name} — {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
-            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+                  {selectedDeck.name} — {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => toggleShare(selectedDeck)}
+                  disabled={sharingDeckId === selectedDeck.id}
+                  className="btn-secondary"
+                >
+                  <Link2 size={16} />
+                  {sharingDeckId === selectedDeck.id
+                    ? "Working…"
+                    : selectedDeck.is_public
+                      ? "Unshare"
+                      : "Share"}
+                </button>
+              </div>
+              {selectedDeck.is_public && selectedDeck.share_slug && (
+                <div className="glass-card flex flex-wrap items-center justify-between gap-3 p-4">
+                  <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--muted-strong)]">
+                    selrano.com/d/{selectedDeck.share_slug}
+                  </p>
+                  <button type="button" onClick={() => copyShareLink(selectedDeck)} className="btn-secondary shrink-0">
+                    {copiedDeckId === selectedDeck.id ? <CheckCircle size={16} /> : <Copy size={16} />}
+                    {copiedDeckId === selectedDeck.id ? "Copied" : "Copy link"}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {visibleCards.length ? (

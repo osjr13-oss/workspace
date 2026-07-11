@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref") || "";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +32,16 @@ export default function SignUpPage() {
     setSuccess(false);
     try {
       const supabase = createSupabaseBrowserClient();
+      const redirectParams = new URLSearchParams({ next: "/dashboard" });
+      if (ref) redirectParams.set("ref", ref);
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName } }
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/auth/callback?${redirectParams.toString()}`
+        }
       });
       if (error) throw error;
 
@@ -47,6 +63,19 @@ export default function SignUpPage() {
       } catch (welcomeError) {
         console.error("[signup] Welcome email delivery failed", welcomeError);
       }
+
+      if (ref) {
+        try {
+          await fetch("/api/referrals/capture", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: ref })
+          });
+        } catch (referralError) {
+          console.error("[signup] Referral capture failed", referralError);
+        }
+      }
+
       router.replace("/dashboard");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create account.");

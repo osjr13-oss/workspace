@@ -3,11 +3,13 @@ import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { clientIp } from "@/lib/audit";
 import { sendWelcomeEmailOnce } from "@/lib/email/welcome";
+import { captureReferral } from "@/lib/referrals";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const ref = searchParams.get("ref");
 
   if (!code) {
     return NextResponse.redirect(`${origin}/signin?error=auth`);
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await sendWelcomeEmailOnce(user, { ip: clientIp(request) });
+    if (user && ref) await captureReferral(ref, user.id);
   } catch (welcomeError) {
     console.error("[auth/callback] welcome email failed", welcomeError);
   }

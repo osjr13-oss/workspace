@@ -53,6 +53,8 @@ export type FlashcardDeck = {
   user_id: string;
   project_id: string | null;
   name: string;
+  is_public: boolean;
+  share_slug: string | null;
   created_at: string;
   updated_at: string;
 };
