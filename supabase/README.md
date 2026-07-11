@@ -17,6 +17,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 13. `migrations/015_fix_service_role_grants.sql` — fix missing service_role grants (email preferences, audit logs, waitlist export were failing)
 14. `migrations/016_block_placeholder_email_domains.sql` — reject signups on always-fake domains like @example.com (bot/spam mitigation)
 15. `migrations/20260710214928_reconcile_launch_contracts.sql` — reconcile production ownership triggers, plan limits, review RPC, welcome tracking, grants, defaults, and indexes
+16. `migrations/20260711001827_restore_service_role_table_grants.sql` — restore live server access across public tables after production migration drift
 
 ## Existing production environments
 

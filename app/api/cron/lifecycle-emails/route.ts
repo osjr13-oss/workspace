@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runLifecycleEmailBatch } from "@/lib/lifecycle-emails";
+import { runWelcomeEmailRecoveryBatch } from "@/lib/email/welcome";
 import { serializeError } from "@/lib/serialize-error";
 
 export const runtime = "nodejs";
@@ -18,8 +19,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await runLifecycleEmailBatch();
-    return NextResponse.json({ success: true, ...result });
+    const [welcome, lifecycle] = await Promise.all([
+      runWelcomeEmailRecoveryBatch(),
+      runLifecycleEmailBatch()
+    ]);
+    return NextResponse.json({ success: true, welcome, lifecycle });
   } catch (error) {
     const msg = serializeError(error);
     console.error("[cron/lifecycle-emails]", msg, error);

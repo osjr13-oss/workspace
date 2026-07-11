@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **July 10, 2026**
+Last updated: **July 11, 2026**
 
 ## Current state
 
@@ -12,6 +12,7 @@ Last updated: **July 10, 2026**
 - Billing: Stripe Free + Pro at $19/month
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
+- Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
 
 ## Confirmed production journeys
 
@@ -43,6 +44,8 @@ Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and
 - Checkout prevents duplicate upgrades; billing UI waits for webhook truth.
 - `invoice.paid` restores subscription state; payment failure does not revoke access prematurely.
 - Welcome email delivery happens after confirmed signup and is tracked once per user.
+- Welcome delivery is awaited before an immediate signup redirect, retries on the next authenticated app load, and is recovered by the daily email job if still unsent.
+- Production `service_role` table and sequence grants were restored after drift caused Settings, welcome-email, support, audit, billing, and account-management server writes to fail.
 - Files upload directly to Supabase with signed TUS, then process server-side.
 - Chat/project/deck/source ownership is verified server-side.
 - Normal chat streams incrementally and persists complete or partial responses before closing.
@@ -59,6 +62,7 @@ The tracked production migration history observed during the audit was:
 1. `20260706160103_pro_waitlist_launch_email`
 2. `20260706163345_restore_support_request_insert`
 3. `20260710214928_reconcile_launch_contracts`
+4. `20260711001827_restore_service_role_table_grants`
 
 The production schema also contains objects from older numbered SQL files that were applied outside migration tracking. The reconciliation migration is intentionally idempotent. Never assume `supabase db push` is safe without comparing remote history and schema.
 
@@ -70,6 +74,9 @@ Key live contracts verified after reconciliation:
 - 2 plan-limit triggers exist
 - `record_study_review` is available to authenticated users
 - trigger-only privileged functions are not executable through the public API
+- `service_role` has all required public-table and sequence privileges, including default privileges for future objects
+
+The July 11 email incident was caused by production migration drift: the server role had schema access but was missing table privileges. The live grant repair fixed the Email preferences error immediately. The signed-in production check confirmed **Send tips & feature reminders** now persists successfully. `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, and `CRON_SECRET` are present in Vercel production/preview configuration. One July 10 account created during the incident still had no welcome delivery record before this release; the authenticated retry and daily recovery batch are designed to deliver it without duplicating mail.
 
 ## AI request lifecycle
 
@@ -101,7 +108,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 1. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
 2. Address Supabase performance-advisor warnings: missing foreign-key indexes and RLS policies that call `auth.uid()` without a scalar subquery.
-3. Supabase leaked-password protection is unavailable on the current plan; email confirmation remains enabled.
+3. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
 4. Add production error tracking and product analytics before scaling paid acquisition.
 5. Add automated browser regression coverage for signup, notes, upload, chat streaming, flashcard generation, study, billing state, and logout.
 

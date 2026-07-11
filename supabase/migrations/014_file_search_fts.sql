@@ -2,7 +2,7 @@
 --
 -- Adds a generated tsvector column (Postgres' searchable, word-stemmed form of the
 -- text) with a GIN index, plus a ranked search function the app calls. Safe to run
--- anytime; the feature stays off until NEXT_PUBLIC_FEATURE_HYBRID_SEARCH is enabled.
+-- anytime; ranked full-text search is always enabled by the application.
 
 alter table public.file_chunks
   add column if not exists content_tsv tsvector

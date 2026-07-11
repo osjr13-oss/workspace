@@ -10,7 +10,7 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 
 | Email | Trigger |
 |-------|---------|
-| Welcome | After signup (`/api/email/welcome`) |
+| Welcome | After signup (`/api/email/welcome`), retried on the next authenticated app load and by the daily email job |
 | Support confirmation | User submits support form |
 | Support notification | Inbox alert to `SUPPORT_INBOX` |
 | Tips & reminders | Optional lifecycle cron (`/api/cron/lifecycle-emails`) — see below |
@@ -27,7 +27,7 @@ CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <
 
 ### Lifecycle tips (cron)
 
-Once per day (14:00 UTC), the app checks opted-in users and sends **at most one** contextual tip email per person per 7 days — only if they have not used a feature yet:
+Once per day (14:00 UTC), the app first recovers any unsent welcome emails, then checks opted-in users and sends **at most one** contextual tip email per person per 7 days — only if they have not used a feature yet:
 
 | Email key | When (days after signup) | Condition |
 |-----------|--------------------------|-----------|
@@ -216,6 +216,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 13. `015_fix_service_role_grants.sql`
 14. `016_block_placeholder_email_domains.sql`
 15. `20260710214928_reconcile_launch_contracts.sql`
+16. `20260711001827_restore_service_role_table_grants.sql`
 
 Production historically received some numbered migrations outside tracked migration history. Compare the remote schema and migration list before applying anything; prefer a focused idempotent reconciliation over replaying every file.
 

@@ -5,7 +5,14 @@ import { welcomeEmail } from "@/lib/email/templates";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function sendWelcomeEmailOnce(user: User, options: { name?: string; ip?: string | null } = {}) {
-  if (!isEmailConfigured() || !user.email) return false;
+  if (!isEmailConfigured()) {
+    console.warn("[email/welcome] Email delivery is not configured");
+    return false;
+  }
+  if (!user.email) {
+    console.warn("[email/welcome] Authenticated user has no email address", { userId: user.id });
+    return false;
+  }
 
   const admin = createSupabaseAdminClient();
   const { data: profile, error: profileError } = await admin
@@ -34,4 +41,31 @@ export async function sendWelcomeEmailOnce(user: User, options: { name?: string;
 
   await logAudit({ user_id: user.id, action: "email.welcome", ip: options.ip || null });
   return true;
+}
+
+export async function runWelcomeEmailRecoveryBatch() {
+  if (!isEmailConfigured()) {
+    return { sent: 0, checked: 0, reason: "email_not_configured" };
+  }
+
+  const admin = createSupabaseAdminClient();
+  let sent = 0;
+  let checked = 0;
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
+    if (error) throw error;
+    if (!data.users.length) break;
+
+    for (const user of data.users) {
+      checked += 1;
+      if (await sendWelcomeEmailOnce(user)) sent += 1;
+    }
+
+    if (data.users.length < 100) break;
+    page += 1;
+  }
+
+  return { sent, checked };
 }

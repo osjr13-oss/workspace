@@ -35,11 +35,18 @@ export default function SignUpPage() {
         return;
       }
 
-      void fetch("/api/email/welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName })
-      }).catch(() => undefined);
+      try {
+        const welcomeResponse = await fetch("/api/email/welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: fullName })
+        });
+        if (!welcomeResponse.ok) {
+          console.error("[signup] Welcome email delivery failed", welcomeResponse.statusText);
+        }
+      } catch (welcomeError) {
+        console.error("[signup] Welcome email delivery failed", welcomeError);
+      }
       router.replace("/dashboard");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create account.");

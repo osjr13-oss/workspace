@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [lifecycleEmails, setLifecycleEmails] = useState(true);
+  const [lifecycleEmails, setLifecycleEmails] = useState(false);
   const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -36,30 +36,35 @@ export default function SettingsPage() {
 
   async function toggleLifecycleEmails(enabled: boolean) {
     setSavingEmailPrefs(true);
-    const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setMessage("You must be signed in.");
+    setMessage("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setMessage("You must be signed in.");
+        return;
+      }
+
+      const response = await fetch("/api/account/email-preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lifecycleEmails: enabled })
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        setMessage(payload?.error || "Could not update email preferences.");
+      } else {
+        setLifecycleEmails(enabled);
+        setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
+      }
+    } catch {
+      setMessage("Could not update email preferences. Please try again.");
+    } finally {
       setSavingEmailPrefs(false);
-      return;
     }
-
-    const response = await fetch("/api/account/email-preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lifecycleEmails: enabled })
-    });
-    const payload = await response.json();
-
-    if (!response.ok) {
-      setMessage(payload.error || "Could not update email preferences.");
-    } else {
-      setLifecycleEmails(enabled);
-      setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
-    }
-    setSavingEmailPrefs(false);
   }
 
   async function save(event: React.FormEvent) {
