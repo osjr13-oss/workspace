@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpen,
@@ -31,7 +31,6 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
 
@@ -45,8 +44,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setSigningOut(false);
       return;
     }
-    router.replace("/signin");
-    router.refresh();
+    // Hard navigation on purpose: a soft router.replace/refresh can serve a
+    // stale prefetched RSC payload for the next page (still reflecting the
+    // signed-in state) instead of re-running middleware against the
+    // now-cleared session cookie, which is what left users stuck on
+    // "Signing out…" with no redirect.
+    window.location.assign("/signin");
   }
 
   return (

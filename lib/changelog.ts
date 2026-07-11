@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-11",
+    title: "Share flashcard decks publicly",
+    description:
+      "Flip any deck to public from the Flashcards page and get a shareable link — anyone can study it, no account required, and it's fully readable to search engines.",
+    tag: "New"
+  },
+  {
     date: "2026-07-10",
     title: "Real-time streaming replies",
     description: "Chat answers now appear word-by-word as they're written, instead of waiting for the full response.",
