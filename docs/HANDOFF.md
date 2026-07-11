@@ -76,7 +76,7 @@ Key live contracts verified after reconciliation:
 - trigger-only privileged functions are not executable through the public API
 - `service_role` has all required public-table and sequence privileges, including default privileges for future objects
 
-The July 11 email incident was caused by production migration drift: the server role had schema access but was missing table privileges. The live grant repair fixed the Email preferences error immediately. The signed-in production check confirmed **Send tips & feature reminders** now persists successfully. `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, and `CRON_SECRET` are present in Vercel production/preview configuration. One July 10 account created during the incident still had no welcome delivery record before this release; the authenticated retry and daily recovery batch are designed to deliver it without duplicating mail.
+The July 11 email incident was caused by production migration drift: the server role had schema access but was missing table privileges. The live grant repair fixed the Email preferences error immediately. The signed-in production check confirmed **Send tips & feature reminders** now persists successfully. `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, and `CRON_SECRET` are present in Vercel production/preview configuration. The July 10 account affected by the incident was recovered through the deployed welcome-email batch at `2026-07-11 00:31:51 UTC`; the database shows one welcome audit event, confirming one delivery without duplication.
 
 ## AI request lifecycle
 
@@ -114,6 +114,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
+- `33e0c7f` — repair email delivery and production grants
 - `028906f` — ship all product capabilities by default
 - `6d51a27` — stream AI chat responses by default
 - `610a977` — use reliable local sign out
