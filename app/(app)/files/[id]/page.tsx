@@ -10,6 +10,22 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
 import type { WorkspaceFile } from "@/lib/types";
 
+/**
+ * PDF extraction (see extractText in app/api/files/upload/route.ts) inserts a
+ * "\n" after nearly every text item, mirroring pdf-parse's own default line
+ * detection — real prose ends up with a line break after almost every word.
+ * Display-only reflow: collapse those into spaces while keeping genuine
+ * paragraph gaps (2+ blank lines) as line breaks. Must never touch the
+ * underlying text used to compute charStart/charEnd, only what's rendered.
+ */
+function reflowForDisplay(text: string) {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/([^\n])\n(?!\n)/g, "$1 ");
+}
+
 export default function FileDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense>
@@ -98,17 +114,17 @@ function FileDetailContent({ params }: { params: Promise<{ id: string }> }) {
           description="This file hasn't finished processing, or its text couldn't be extracted."
         />
       ) : (
-        <article className="panel whitespace-pre-wrap p-7 text-sm leading-7 text-[var(--muted-strong)]">
-          {before}
+        <article className="panel whitespace-pre-wrap p-7 text-base leading-8 text-[var(--muted-strong)]">
+          {reflowForDisplay(before)}
           {hasHighlight ? (
             <mark
               ref={highlightRef}
               className="rounded-md bg-[rgba(154,107,19,0.22)] px-0.5 text-[var(--text)] transition-colors duration-150"
             >
-              {highlighted}
+              {reflowForDisplay(highlighted)}
             </mark>
           ) : null}
-          {after}
+          {reflowForDisplay(after)}
         </article>
       )}
     </div>
