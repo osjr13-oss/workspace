@@ -8,13 +8,21 @@ import { CitationBadge } from "@/components/citation-badge";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 /** Turns "[1]" markers into markdown links ReactMarkdown will render, so the
  * `a` override below can swap them for clickable citation badges. */
 function withCitationLinks(content: string) {
   return content.replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
+}
+
+/** react-markdown sanitizes link URLs by default and strips any scheme it
+ * doesn't recognize (http/https/mailto/...) down to an empty href — which
+ * silently ate our "citation:n" links. Let those through unchanged, and keep
+ * the default sanitizer for every other URL. */
+function urlTransform(url: string) {
+  return url.startsWith("citation:") ? url : defaultUrlTransform(url);
 }
 
 export default function ChatsPage() {
@@ -214,6 +222,7 @@ function ChatsContent() {
                   ) : (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
+                      urlTransform={urlTransform}
                       className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-extrabold prose-headings:tracking-tight prose-code:text-xs prose-pre:text-xs"
                       components={
                         message.citations?.length
