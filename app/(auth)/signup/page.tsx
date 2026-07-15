@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+
+const REFERRAL_COOKIE = "selrano_ref";
 
 export default function SignUpPage() {
   return (
@@ -18,6 +20,16 @@ function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref") || "";
+
+  // Belt-and-suspenders: also stash the referral code in a first-party
+  // cookie. Supabase's email-confirmation redirect doesn't reliably
+  // preserve extra query params appended to emailRedirectTo (the same
+  // issue behind the password-reset link bug), so /auth/callback reads
+  // this cookie as a fallback that doesn't depend on that round trip.
+  useEffect(() => {
+    if (!ref) return;
+    document.cookie = `${REFERRAL_COOKIE}=${encodeURIComponent(ref)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  }, [ref]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

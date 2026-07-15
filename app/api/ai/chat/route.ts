@@ -8,6 +8,7 @@ import { getAuthenticatedUser } from "@/lib/supabase/server";
 import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {
@@ -134,25 +135,34 @@ export async function POST(request: Request) {
         } finally {
           // Persist before closing so the browser's post-stream reload is
           // guaranteed to find the same complete (or partial) assistant reply.
-          if (answer) {
-            const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
-            const citations = usedMarkers
-              .map((marker) => context.citations[marker])
-              .filter((citation): citation is Citation => Boolean(citation));
+          // Wrapped so a persistence failure (network blip, transient DB
+          // error) can never prevent controller.close() below — otherwise
+          // the stream never signals completion and the client hangs
+          // waiting for more data that will never arrive.
+          try {
+            if (answer) {
+              const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
+              const citations = usedMarkers
+                .map((marker) => context.citations[marker])
+                .filter((citation): citation is Citation => Boolean(citation));
 
-            const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
-              user_id: user.id,
-              thread_id: finalThreadId,
-              role: "assistant",
-              content: answer.trim(),
-              citations
-            });
-            if (assistantMessageError) {
-              console.error("[chat] persist assistant message failed", assistantMessageError);
+              const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
+                user_id: user.id,
+                thread_id: finalThreadId,
+                role: "assistant",
+                content: answer.trim(),
+                citations
+              });
+              if (assistantMessageError) {
+                console.error("[chat] persist assistant message failed", assistantMessageError);
+              }
+              await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
             }
-            await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+          } catch (persistError) {
+            console.error("[chat] persist assistant message threw", serializeError(persistError));
+          } finally {
+            controller.close();
           }
-          controller.close();
         }
       }
     });
