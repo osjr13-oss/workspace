@@ -47,9 +47,17 @@ function FlashcardsContent() {
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    // Explicit user_id filters, not just RLS: flashcard_decks/flashcards also
+    // have an additive public-read policy (for the /d/[slug] share page), so
+    // an unfiltered query here would mix every public deck from every user
+    // into "my decks" instead of just this account's own rows.
     const [deckResult, cardResult, projectResult, noteResult, fileResult] = await Promise.all([
-      supabase.from("flashcard_decks").select("*").order("updated_at", { ascending: false }),
-      supabase.from("flashcards").select("*").order("created_at", { ascending: false }),
+      supabase.from("flashcard_decks").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }),
+      supabase.from("flashcards").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("projects").select("*").order("name"),
       supabase.from("notes").select("*").order("updated_at", { ascending: false }),
       supabase.from("files").select("*").eq("extraction_status", "ready").order("created_at", { ascending: false })

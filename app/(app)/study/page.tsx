@@ -24,15 +24,26 @@ export default function StudyPage() {
     const supabase = createSupabaseBrowserClient();
     setLoadError("");
     setError("");
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoadError("Your session has expired. Please refresh the page and sign in again.");
+      return;
+    }
     const dueFilter = `due_at.is.null,due_at.lte.${new Date().toISOString()}`;
+    // Explicit user_id filter: flashcards also has a public-read policy (for
+    // the /d/[slug] share page), so this would otherwise pull other users'
+    // public-deck cards into the study queue whenever their due_at matched.
     const [cardsResult, countResult] = await Promise.all([
       supabase
         .from("flashcards")
         .select("*")
+        .eq("user_id", user.id)
         .or(dueFilter)
         .order("due_at", { ascending: true, nullsFirst: true })
         .limit(BATCH_SIZE),
-      supabase.from("flashcards").select("id", { count: "exact", head: true }).or(dueFilter)
+      supabase.from("flashcards").select("id", { count: "exact", head: true }).eq("user_id", user.id).or(dueFilter)
     ]);
     if (cardsResult.error) {
       setLoadError(cardsResult.error.message || "Could not load cards.");

@@ -27,12 +27,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     async function load() {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      // flashcard_decks also has a public-read policy (for the /d/[slug]
+      // share page); an explicit user_id filter keeps this project's deck
+      // list from ever picking up another user's public deck by a stray
+      // project_id match.
       const [projectResult, notesResult, filesResult, threadsResult, decksResult] = await Promise.all([
         supabase.from("projects").select("*").eq("id", id).single(),
         supabase.from("notes").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
         supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
         supabase.from("chat_threads").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
-        supabase.from("flashcard_decks").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
+        supabase
+          .from("flashcard_decks")
+          .select("*")
+          .eq("project_id", id)
+          .eq("user_id", user?.id || "")
+          .order("updated_at", { ascending: false }),
       ]);
       const firstError = projectResult.error || notesResult.error || filesResult.error || threadsResult.error || decksResult.error;
       if (firstError) {

@@ -28,6 +28,9 @@ export default function DashboardPage() {
         if (profile?.full_name) displayName = profile.full_name;
       }
       setName(displayName.split(" ")[0] || "there");
+      // flashcards also has a public-read policy (for the /d/[slug] share
+      // page), so its count needs an explicit user_id filter — otherwise
+      // every public deck's cards from every user get counted here too.
       const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),
@@ -35,7 +38,7 @@ export default function DashboardPage() {
         supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("notes").select("id", { count: "exact", head: true }),
         supabase.from("files").select("id", { count: "exact", head: true }),
-        supabase.from("flashcards").select("id", { count: "exact", head: true })
+        user ? supabase.from("flashcards").select("id", { count: "exact", head: true }).eq("user_id", user.id) : Promise.resolve({ count: 0 })
       ]);
       setProjects((projectsResult.data as Project[]) || []);
       setChats((chatsResult.data as ChatThread[]) || []);
