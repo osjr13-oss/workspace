@@ -4,11 +4,18 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Send, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { CitationBadge } from "@/components/citation-badge";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+/** Turns "[1]" markers into markdown links ReactMarkdown will render, so the
+ * `a` override below can swap them for clickable citation badges. */
+function withCitationLinks(content: string) {
+  return content.replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
+}
 
 export default function ChatsPage() {
   return (
@@ -208,8 +215,24 @@ function ChatsContent() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-extrabold prose-headings:tracking-tight prose-code:text-xs prose-pre:text-xs"
+                      components={
+                        message.citations?.length
+                          ? {
+                              a: ({ href, children }) => {
+                                const marker = href?.startsWith("citation:") ? href.slice("citation:".length) : null;
+                                const citation = marker ? message.citations?.find((c) => c.marker === marker) : null;
+                                if (citation) return <CitationBadge citation={citation} />;
+                                return (
+                                  <a href={href} target="_blank" rel="noreferrer">
+                                    {children}
+                                  </a>
+                                );
+                              }
+                            }
+                          : undefined
+                      }
                     >
-                      {message.content}
+                      {message.citations?.length ? withCitationLinks(message.content) : message.content}
                     </ReactMarkdown>
                   )}
                 </div>

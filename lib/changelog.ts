@@ -12,6 +12,20 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-14",
+    title: "Inline citations in AI chat",
+    description:
+      "Answers grounded in your notes and files now carry clickable citation markers — click one to jump straight to the exact passage, and page for PDFs, it came from.",
+    tag: "New"
+  },
+  {
+    date: "2026-07-14",
+    title: "Chat says when your material doesn't cover it",
+    description:
+      "When your project's notes and files don't have anything relevant to a question, Selrano now says so plainly instead of quietly falling back on general knowledge.",
+    tag: "Improved"
+  },
+  {
     date: "2026-07-11",
     title: "Share flashcard decks publicly",
     description:

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions } from "@/lib/ai-tools";
 import { callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
-import { searchChunksFullText, searchProjectChunks } from "@/lib/retrieve-context";
+import { searchChunksFullText, searchProjectChunks, type RetrievedChunk } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -74,16 +75,24 @@ export async function POST(request: Request) {
       {
         role: "system" as const,
         content:
-          "You are Selrano, an AI built into an academic workspace. Be direct and conversational — answer the question immediately without preamble, intros, or sign-offs. Never start with 'I can help with...' or list your own capabilities. Never use bullet points or numbered lists unless the user explicitly asks for them or the content is genuinely list-like. Write in plain prose. Keep responses tight — say what needs to be said, nothing more. If the user's project context is relevant, use it naturally without announcing that you're doing so. If you don't know something, say so plainly."
+          "You are Selrano, an AI built into an academic workspace. Be direct and conversational — answer the question immediately without preamble, intros, or sign-offs. Never start with 'I can help with...' or list your own capabilities. Never use bullet points or numbered lists unless the user explicitly asks for them or the content is genuinely list-like. Write in plain prose. Keep responses tight — say what needs to be said, nothing more. If the user's project context is relevant, use it naturally without announcing that you're doing so. If you don't know something, say so plainly. When project context is provided, treat it as the source of truth for facts about the user's own notes and files — do not add claims about that material beyond what the context supports, even if you know more generally, and if the context doesn't cover the question, say so plainly instead of guessing. This grounding rule only applies to claims about the user's own material; answer unrelated general questions normally. When you state a fact drawn from the project context, add the matching reference id in brackets right after the claim, like this: <claim> [1]. Only cite ids that were actually provided. Do not invent citations."
       },
-      ...(context
+      ...(context.text
         ? [
             {
               role: "system" as const,
-              content: `Project context:\n${context}`
+              content: `Project context:\n${context.text}`
             }
           ]
-        : []),
+        : projectId
+          ? [
+              {
+                role: "system" as const,
+                content:
+                  "No matching project context was found for this question. If the user is asking about their own notes, files, or materials, say plainly that nothing relevant was found in their workspace rather than guessing or using general knowledge."
+              }
+            ]
+          : []),
       ...((historyResult.data || []) as Array<{ role: "user" | "assistant"; content: string }>).map((message) => ({
         role: message.role,
         content: message.content
@@ -126,11 +135,17 @@ export async function POST(request: Request) {
           // Persist before closing so the browser's post-stream reload is
           // guaranteed to find the same complete (or partial) assistant reply.
           if (answer) {
+            const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
+            const citations = usedMarkers
+              .map((marker) => context.citations[marker])
+              .filter((citation): citation is Citation => Boolean(citation));
+
             const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
               user_id: user.id,
               thread_id: finalThreadId,
               role: "assistant",
-              content: answer.trim()
+              content: answer.trim(),
+              citations
             });
             if (assistantMessageError) {
               console.error("[chat] persist assistant message failed", assistantMessageError);
@@ -201,12 +216,22 @@ async function prepareToolMessages(
   return toolMessages;
 }
 
+type FallbackChunkRow = {
+  id: string;
+  content: string;
+  file_id: string;
+  page_number: number | null;
+  char_start: number | null;
+  char_end: number | null;
+  files: { name: string } | null;
+};
+
 async function loadProjectContext(
   supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
   projectId: string | null,
   query?: string
-) {
-  if (!projectId) return "";
+): Promise<{ text: string; citations: Record<string, Citation> }> {
+  if (!projectId) return { text: "", citations: {} };
 
   const trimmedQuery = query?.trim() || "";
   const semanticChunks = trimmedQuery ? await searchProjectChunks(supabase, projectId, trimmedQuery, 6) : [];
@@ -220,19 +245,53 @@ async function loadProjectContext(
 
   const needsFallbackChunks = !semanticChunks.length && !ftsChunks.length;
 
-  const [notes, chunks, cards] = await Promise.all([
+  const [notes, fallbackChunks, cards] = await Promise.all([
     supabase.from("notes").select("title, content").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(6),
     needsFallbackChunks
-      ? supabase.from("file_chunks").select("content").eq("project_id", projectId).order("chunk_index").limit(10)
-      : Promise.resolve({ data: [] as Array<{ content: string }> }),
+      ? supabase
+          .from("file_chunks")
+          .select("id, content, file_id, page_number, char_start, char_end, files(name)")
+          .eq("project_id", projectId)
+          .order("chunk_index")
+          .limit(10)
+      : Promise.resolve({ data: [] as FallbackChunkRow[] }),
     supabase.from("flashcards").select("front, back").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(12)
   ]);
 
-  const fileExcerpts = semanticChunks.length
-    ? semanticChunks.map((chunk) => `File excerpt (relevant):\n${chunk.content}`)
-    : ftsChunks.length
-      ? ftsChunks.map((chunk) => `File excerpt (relevant):\n${chunk.content}`)
-      : ((chunks.data || []) as Array<{ content: string }>).map((chunk) => `File excerpt:\n${chunk.content}`);
+  // Ranked hits (semantic or full-text) are treated as strong evidence; the
+  // fallback path (arbitrary first chunks of a file, used only when neither
+  // ranked search found anything) is labeled unranked so the model doesn't
+  // treat it as strong evidence either — see the grounding instruction above.
+  const rankedChunks: RetrievedChunk[] = semanticChunks.length ? semanticChunks : ftsChunks;
+  const fallbackSources: RetrievedChunk[] = rankedChunks.length
+    ? []
+    : ((fallbackChunks.data || []) as FallbackChunkRow[]).map((row) => ({
+        content: row.content,
+        chunkId: row.id,
+        fileId: row.file_id,
+        fileName: row.files?.name || "Untitled file",
+        pageNumber: row.page_number,
+        charStart: row.char_start,
+        charEnd: row.char_end
+      }));
+
+  const citations: Record<string, Citation> = {};
+  const fileExcerpts = (rankedChunks.length ? rankedChunks : fallbackSources).map((chunk, index) => {
+    const marker = String(index + 1);
+    citations[marker] = {
+      marker,
+      fileId: chunk.fileId,
+      fileName: chunk.fileName,
+      pageNumber: chunk.pageNumber,
+      charStart: chunk.charStart,
+      charEnd: chunk.charEnd
+    };
+    const location = chunk.pageNumber ? `, page ${chunk.pageNumber}` : "";
+    const label = rankedChunks.length
+      ? `[${marker}] File excerpt from "${chunk.fileName}"${location}:`
+      : `[${marker}] File excerpt (unranked, just the start of a file, may not relate to this question) from "${chunk.fileName}"${location}:`;
+    return `${label}\n${chunk.content}`;
+  });
 
   const parts = [
     ...((notes.data || []) as Array<{ title: string; content: string }>).map((note) => `Note: ${note.title}\n${note.content.slice(0, 1800)}`),
@@ -240,5 +299,5 @@ async function loadProjectContext(
     ...((cards.data || []) as Array<{ front: string; back: string }>).map((card) => `Flashcard: ${card.front}\nAnswer: ${card.back}`)
   ];
 
-  return parts.join("\n\n---\n\n").slice(0, 14000);
+  return { text: parts.join("\n\n---\n\n").slice(0, 14000), citations };
 }

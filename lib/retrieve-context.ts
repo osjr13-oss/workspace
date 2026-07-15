@@ -3,12 +3,33 @@ import type { getAuthenticatedUser } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"];
 
+export type RetrievedChunk = {
+  content: string;
+  chunkId: string;
+  fileId: string;
+  fileName: string;
+  pageNumber: number | null;
+  charStart: number | null;
+  charEnd: number | null;
+};
+
+type MatchFileChunksRow = {
+  content: string;
+  similarity: number;
+  chunk_id: string;
+  file_id: string;
+  file_name: string;
+  page_number: number | null;
+  char_start: number | null;
+  char_end: number | null;
+};
+
 export async function searchProjectChunks(
   supabase: Supabase,
   projectId: string,
   query: string,
   limit = 6
-): Promise<Array<{ content: string; similarity: number }>> {
+): Promise<RetrievedChunk[]> {
   if (!hasEmbeddingProvider()) return [];
 
   try {
@@ -24,7 +45,17 @@ export async function searchProjectChunks(
       return [];
     }
 
-    return ((data || []) as Array<{ content: string; similarity: number }>).filter((row) => row.content);
+    return ((data || []) as MatchFileChunksRow[])
+      .filter((row) => row.content)
+      .map((row) => ({
+        content: row.content,
+        chunkId: row.chunk_id,
+        fileId: row.file_id,
+        fileName: row.file_name,
+        pageNumber: row.page_number,
+        charStart: row.char_start,
+        charEnd: row.char_end
+      }));
   } catch (error) {
     console.error("[retrieve-context]", error);
     return [];
@@ -37,11 +68,22 @@ export async function searchProjectChunks(
  * function backed by a tsvector index. Pass projectId to scope to one project, or
  * null to search all of the user's files.
  */
+type SearchChunksFtsRow = {
+  content: string;
+  rank: number;
+  chunk_id: string;
+  file_id: string;
+  file_name: string;
+  page_number: number | null;
+  char_start: number | null;
+  char_end: number | null;
+};
+
 export async function searchChunksFullText(
   supabase: Supabase,
   query: string,
   options: { projectId?: string | null; limit?: number } = {}
-): Promise<Array<{ content: string; rank: number }>> {
+): Promise<RetrievedChunk[]> {
   if (!query.trim()) return [];
 
   try {
@@ -56,7 +98,17 @@ export async function searchChunksFullText(
       return [];
     }
 
-    return ((data || []) as Array<{ content: string; rank: number }>).filter((row) => row.content);
+    return ((data || []) as SearchChunksFtsRow[])
+      .filter((row) => row.content)
+      .map((row) => ({
+        content: row.content,
+        chunkId: row.chunk_id,
+        fileId: row.file_id,
+        fileName: row.file_name,
+        pageNumber: row.page_number,
+        charStart: row.char_start,
+        charEnd: row.char_end
+      }));
   } catch (error) {
     console.error("[retrieve-context] fts", error);
     return [];

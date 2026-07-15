@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { embedChunksForFile } from "@/lib/embeddings";
-import { chunkText } from "@/lib/chunk";
+import { chunkTextWithLocations } from "@/lib/chunk";
 import { serializeError } from "@/lib/serialize-error";
 import { assertFileSizeLimit, getUserLimits } from "@/lib/tier";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -79,18 +79,21 @@ export async function POST(request: Request) {
       if (insertError) throw insertError;
       fileRecordId = fileRecord.id;
 
-      const chunks = chunkText(extraction.text);
+      const located = chunkTextWithLocations(extraction.text, extraction.pages);
       let embedded = 0;
-      if (chunks.length) {
+      if (located.length) {
         const { data: insertedChunks, error: chunkError } = await supabase
           .from("file_chunks")
           .insert(
-            chunks.map((content, index) => ({
+            located.map((chunk, index) => ({
               user_id: user.id,
               file_id: fileRecord.id,
               project_id: projectId,
               chunk_index: index,
-              content
+              content: chunk.content,
+              page_number: chunk.pageNumber,
+              char_start: chunk.charStart,
+              char_end: chunk.charEnd
             }))
           )
           .select("id, content");
@@ -103,7 +106,7 @@ export async function POST(request: Request) {
         });
       }
 
-      return NextResponse.json({ file: fileRecord, chunks: chunks.length, embedded });
+      return NextResponse.json({ file: fileRecord, chunks: located.length, embedded });
     } catch (error) {
       if (fileRecordId) await supabase.from("files").delete().eq("id", fileRecordId);
       await supabase.storage.from("workspace-files").remove([storagePath]);
@@ -116,24 +119,72 @@ export async function POST(request: Request) {
   }
 }
 
-async function extractText(name: string, mimeType: string, bytes: Buffer) {
+type ExtractedPage = { pageNumber: number; text: string; start: number; end: number };
+type ExtractionResult = { supported: boolean; text: string; pages: ExtractedPage[] };
+
+async function extractText(name: string, mimeType: string, bytes: Buffer): Promise<ExtractionResult> {
   const extension = name.toLowerCase().split(".").pop() || "";
 
   if (["txt", "md", "markdown"].includes(extension) || mimeType.startsWith("text/")) {
-    return { supported: true, text: bytes.toString("utf8") };
+    return { supported: true, text: bytes.toString("utf8"), pages: [] };
   }
 
   if (extension === "docx" || mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
     const mammoth = await import("mammoth");
     const result = await mammoth.extractRawText({ buffer: bytes });
-    return { supported: true, text: result.value.trim() };
+    return { supported: true, text: result.value.trim(), pages: [] };
   }
 
   if (extension === "pdf" || mimeType === "application/pdf") {
     const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(bytes);
-    return { supported: true, text: result.text.trim() };
+    const rawPages: string[] = [];
+
+    // Custom pagerender captures each page's text separately (mirrors pdf-parse's
+    // own default renderer) so we can compute per-page character ranges below —
+    // the stock API only ever returns one flattened string with no boundaries.
+    const result = await pdfParse(bytes, {
+      pagerender: async (pageData) => {
+        const textContent = await pageData.getTextContent({ normalizeWhitespace: false, disableCombineTextItems: false });
+        let lastY;
+        let text = "";
+        for (const item of textContent.items) {
+          if (lastY === item.transform[5] || lastY === undefined) {
+            text += item.str;
+          } else {
+            text += "\n" + item.str;
+          }
+          lastY = item.transform[5];
+        }
+        rawPages.push(text);
+        return text;
+      }
+    });
+
+    // pdf-parse builds ret.text as `${acc}\n\n${pageText}` starting from "" for
+    // every page (including the first), so the raw text always starts with a
+    // leading "\n\n". Mirror that exact join to compute each page's character
+    // range, then shift by whatever .trim() below removes from the front so the
+    // ranges stay valid against the trimmed text we actually store and chunk.
+    const raw = result.text;
+    const trimmed = raw.trim();
+    const leadingTrim = raw.length - raw.trimStart().length;
+
+    let cursor = 0;
+    const pages: ExtractedPage[] = rawPages.map((pageText, index) => {
+      cursor += 2; // "\n\n" separator
+      const rawStart = cursor;
+      cursor += pageText.length;
+      const rawEnd = cursor;
+      return {
+        pageNumber: index + 1,
+        text: pageText,
+        start: Math.max(0, Math.min(trimmed.length, rawStart - leadingTrim)),
+        end: Math.max(0, Math.min(trimmed.length, rawEnd - leadingTrim))
+      };
+    });
+
+    return { supported: true, text: trimmed, pages };
   }
 
-  return { supported: false, text: "" };
+  return { supported: false, text: "", pages: [] };
 }

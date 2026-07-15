@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Trash2, Upload as UploadIcon } from "lucide-react";
@@ -149,7 +150,9 @@ function FilesContent() {
               {files.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <p className="font-extrabold">{item.name}</p>
+                    <Link href={`/files/${item.id}`} className="font-extrabold hover:underline">
+                      {item.name}
+                    </Link>
                     <p className="text-xs text-[var(--muted)]">{item.mime_type || "Unknown type"}</p>
                   </td>
                   <td>{fileSize(item.size_bytes)}</td>

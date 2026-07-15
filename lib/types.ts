@@ -39,12 +39,22 @@ export type ChatThread = {
   updated_at: string;
 };
 
+export type Citation = {
+  marker: string;
+  fileId: string;
+  fileName: string;
+  pageNumber: number | null;
+  charStart: number | null;
+  charEnd: number | null;
+};
+
 export type ChatMessage = {
   id: string;
   thread_id: string;
   user_id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  citations?: Citation[];
   created_at: string;
 };
 
