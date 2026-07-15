@@ -16,10 +16,15 @@ export default function SignUpPage() {
   );
 }
 
+function safeNextPath(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
+
 function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref") || "";
+  const nextPath = safeNextPath(searchParams.get("next"));
 
   // Belt-and-suspenders: also stash the referral code in a first-party
   // cookie. Supabase's email-confirmation redirect doesn't reliably
@@ -44,7 +49,7 @@ function SignUpForm() {
     setSuccess(false);
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectParams = new URLSearchParams({ next: "/dashboard" });
+      const redirectParams = new URLSearchParams({ next: nextPath });
       if (ref) redirectParams.set("ref", ref);
 
       const { data, error } = await supabase.auth.signUp({
@@ -88,13 +93,15 @@ function SignUpForm() {
         }
       }
 
-      router.replace("/dashboard");
+      router.replace(nextPath);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create account.");
     } finally {
       setLoading(false);
     }
   }
+
+  const signInHref = nextPath !== "/dashboard" ? `/signin?next=${encodeURIComponent(nextPath)}` : "/signin";
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
@@ -113,7 +120,7 @@ function SignUpForm() {
         </form>
         <p className="mt-6 text-sm text-[var(--muted)]">
           Already have an account?{" "}
-          <Link href="/signin" className="font-bold text-[var(--text)]">Sign in</Link>
+          <Link href={signInHref} className="font-bold text-[var(--text)]">Sign in</Link>
         </p>
       </section>
     </main>

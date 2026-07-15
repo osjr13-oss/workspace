@@ -57,6 +57,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && authOnlyPaths.includes(pathname)) {
+    const next = request.nextUrl.searchParams.get("next");
+    if (next?.startsWith("/") && !next.startsWith("//")) {
+      const target = new URL(next, request.nextUrl.origin);
+      const dest = request.nextUrl.clone();
+      dest.pathname = target.pathname;
+      dest.search = target.search;
+      return NextResponse.redirect(dest);
+    }
     const dashboard = request.nextUrl.clone();
     dashboard.pathname = "/dashboard";
     dashboard.search = "";

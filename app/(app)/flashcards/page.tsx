@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, Copy, Link2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Sparkles, Trash2 } from "lucide-react";
+import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -19,6 +20,7 @@ export default function FlashcardsPage() {
 function FlashcardsContent() {
   const searchParams = useSearchParams();
   const projectFilter = searchParams.get("project");
+  const deckFromQuery = searchParams.get("deck");
 
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
   const [cards, setCards] = useState<Flashcard[]>([]);
@@ -26,7 +28,7 @@ function FlashcardsContent() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
 
-  const [deckId, setDeckId] = useState("");
+  const [deckId, setDeckId] = useState(deckFromQuery || "");
   const deckIdRef = useRef(deckId);
   useEffect(() => { deckIdRef.current = deckId; }, [deckId]);
 
@@ -41,6 +43,7 @@ function FlashcardsContent() {
   const [pageError, setPageError] = useState("");
   const [sharingDeckId, setSharingDeckId] = useState("");
   const [copiedDeckId, setCopiedDeckId] = useState("");
+  const [practicing, setPracticing] = useState(false);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -57,17 +60,32 @@ function FlashcardsContent() {
     setProjects((projectResult.data as Project[]) || []);
     setNotes((noteResult.data as Note[]) || []);
     setFiles((fileResult.data as WorkspaceFile[]) || []);
-    // Use ref to read current deckId without stale closure
-    if (!deckIdRef.current && loadedDecks[0]) {
+    // Prefer ?deck= from clone redirect, then keep current selection, else first deck.
+    const preferred = deckIdRef.current;
+    if (preferred && loadedDecks.some((deck) => deck.id === preferred)) {
+      setDeckId(preferred);
+    } else if (loadedDecks[0]) {
       setDeckId(loadedDecks[0].id);
+      deckIdRef.current = loadedDecks[0].id;
     }
   }
+
+  useEffect(() => {
+    if (deckFromQuery) {
+      setDeckId(deckFromQuery);
+      deckIdRef.current = deckFromQuery;
+    }
+  }, [deckFromQuery]);
 
   useEffect(() => {
     setProjectId(projectFilter || "");
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectFilter]);
+
+  useEffect(() => {
+    setPracticing(false);
+  }, [deckId]);
 
   async function createDeck(event: React.FormEvent) {
     event.preventDefault();
@@ -203,7 +221,30 @@ function FlashcardsContent() {
   }
 
   const visibleCards = deckId ? cards.filter((c) => c.deck_id === deckId) : cards;
+  const practiceCards = [...visibleCards].reverse();
   const selectedDeck = decks.find((d) => d.id === deckId);
+
+  if (practicing && selectedDeck) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+        <WorkspaceHeader title={selectedDeck.name} eyebrow="Practice anytime">
+          <button type="button" onClick={() => setPracticing(false)} className="btn-secondary">
+            <ArrowLeft size={18} />
+            Back to deck
+          </button>
+        </WorkspaceHeader>
+        <FlashcardPracticeSession
+          cards={practiceCards}
+          mode="practice"
+          emptyTitle="No cards in this deck"
+          emptyDescription="Add cards manually or generate them from a note or file, then come back to practice."
+          finishedTitle="Practice complete"
+          finishedDescription="You flipped through every card in this deck. Study mode still handles due-card review and scheduling."
+          footerNote="Practice anytime — this does not change your study schedule."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
@@ -345,19 +386,30 @@ function FlashcardsContent() {
                 <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
                   {selectedDeck.name} — {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => toggleShare(selectedDeck)}
-                  disabled={sharingDeckId === selectedDeck.id}
-                  className="btn-secondary"
-                >
-                  <Link2 size={16} />
-                  {sharingDeckId === selectedDeck.id
-                    ? "Working…"
-                    : selectedDeck.is_public
-                      ? "Unshare"
-                      : "Share"}
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPracticing(true)}
+                    disabled={!visibleCards.length}
+                    className="btn-primary"
+                  >
+                    <Play size={16} />
+                    Practice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleShare(selectedDeck)}
+                    disabled={sharingDeckId === selectedDeck.id}
+                    className="btn-secondary"
+                  >
+                    <Link2 size={16} />
+                    {sharingDeckId === selectedDeck.id
+                      ? "Working…"
+                      : selectedDeck.is_public
+                        ? "Unshare"
+                        : "Share"}
+                  </button>
+                </div>
               </div>
               {selectedDeck.is_public && selectedDeck.share_slug && (
                 <div className="glass-card flex flex-wrap items-center justify-between gap-3 p-4">

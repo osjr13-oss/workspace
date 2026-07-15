@@ -12,6 +12,20 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-15",
+    title: "Practice any deck anytime",
+    description:
+      "Open a deck from Flashcards and flip through every card whenever you want. Study mode stays for due-card review and spaced repetition — practice never messes with your schedule.",
+    tag: "Improved"
+  },
+  {
+    date: "2026-07-15",
+    title: "Save shared decks to your workspace",
+    description:
+      "On any public deck link, tap Add to my workspace to copy the cards into your account — or sign up and land right back on the deck to save it.",
+    tag: "New"
+  },
+  {
     date: "2026-07-14",
     title: "Inline citations in AI chat",
     description:

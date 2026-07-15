@@ -1,13 +1,13 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { AddPublicDeckButton } from "@/components/add-public-deck-button";
 import { PublicDeckCards } from "@/components/public-deck-cards";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { absoluteUrl, brand } from "@/lib/brand";
 
 type Params = { slug: string };
+type SearchParams = { add?: string };
 
 const getPublicDeck = cache(async (slug: string) => {
   const supabase = await createSupabaseServerClient();
@@ -58,12 +58,20 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   };
 }
 
-export default async function PublicDeckPage({ params }: { params: Promise<Params> }) {
+export default async function PublicDeckPage({
+  params,
+  searchParams
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
+}) {
   const { slug } = await params;
+  const { add } = await searchParams;
   const result = await getPublicDeck(slug);
   if (!result) notFound();
 
   const { deck, cards } = result;
+  const { user } = await getAuthenticatedUser();
 
   return (
     <article>
@@ -81,19 +89,12 @@ export default async function PublicDeckPage({ params }: { params: Promise<Param
         )}
       </div>
 
-      <div className="glass-card mt-12 flex flex-col items-start gap-4 p-7 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="flex items-center gap-2 text-sm font-extrabold">
-            <Sparkles size={16} /> Made with {brand.name}
-          </p>
-          <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">
-            Upload your notes and get flashcards like this in seconds.
-          </p>
-        </div>
-        <Link href="/signup" className="btn-primary shrink-0">
-          Try {brand.name} free
-        </Link>
-      </div>
+      <AddPublicDeckButton
+        slug={slug}
+        deckName={deck.name}
+        isAuthenticated={Boolean(user)}
+        autoAdd={add === "1"}
+      />
     </article>
   );
 }

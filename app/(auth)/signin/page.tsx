@@ -1,13 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
+function safeNextPath(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
+
 export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -21,14 +35,15 @@ export default function SignInPage() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const next = new URLSearchParams(window.location.search).get("next");
-      router.replace(next?.startsWith("/") ? next : "/dashboard");
+      router.replace(nextPath);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not sign in.");
     } finally {
       setLoading(false);
     }
   }
+
+  const signUpHref = nextPath !== "/dashboard" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup";
 
   return (
     <AuthFrame title="Welcome back" copy="Sign in to continue organizing your work.">
@@ -41,7 +56,7 @@ export default function SignInPage() {
         {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
       </form>
       <div className="mt-6 flex items-center justify-between text-sm text-[var(--muted)]">
-        <Link href="/signup" className="font-bold text-[var(--text)]">Create account</Link>
+        <Link href={signUpHref} className="font-bold text-[var(--text)]">Create account</Link>
         <Link href="/reset-password">Reset password</Link>
       </div>
     </AuthFrame>
