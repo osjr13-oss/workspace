@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Brain, CheckCircle2, Files, MessageSquare, Sparkles, Upload } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -42,10 +42,14 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="mt-8 grid max-w-2xl gap-3 text-sm font-bold text-[var(--muted-strong)] sm:grid-cols-3">
-            {["Organize source material", "Ask grounded questions", "Review what matters"].map((item) => (
-              <div key={item} className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-[var(--low)]" />
-                {item}
+            {[
+              { label: "Materials", value: "Notes and files stay together" },
+              { label: "Context", value: "Chat uses your sources" },
+              { label: "Review", value: "Practice when repetition helps" }
+            ].map((item) => (
+              <div key={item.label} className="border-l border-[var(--border-strong)] pl-3">
+                <p className="text-xs uppercase tracking-[0.1em] text-[var(--muted)]">{item.label}</p>
+                <p className="mt-1">{item.value}</p>
               </div>
             ))}
           </div>
@@ -72,7 +76,7 @@ export default function LandingPage() {
               <div className="panel mt-10 flex items-center justify-between p-5 shadow-none">
                 <div className="flex items-center gap-4">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-                    <Brain size={20} />
+                    <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Ctx</span>
                   </span>
                   <div>
                     <p className="font-extrabold">Ask with project context</p>
@@ -102,16 +106,13 @@ export default function LandingPage() {
       <section id="workflow" className="mx-auto max-w-7xl px-5 pb-16 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-3">
           {[
-            { icon: Upload, title: "1. Gather the material", body: "Upload PDFs, DOCX files, text, or Markdown and keep everything organized by project." },
-            { icon: MessageSquare, title: "2. Work with context", body: "Ask questions, draft, summarize, and reason with answers grounded in your own materials." },
-            { icon: Brain, title: "3. Review what matters", body: "Turn important ideas into cards when repetition is useful, then keep track of what is due." }
+            { label: "Material", title: "Gather the material", body: "Upload PDFs, DOCX files, text, or Markdown and keep everything organized by project." },
+            { label: "Context", title: "Work with context", body: "Ask questions, draft, summarize, and reason with answers grounded in your own materials." },
+            { label: "Review", title: "Review what matters", body: "Turn important ideas into cards when repetition is useful, then keep track of what is due." }
           ].map((step) => {
-            const Icon = step.icon;
             return (
               <article key={step.title} className="panel p-6">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--text)] text-white">
-                  <Icon size={20} />
-                </span>
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{step.label}</p>
                 <h2 className="mt-5 text-lg font-extrabold tracking-[-0.01em]">{step.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{step.body}</p>
               </article>
@@ -122,16 +123,15 @@ export default function LandingPage() {
 
       <section id="features" className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         {[
-          { icon: MessageSquare, title: "Project-aware chat", body: "Ask questions with notes, files, and flashcards as source context." },
-          { icon: BookOpen, title: "Markdown notes", body: "Write structured study notes with a clean editor and preview." },
-          { icon: Files, title: "File library", body: "Upload documents, extract text, and reuse them across your work." },
-          { icon: Brain, title: "Flashcards and review", body: "Create decks when repetition helps, then review due cards inside the same workspace." },
-          { icon: Sparkles, title: "Quick transformations", body: "Summarize, sharpen, expand, outline, and turn pasted text into useful study notes." }
+          { label: "Chat", title: "Project-aware answers", body: "Ask questions with notes, files, and flashcards as source context." },
+          { label: "Notes", title: "Structured writing", body: "Write study notes with a clean Markdown editor and preview." },
+          { label: "Files", title: "Source library", body: "Upload documents, extract text, and reuse them across your work." },
+          { label: "Review", title: "Flashcards when useful", body: "Create decks when repetition helps, then review due cards inside the same workspace." },
+          { label: "Transform", title: "Text into next steps", body: "Summarize, sharpen, expand, outline, and turn pasted text into useful study notes." }
         ].map((feature) => {
-          const Icon = feature.icon;
           return (
             <article key={feature.title} className="glass-card p-6">
-              <Icon size={22} />
+              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{feature.label}</p>
               <h3 className="mt-5 text-base font-extrabold tracking-[-0.01em]">{feature.title}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{feature.body}</p>
             </article>
@@ -141,7 +141,7 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
         <div className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10">
-          <Sparkles size={24} />
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one project</p>
           <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">Bring your material into one workspace.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
             Start free with projects, uploads, notes, study review, and AI chat that uses your material.

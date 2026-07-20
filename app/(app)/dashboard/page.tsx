@@ -65,7 +65,7 @@ export default function DashboardPage() {
       <section className="panel grid gap-5 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="flex gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-            <Upload size={21} />
+            <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Src</span>
           </span>
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Best first move</p>
