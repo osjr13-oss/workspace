@@ -1,6 +1,6 @@
 # Selrano
 
-Selrano is a production-oriented AI workspace for projects, notes, files, flashcards, study review, and Groq-powered project-aware chat.
+Selrano is a production-oriented AI workspace for projects, notes, private files, review, and Groq-powered project-aware chat. Flashcards are one study output inside the workspace, not the whole product category.
 
 ## Local Setup
 

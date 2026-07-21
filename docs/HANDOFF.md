@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **July 11, 2026**
+Last updated: **July 21, 2026**
 
 ## Current state
 
@@ -13,6 +13,13 @@ Last updated: **July 11, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
+
+## Product positioning and UI direction
+
+- Position Selrano as a calm AI workspace for a user's own materials: projects, notes, private uploads, grounded chat, quick transformations, flashcards, and review.
+- Do not let the homepage or onboarding revolve entirely around flashcards. Flashcards are useful, but Selrano should not read like a Quizlet competitor.
+- The preferred public framing is materials first: gather source material, work with context, then review what matters.
+- Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
 
 ## Confirmed production journeys
 
@@ -114,6 +121,8 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
+- `97c3ce6` — remove generic marketing icons
+- `710f2be` — refine Selrano product positioning
 - `33e0c7f` — repair email delivery and production grants
 - `028906f` — ship all product capabilities by default
 - `6d51a27` — stream AI chat responses by default
