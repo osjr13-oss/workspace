@@ -12,6 +12,7 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-6 text-sm font-bold text-[var(--muted)] sm:flex">
             <a href="#features">Features</a>
             <Link href="/pricing">Pricing</Link>
+            <Link href="/guides">Guides</Link>
             <a href="#workspace">Workspace</a>
             <Link href="/signin">Sign in</Link>
             <Link href="/signup" className="btn-primary">

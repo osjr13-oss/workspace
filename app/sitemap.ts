@@ -3,6 +3,12 @@ import { absoluteUrl } from "@/lib/brand";
 import { guides } from "@/lib/guides";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+// Queries the database, so it can't be statically prerendered at build time
+// (no Supabase credentials are available in that context, e.g. in CI).
+// force-dynamic makes Next render this on every request instead of trying
+// to execute it during `next build`.
+export const dynamic = "force-dynamic";
+
 const staticRoutes: Array<{ path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }> = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/pricing", priority: 0.8, changeFrequency: "monthly" },
