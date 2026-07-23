@@ -68,7 +68,11 @@ export async function POST(request: Request) {
             status: subscription.status,
             currentPeriodEnd: new Date(subscription.current_period_end * 1000)
           });
-        } else if (["canceled", "unpaid", "past_due", "incomplete_expired"].includes(subscription.status)) {
+        } else if (["canceled", "unpaid", "incomplete_expired"].includes(subscription.status)) {
+          // Deliberately excludes "past_due": that status fires on the first failed
+          // charge, before Stripe's retry schedule has run its course. Revoking
+          // access here would contradict invoice.payment_failed below, which waits
+          // for Stripe to actually give up (unpaid) before downgrading.
           await setUserFree(userId);
         }
         break;

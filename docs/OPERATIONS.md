@@ -224,11 +224,7 @@ Production historically received some numbered migrations outside tracked migrat
 
 ### Historical Pro waitlist
 
-The public Pro waitlist is closed now that billing is live. Historical signups remain in **`pro_waitlist`** and can be exported as CSV if needed:
-
-```bash
-curl -H "Authorization: Bearer YOUR_SECRET" https://selrano.com/api/waitlist/export -o waitlist.csv
-```
+The public Pro waitlist page, its API route, and `WAITLIST_EXPORT_SECRET` were removed now that billing is live and nothing writes to the waitlist anymore. Historical signups from before the July 6 hardening migration still sit in the **`pro_waitlist`** table (query it directly via the Supabase dashboard or CLI if that data is ever needed); the table itself was intentionally left in place rather than dropped, since dropping it would delete that historical data.
 
 ## 6. What large companies add later
 

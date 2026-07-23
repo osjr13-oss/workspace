@@ -15,29 +15,33 @@ export async function sendWelcomeEmailOnce(user: User, options: { name?: string;
   }
 
   const admin = createSupabaseAdminClient();
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .select("welcome_email_sent_at")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profileError) throw profileError;
-  if (profile?.welcome_email_sent_at) return false;
 
-  const name = options.name?.trim() || user.user_metadata?.full_name || "";
-  const template = welcomeEmail({ name });
-  await sendEmail({
-    to: user.email,
-    subject: template.subject,
-    html: template.html,
-    replyTo: process.env.SUPPORT_INBOX || undefined
-  });
-
-  const { error: updateError } = await admin
+  // Claim the send atomically before doing it: the WHERE clause means only one
+  // concurrent caller (client-side signup call, cron recovery batch, a retry)
+  // can ever get a row back here for the same user.
+  const { data: claimed, error: claimError } = await admin
     .from("profiles")
     .update({ welcome_email_sent_at: new Date().toISOString() })
     .eq("id", user.id)
-    .is("welcome_email_sent_at", null);
-  if (updateError) throw updateError;
+    .is("welcome_email_sent_at", null)
+    .select("id");
+  if (claimError) throw claimError;
+  if (!claimed || claimed.length === 0) return false;
+
+  const name = options.name?.trim() || user.user_metadata?.full_name || "";
+  const template = welcomeEmail({ name });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: template.subject,
+      html: template.html,
+      replyTo: process.env.SUPPORT_INBOX || undefined
+    });
+  } catch (sendError) {
+    // Release the claim so a later retry or the recovery batch can try again.
+    await admin.from("profiles").update({ welcome_email_sent_at: null }).eq("id", user.id);
+    throw sendError;
+  }
 
   await logAudit({ user_id: user.id, action: "email.welcome", ip: options.ip || null });
   return true;

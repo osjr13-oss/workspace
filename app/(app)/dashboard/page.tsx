@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus, Upload } from "lucide-react";
+import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { QuickActions } from "@/components/quick-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -61,31 +61,6 @@ export default function DashboardPage() {
           New chat
         </Link>
       </WorkspaceHeader>
-
-      <section className="panel grid gap-5 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div className="flex gap-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-            <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Src</span>
-          </span>
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Best first move</p>
-            <h2 className="mt-1 text-xl font-extrabold tracking-[-0.02em]">Add material and build from there.</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-strong)]">
-              Upload a reading, lecture note, or Markdown file. Once it is processed, Selrano can answer questions, support notes, and help create review material from that source.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3 lg:justify-end">
-          <Link href="/files" className="btn-primary">
-            <Upload size={18} />
-            Upload file
-          </Link>
-          <Link href="/flashcards" className="btn-secondary">
-            Review
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
 
       <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
         <div className="flex items-center gap-4">

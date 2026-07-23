@@ -3,6 +3,7 @@ import { clientIp, logAudit } from "@/lib/audit";
 import { brand } from "@/lib/brand";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { supportConfirmationEmail, supportTeamNotificationEmail } from "@/lib/email/templates";
+import { allowRequest } from "@/lib/rate-limit";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
@@ -26,6 +27,12 @@ function supportRecipients() {
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIp(request) || "unknown";
+    const withinLimit = await allowRequest("support.contact", ip, 5, 600);
+    if (!withinLimit) {
+      return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+    }
+
     const body = (await request.json()) as {
       name?: string;
       email?: string;
@@ -73,7 +80,7 @@ export async function POST(request: Request) {
       user_id: user?.id || null,
       action: "support.contact",
       metadata: { ticket_id: id, subject },
-      ip: clientIp(request)
+      ip
     });
 
     if (isEmailConfigured()) {
