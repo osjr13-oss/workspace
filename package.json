@@ -38,6 +38,7 @@
     "typescript": "^5.7.0"
   },
   "overrides": {
-    "postcss": "$postcss"
+    "postcss": "$postcss",
+    "sharp": "^0.35.3"
   }
 }
