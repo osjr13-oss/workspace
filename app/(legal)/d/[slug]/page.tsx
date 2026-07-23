@@ -32,10 +32,10 @@ const getPublicDeck = cache(async (slug: string) => {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getPublicDeck(slug);
-  if (!result) return { title: `Deck not found — ${brand.name}` };
+  if (!result) return { title: "Deck not found" };
 
   const { deck, cards } = result;
-  const title = `${deck.name} flashcards — study free on ${brand.name}`;
+  const title = `${deck.name} flashcards, free to study`;
   const description = `${cards.length} free flashcard${cards.length === 1 ? "" : "s"} on "${deck.name}". Study instantly, no signup required — then make your own with ${brand.name}.`;
   const url = absoluteUrl(`/d/${slug}`);
 

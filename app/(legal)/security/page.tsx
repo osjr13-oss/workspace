@@ -3,7 +3,7 @@ import Link from "next/link";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: `Security — ${brand.name}`,
+  title: "Security",
   description: `Security practices and reporting for ${brand.name}.`
 };
 

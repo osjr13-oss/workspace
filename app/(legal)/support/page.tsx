@@ -4,7 +4,7 @@ import { SupportContactForm } from "@/components/support-contact-form";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: `Support — ${brand.name}`,
+  title: "Support",
   description: `Contact ${brand.name} support. Response within ${brand.support.responseSla}.`
 };
 

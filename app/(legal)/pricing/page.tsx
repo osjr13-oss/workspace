@@ -4,7 +4,7 @@ import { PricingTable } from "@/components/pricing-table";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: `Pricing — ${brand.name}`,
+  title: "Pricing",
   description: `Free and Pro plans for ${brand.name}.`
 };
 

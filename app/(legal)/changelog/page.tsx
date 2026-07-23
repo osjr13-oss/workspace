@@ -3,7 +3,7 @@ import { brand } from "@/lib/brand";
 import { changelog } from "@/lib/changelog";
 
 export const metadata: Metadata = {
-  title: `Changelog — ${brand.name}`,
+  title: "Changelog",
   description: `What's new in ${brand.name}.`
 };
 

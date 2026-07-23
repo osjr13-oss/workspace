@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: `Privacy Policy — ${brand.name}`,
+  title: "Privacy Policy",
   description: "Read Selrano's Privacy Policy.",
 };
 
