@@ -11,6 +11,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <SelranoLogo href="/" />
           <nav className="flex flex-wrap gap-6 text-sm font-bold text-[var(--muted)]">
             <Link href="/pricing" className="hover:text-[var(--text)] transition-colors">Pricing</Link>
+            <Link href="/guides" className="hover:text-[var(--text)] transition-colors">Guides</Link>
             <Link href="/changelog" className="hover:text-[var(--text)] transition-colors">Changelog</Link>
             <Link href={brand.urls.support} className="hover:text-[var(--text)] transition-colors">Support</Link>
             <Link href={brand.urls.security} className="hover:text-[var(--text)] transition-colors">Security</Link>
