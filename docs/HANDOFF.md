@@ -16,9 +16,9 @@ Last updated: **July 21, 2026**
 
 ## Product positioning and UI direction
 
-- Position Selrano as a calm AI workspace for a user's own materials: projects, notes, private uploads, grounded chat, quick transformations, flashcards, and review.
-- Do not let the homepage or onboarding revolve entirely around flashcards. Flashcards are useful, but Selrano should not read like a Quizlet competitor.
-- The preferred public framing is materials first: gather source material, work with context, then review what matters.
+- Position Selrano for professional certification and licensure exam prep (bar exam, CFA, medical/nursing boards, PMP, and similar), not general college students or a broad "AI workspace" pitch.
+- Lead with grounded chat: answers traced back to the user's own uploaded outlines and practice material, not generic answers that miss the exam's framework. Accuracy is the hook, since a wrong answer matters more when a license or certification is on the line.
+- Source library (outlines, practice exams, course PDFs) is the trust foundation. Spaced repetition review is the secondary, expected feature, this audience already uses tools like Anki. Notes support synthesis but do not lead the pitch.
 - Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
 
 ## Confirmed production journeys

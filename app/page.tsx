@@ -27,10 +27,10 @@ export default function LandingPage() {
       <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pt-20">
         <div>
           <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-            A calm AI workspace for your notes, files, and study sessions.
+            Study for your exam with an AI that only knows what you gave it.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
-            Keep projects, notes, uploaded readings, grounded chat, flashcards, and review in one place so your material stays organized and usable.
+            Upload your outlines, practice material, and course PDFs. Ask questions and get answers grounded in what you actually uploaded, not generic answers that miss your exam&rsquo;s framework. Review what&rsquo;s shaky with spaced repetition built in.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/signup" className="btn-primary">
@@ -43,9 +43,9 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 grid max-w-2xl gap-3 text-sm font-bold text-[var(--muted-strong)] sm:grid-cols-3">
             {[
-              { label: "Materials", value: "Notes and files stay together" },
-              { label: "Context", value: "Chat uses your sources" },
-              { label: "Review", value: "Practice when repetition helps" }
+              { label: "Material", value: "Outlines and practice material stay organized" },
+              { label: "Context", value: "Answers grounded in your own material" },
+              { label: "Review", value: "Spaced repetition for what's shaky" }
             ].map((item) => (
               <div key={item.label} className="border-l border-[var(--border-strong)] pl-3">
                 <p className="text-xs uppercase tracking-[0.1em] text-[var(--muted)]">{item.label}</p>
@@ -70,27 +70,27 @@ export default function LandingPage() {
               ))}
             </aside>
             <div className="p-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Study plan</p>
-              <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Bio midterm workspace</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">Notes, files, chats, and review material in one project.</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Exam prep</p>
+              <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Bar exam workspace</h2>
+              <p className="mt-2 text-sm text-[var(--muted)]">Outlines, practice material, chats, and review cards in one project.</p>
               <div className="panel mt-10 flex items-center justify-between p-5 shadow-none">
                 <div className="flex items-center gap-4">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
                     <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Ctx</span>
                   </span>
                   <div>
-                    <p className="font-extrabold">Ask with project context</p>
-                    <p className="text-sm text-[var(--muted)]">Use uploaded lectures, notes, and cards as source material.</p>
+                    <p className="font-extrabold">Ask with grounded context</p>
+                    <p className="text-sm text-[var(--muted)]">Answers trace back to your uploaded outlines and practice material.</p>
                   </div>
                 </div>
                 <ArrowRight size={20} />
               </div>
               <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 {[
-                  { title: "Recent note", body: "Cell transport summary" },
-                  { title: "Source file", body: "Cell biology week 4.pdf" },
-                  { title: "Grounded chat", body: "Explain active transport using my lecture." },
-                  { title: "Review", body: "18 cards due today." }
+                  { title: "Recent note", body: "Rule against perpetuities outline" },
+                  { title: "Source file", body: "Contracts outline.pdf" },
+                  { title: "Grounded chat", body: "Explain consideration using my outline." },
+                  { title: "Review", body: "24 cards due today." }
                 ].map((item) => (
                   <div key={item.title} className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5">
                     <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
@@ -106,9 +106,9 @@ export default function LandingPage() {
       <section id="workflow" className="mx-auto max-w-7xl px-5 pb-16 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-3">
           {[
-            { label: "Material", title: "Gather the material", body: "Upload PDFs, DOCX files, text, or Markdown and keep everything organized by project." },
-            { label: "Context", title: "Work with context", body: "Ask questions, draft, summarize, and reason with answers grounded in your own materials." },
-            { label: "Review", title: "Review what matters", body: "Turn important ideas into cards when repetition is useful, then keep track of what is due." }
+            { label: "Material", title: "Gather the material", body: "Upload outlines, practice questions, and course PDFs and keep everything organized by project." },
+            { label: "Context", title: "Ask with confidence", body: "Get answers grounded in your own prep material, not generic answers that miss your exam's framework." },
+            { label: "Review", title: "Review what's shaky", body: "Turn material into cards and review with spaced repetition before test day." }
           ].map((step) => {
             return (
               <article key={step.title} className="panel p-6">
@@ -123,11 +123,11 @@ export default function LandingPage() {
 
       <section id="features" className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         {[
-          { label: "Chat", title: "Project-aware answers", body: "Ask questions with notes, files, and flashcards as source context." },
-          { label: "Notes", title: "Structured writing", body: "Write study notes with a clean Markdown editor and preview." },
-          { label: "Files", title: "Source library", body: "Upload documents, extract text, and reuse them across your work." },
-          { label: "Review", title: "Flashcards when useful", body: "Create decks when repetition helps, then review due cards inside the same workspace." },
-          { label: "Transform", title: "Text into next steps", body: "Summarize, sharpen, expand, outline, and turn pasted text into useful study notes." }
+          { label: "Chat", title: "Grounded answers you can trust", body: "Ask questions and get answers traced back to your own outlines and practice material, not generic guesses." },
+          { label: "Files", title: "Your prep material, organized", body: "Upload outlines, practice exams, and course PDFs, extract text, and reuse them across your work." },
+          { label: "Review", title: "Spaced repetition built in", body: "Turn material into cards and review what's due before test day." },
+          { label: "Notes", title: "Structured writing", body: "Write outlines and summaries with a clean Markdown editor and preview." },
+          { label: "Transform", title: "Text into next steps", body: "Summarize, sharpen, expand, outline, and turn pasted text into useful study material." }
         ].map((feature) => {
           return (
             <article key={feature.title} className="glass-card p-6">
@@ -141,10 +141,10 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
         <div className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10">
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one project</p>
-          <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">Bring your material into one workspace.</h2>
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one exam</p>
+          <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">Bring your prep material into one workspace.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
-            Start free with projects, uploads, notes, study review, and AI chat that uses your material.
+            Start free with projects, uploads, notes, spaced repetition review, and AI chat grounded in your own material.
           </p>
           <div className="mt-6">
             <Link href="/signup" className="btn-invert">

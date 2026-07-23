@@ -5,7 +5,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 ## Product contract
 
 - Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, support, and Stripe billing.
-- Position Selrano as a calm materials workspace: source files, notes, grounded chat, review, and transformations together. Do not make the product revolve entirely around flashcards or frame it as a Quizlet competitor; flashcards are one useful output inside the broader workspace.
+- Position Selrano for professional certification and licensure exam prep (bar exam, CFA, medical/nursing boards, PMP, and similar), not general college students or a broad "AI workspace" pitch. Lead with grounded chat: answers traced to the user's own uploaded outlines and practice material, since accuracy matters more when a wrong answer affects a license or certification. Source files are the trust foundation; spaced repetition review is the expected companion (this audience already uses tools like Anki); notes and transformations support the work but do not lead the pitch.
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.
 - Normal chat responses stream incrementally. Explicit workspace requests can search the user's materials, create notes, and create flashcard decks, then stream the final response.
