@@ -39,5 +39,12 @@ export async function sendEmail(params: SendEmailParams) {
     throw new Error(`Email send failed: ${detail}`);
   }
 
-  return { ok: true as const, skipped: false as const };
+  const result = (await response.json().catch(() => null)) as { id?: string } | null;
+  console.info("[email] sent", {
+    id: result?.id || null,
+    recipients: to.length,
+    subject: params.subject
+  });
+
+  return { ok: true as const, skipped: false as const, id: result?.id || null };
 }

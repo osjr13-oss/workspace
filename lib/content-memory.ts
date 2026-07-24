@@ -2,6 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { completeAi } from "@/lib/ai";
 import { removeEmDashes } from "@/lib/text";
 
+type MemoryRow = {
+  id: string;
+  content: string;
+  importance: number;
+};
+
 function tokenize(value: string) {
   return new Set(
     value
@@ -23,6 +29,114 @@ function overlap(query: string, content: string) {
   return matches / queryWords.size;
 }
 
+function isRecallQuery(query: string) {
+  return /\b(?:what do you know|what do you remember|remember about me|know about me|my preferences|my goals|who am i|tell me about myself)\b/i.test(
+    query
+  );
+}
+
+async function loadMemoryRows(supabase: SupabaseClient, userId: string) {
+  const { data, error } = await supabase
+    .from("content_memories")
+    .select("id, content, importance")
+    .eq("user_id", userId)
+    .order("importance", { ascending: false })
+    .order("last_accessed", { ascending: false })
+    .limit(50);
+
+  if (error) return [];
+  return (data || []) as MemoryRow[];
+}
+
+async function extractMemoryCandidates(source: string, maxCount: number) {
+  const result = await completeAi(
+    [
+      {
+        role: "system",
+        content:
+          `Extract lasting facts about the user from the supplied conversation material. Include durable preferences, identity details, ongoing projects, recurring concerns, and continuing goals only. Do not include writing-style observations. Return a JSON array of at most ${maxCount} concise strings. Return [] when there is nothing worth remembering. Never use an em dash.`
+      },
+      {
+        role: "user",
+        content: source
+      }
+    ],
+    { temperature: 0.1 }
+  );
+
+  const match = result.text.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  const parsed = JSON.parse(match[0]) as unknown;
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => removeEmDashes(item.trim()).slice(0, 400))
+    .filter((item) => item.length >= 8)
+    .slice(0, maxCount);
+}
+
+async function storeMemories(
+  supabase: SupabaseClient,
+  userId: string,
+  candidates: string[],
+  importance = 0.6
+) {
+  const existing = await loadMemoryRows(supabase, userId);
+  const known = existing.map((row) => row.content);
+  let inserted = 0;
+
+  for (const content of candidates) {
+    const duplicate = known.some((item) => overlap(content, item) > 0.72);
+    if (duplicate) continue;
+
+    const { error } = await supabase.from("content_memories").insert({
+      user_id: userId,
+      content,
+      importance
+    });
+    if (error) {
+      console.error("[memory] insert failed", error);
+      continue;
+    }
+
+    known.push(content);
+    inserted += 1;
+  }
+
+  return inserted;
+}
+
+async function bootstrapMemoriesFromHistory(
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("content")
+    .eq("user_id", userId)
+    .eq("role", "user")
+    .order("created_at", { ascending: false })
+    .limit(80);
+
+  if (error || !data || data.length < 4) return 0;
+
+  const history = data
+    .map((row) => removeEmDashes(String(row.content || "")).trim())
+    .filter((message) => message.length >= 12 && !isRecallQuery(message))
+    .reverse()
+    .join("\n\n")
+    .slice(-12000);
+
+  if (history.length < 80) return 0;
+
+  const candidates = await extractMemoryCandidates(
+    `User messages from earlier conversations:\n\n${history}`,
+    12
+  );
+  return storeMemories(supabase, userId, candidates, 0.7);
+}
+
 export async function retrieveMemories(
   supabase: SupabaseClient,
   userId: string,
@@ -30,22 +144,30 @@ export async function retrieveMemories(
   limit = 5
 ) {
   try {
-    const { data, error } = await supabase
-      .from("content_memories")
-      .select("id, content, importance")
-      .eq("user_id", userId)
-      .order("importance", { ascending: false })
-      .limit(40);
-    if (error) return [];
+    let rows = await loadMemoryRows(supabase, userId);
 
-    const ranked = (data || [])
-      .map((row) => ({
-        ...row,
-        score: overlap(query, String(row.content)) * 0.75 + Number(row.importance || 0.5) * 0.25
-      }))
-      .filter((row) => row.score > 0.1)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    if (rows.length === 0) {
+      const inserted = await bootstrapMemoriesFromHistory(supabase, userId);
+      if (inserted > 0) {
+        console.info("[memory] history bootstrap completed", {
+          userId,
+          inserted
+        });
+        rows = await loadMemoryRows(supabase, userId);
+      }
+    }
+
+    const recallQuery = isRecallQuery(query);
+    const ranked = recallQuery
+      ? rows.slice(0, Math.max(limit, 10))
+      : rows
+          .map((row) => ({
+            ...row,
+            score: overlap(query, row.content) * 0.75 + Number(row.importance || 0.5) * 0.25
+          }))
+          .filter((row) => row.score > 0.1)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit);
 
     if (ranked.length) {
       await supabase
@@ -57,8 +179,9 @@ export async function retrieveMemories(
         );
     }
 
-    return ranked.map((row) => removeEmDashes(String(row.content)));
-  } catch {
+    return ranked.map((row) => removeEmDashes(row.content));
+  } catch (error) {
+    console.error("[memory] retrieval failed", error);
     return [];
   }
 }
@@ -72,47 +195,11 @@ export async function extractMemories(
   if (userMessage.trim().length < 24) return;
 
   try {
-    const result = await completeAi(
-      [
-        {
-          role: "system",
-          content:
-            "Extract lasting facts about the user from this exchange. Include durable preferences, identity details, ongoing projects, and continuing goals only. Do not include writing-style observations. Return a JSON array of at most 3 strings. Return [] when there is nothing worth remembering. Never use an em dash."
-        },
-        {
-          role: "user",
-          content: `User: ${userMessage.slice(0, 900)}\nAssistant: ${assistantMessage.slice(0, 900)}`
-        }
-      ],
-      { temperature: 0.1 }
+    const candidates = await extractMemoryCandidates(
+      `User: ${userMessage.slice(0, 1200)}\nAssistant: ${assistantMessage.slice(0, 1200)}`,
+      3
     );
-
-    const match = result.text.match(/\[[\s\S]*\]/);
-    if (!match) return;
-    const parsed = JSON.parse(match[0]) as unknown;
-    if (!Array.isArray(parsed)) return;
-
-    const { data: existing } = await supabase
-      .from("content_memories")
-      .select("content")
-      .eq("user_id", userId)
-      .limit(50);
-
-    for (const item of parsed.slice(0, 3)) {
-      if (typeof item !== "string") continue;
-      const content = removeEmDashes(item.trim()).slice(0, 400);
-      if (content.length < 8) continue;
-      const duplicate = (existing || []).some(
-        (row) => overlap(content, String(row.content)) > 0.72
-      );
-      if (duplicate) continue;
-
-      await supabase.from("content_memories").insert({
-        user_id: userId,
-        content,
-        importance: 0.6
-      });
-    }
+    await storeMemories(supabase, userId, candidates);
   } catch (error) {
     console.error("[memory] extraction failed", error);
   }

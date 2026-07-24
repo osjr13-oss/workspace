@@ -228,6 +228,43 @@ select {
   color: #fffefa;
 }
 
+.thinking-trace {
+  width: fit-content;
+  max-width: 100%;
+  border-left: 2px solid var(--border-strong);
+  padding: 8px 0 8px 16px;
+}
+
+.thinking-phase {
+  background: rgba(255, 255, 255, 0.5);
+  animation: selrano-thought-current 2.7s ease-in-out infinite;
+}
+
+.thinking-phase[data-phase="1"] {
+  animation-delay: 900ms;
+}
+
+.thinking-phase[data-phase="2"] {
+  animation-delay: 1800ms;
+}
+
+@keyframes selrano-thought-current {
+  0%,
+  65%,
+  100% {
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(0);
+  }
+
+  18%,
+  38% {
+    color: var(--text);
+    background: var(--surface-strong);
+    transform: translateY(-2px);
+  }
+}
+
 @media (max-width: 920px) {
   .layout-grid {
     grid-template-columns: 1fr;

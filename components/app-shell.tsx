@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   BookOpen,
   Brain,
+  BrainCircuit,
   Files,
   FolderOpen,
   Home,
@@ -13,8 +14,7 @@ import {
   LogOut,
   MessageSquare,
   Plus,
-  Settings,
-  Sparkles
+  Settings
 } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -26,7 +26,7 @@ const nav = [
   { href: "/files", label: "Files", icon: Files },
   { href: "/notes", label: "Notes", icon: BookOpen },
   { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/study", label: "Study", icon: Sparkles }
+  { href: "/study", label: "Study", icon: BrainCircuit }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

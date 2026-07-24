@@ -80,7 +80,7 @@ export default function FreeQuizletAlternativeGuide() {
             <tr>
               <td>AI cards from your own PDF</td>
               <td>Plus only, 2 docs/week free</td>
-              <td>Included in the free daily AI limit</td>
+              <td>Included on the free plan</td>
             </tr>
             <tr>
               <td>Chat grounded in your material</td>

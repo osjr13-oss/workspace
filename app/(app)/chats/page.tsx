@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
+import { ThinkingTrace } from "@/components/thinking-trace";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
@@ -30,7 +31,7 @@ function ChatsContent() {
   const [projectId, setProjectId] = useState(initialProject || "");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   async function loadThreads() {
@@ -181,16 +182,19 @@ function ChatsContent() {
     await requestReply({ regenerateMessageId: messageId });
   }
 
-  async function deleteThread() {
-    if (!threadId) return;
+  async function deleteThread(targetThreadId: string) {
     if (!confirm("Delete this conversation? All messages will be permanently removed.")) return;
-    setDeleting(true);
+    setDeletingThreadId(targetThreadId);
     const supabase = createSupabaseBrowserClient();
-    await supabase.from("chat_threads").delete().eq("id", threadId);
-    setThreadId(null);
-    setMessages([]);
-    await loadThreads();
-    setDeleting(false);
+    const { error } = await supabase.from("chat_threads").delete().eq("id", targetThreadId);
+    if (!error) {
+      setThreads((current) => current.filter((thread) => thread.id !== targetThreadId));
+      if (threadId === targetThreadId) {
+        setThreadId(null);
+        setMessages([]);
+      }
+    }
+    setDeletingThreadId(null);
   }
 
   return (
@@ -209,15 +213,28 @@ function ChatsContent() {
         {threadId ? <p className="mt-2 px-2 text-xs text-[var(--muted)]">Start a new conversation to change project context.</p> : null}
         <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto">
           {threads.map((thread) => (
-            <button
-              key={thread.id}
-              type="button"
-              onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
-              className={`w-full rounded-2xl p-4 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
-            >
-              <p className="font-extrabold">{removeEmDashes(thread.title)}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
-            </button>
+            <div key={thread.id} className="group/thread relative">
+              <button
+                type="button"
+                onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
+                className={`w-full rounded-2xl p-4 pr-12 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
+              >
+                <p className="truncate font-extrabold">{removeEmDashes(thread.title)}</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteThread(thread.id)}
+                disabled={deletingThreadId === thread.id}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-[var(--muted)] opacity-100 transition hover:bg-white hover:text-[var(--critical)] focus:opacity-100 sm:opacity-0 sm:group-hover/thread:opacity-100 ${
+                  threadId === thread.id ? "sm:opacity-100" : ""
+                }`}
+                aria-label={`Delete ${removeEmDashes(thread.title)}`}
+                title="Delete conversation"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
           ))}
         </div>
       </aside>
@@ -231,8 +248,8 @@ function ChatsContent() {
           {threadId ? (
             <button
               type="button"
-              onClick={deleteThread}
-              disabled={deleting}
+              onClick={() => deleteThread(threadId)}
+              disabled={deletingThreadId === threadId}
               title="Delete conversation"
               className="btn-secondary shrink-0 text-[var(--critical)]"
             >
@@ -240,7 +257,7 @@ function ChatsContent() {
             </button>
           ) : null}
         </div>
-        <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+        <div ref={listRef} className="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-7 sm:px-8 lg:px-10">
           {messages.length ? (
             messages.map((message) => (
               <ChatMessageBubble
@@ -259,7 +276,7 @@ function ChatsContent() {
               </div>
             </div>
           )}
-          {loading && !messages.some((message) => message.id === "streaming") ? <div className="status-pill">Thinking</div> : null}
+          {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">

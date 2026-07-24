@@ -7,14 +7,38 @@ export type LifecycleEmailKey =
   | "tip_chat"
   | "tip_flashcards"
   | "tip_study"
-  | "nudge_inactive";
+  | "nudge_inactive"
+  | "weekly_digest";
+
+export type LifecycleEmailStats = {
+  projects: number;
+  files: number;
+  chatThreads: number;
+  decks: number;
+  aiEventsLast7d: number;
+};
 
 function greeting(name: string) {
   return name ? `Hi ${name},` : "Hi there,";
 }
 
-export function lifecycleEmail(key: LifecycleEmailKey, name: string): { subject: string; html: string } {
+function countLabel(value: number, singular: string, plural = `${singular}s`) {
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
+export function lifecycleEmail(
+  key: LifecycleEmailKey,
+  name: string,
+  stats?: LifecycleEmailStats
+): { subject: string; html: string } {
   const g = greeting(name);
+  const digestStats = stats || {
+    projects: 0,
+    files: 0,
+    chatThreads: 0,
+    decks: 0,
+    aiEventsLast7d: 0
+  };
 
   const templates: Record<LifecycleEmailKey, { subject: string; body: string; preview: string }> = {
     tip_projects: {
@@ -77,6 +101,17 @@ export function lifecycleEmail(key: LifecycleEmailKey, name: string): { subject:
         <p style="margin:0 0 16px;">Quick wins: add one note, upload one PDF, or ask one question in chat.</p>
         <p style="margin:0 0 24px;">${cta("/chats", "Talk to Selrano")}</p>
         <p style="margin:0;font-size:13px;">Turn off tips anytime in <a href="${absoluteUrl("/settings")}" style="color:${brand.colors.text};">Settings</a>.</p>
+      `
+    },
+    weekly_digest: {
+      subject: "A quick look at your workspace",
+      preview: "Your Selrano week, in one useful glance",
+      body: `
+        <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
+        <p style="margin:0 0 16px;">Here is your week in ${brand.name}: <strong>${countLabel(digestStats.aiEventsLast7d, "AI interaction")}</strong>, ${countLabel(digestStats.projects, "project")}, ${countLabel(digestStats.files, "file")}, and ${countLabel(digestStats.decks, "flashcard deck")} in your workspace.</p>
+        <p style="margin:0 0 16px;">Pick up a conversation, connect a project, or ask what ${brand.name} remembers about your goals and preferences.</p>
+        <p style="margin:0 0 24px;">${cta("/chats", "Continue in Selrano")}</p>
+        <p style="margin:0;font-size:13px;">You asked for occasional updates. You can turn them off anytime in <a href="${absoluteUrl("/settings")}" style="color:${brand.colors.text};">Settings</a>.</p>
       `
     }
   };
