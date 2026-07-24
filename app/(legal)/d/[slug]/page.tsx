@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
   const { deck, cards } = result;
   const title = `${deck.name} flashcards, free to study`;
-  const description = `${cards.length} free flashcard${cards.length === 1 ? "" : "s"} on "${deck.name}". Study instantly, no signup required — then make your own with ${brand.name}.`;
+  const description = `${cards.length} free flashcard${cards.length === 1 ? "" : "s"} on "${deck.name}". Study instantly, no signup required, then make your own with ${brand.name}.`;
   const url = absoluteUrl(`/d/${slug}`);
 
   return {

@@ -10,8 +10,8 @@ const REFERRAL_COOKIE = "selrano_ref";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
-  // Prefer the cookie set on /signup — Supabase's confirmation redirect
+  const next = searchParams.get("next") ?? "/chats";
+  // Prefer the cookie set on /signup. Supabase's confirmation redirect
   // doesn't reliably preserve the "ref" query param through emailRedirectTo,
   // so the query param is a best-effort fallback, not the primary source.
   const ref = request.cookies.get(REFERRAL_COOKIE)?.value || searchParams.get("ref");

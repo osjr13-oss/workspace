@@ -4,7 +4,7 @@ import { ProCheckoutButton } from "@/components/pro-checkout-button";
 import { PLANS } from "@/lib/plans";
 
 const rows = [
-  { label: "AI messages per day", free: String(PLANS.free.dailyAiRequests), pro: String(PLANS.pro.dailyAiRequests) },
+  { label: "Adaptive AI chat", free: "Included", pro: "Included" },
   { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
   { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
   { label: "Flashcard decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
@@ -31,7 +31,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
                 <li key={row.label} className="flex items-start gap-3 text-sm">
                   <Check size={16} className="mt-0.5 shrink-0 text-[var(--low)]" />
                   <span>
-                    <strong>{isPro ? row.pro : row.free}</strong> — {row.label}
+                    <strong>{isPro ? row.pro : row.free}</strong>: {row.label}
                   </span>
                 </li>
               ))}

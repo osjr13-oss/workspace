@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <article className="prose-Selrano">
+    <article className="prose-selrano">
       <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Terms of Service</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
@@ -30,7 +30,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="3. Description of Service">
-        <p>Selrano is an AI-powered academic workspace that allows users to create projects, write and organize notes, upload files, generate flashcards, and interact with an AI assistant. Features include but are not limited to:</p>
+        <p>Selrano is an AI-powered workspace that allows users to chat with an adaptive assistant, create projects, write and organize notes, upload files, generate flashcards, and review material. Features include but are not limited to:</p>
         <ul>
           <li>AI-assisted chat powered by third-party large language model providers.</li>
           <li>Document upload, text extraction, and storage.</li>
@@ -50,7 +50,7 @@ export default function TermsPage() {
           <li>Reverse-engineer, decompile, or disassemble any part of the Service.</li>
           <li>Use automated bots, scrapers, or scripts to access the Service without our express written permission.</li>
           <li>Circumvent or attempt to circumvent any authentication or security mechanism.</li>
-          <li>Use the AI features to generate academic work intended to deceive educational institutions in violation of their academic integrity policies — we are a study aid, not a cheating tool.</li>
+          <li>Use the AI features to generate academic work intended to deceive educational institutions in violation of their academic integrity policies. We are a study aid, not a cheating tool.</li>
         </ul>
         <p>Violation of this section may result in immediate termination of your account.</p>
       </Section>
@@ -75,15 +75,17 @@ export default function TermsPage() {
       <Section title="7. Third-Party Services">
         <p>The Service integrates with and depends on third-party services including:</p>
         <ul>
-          <li><strong>Supabase</strong> — database, authentication, and file storage.</li>
-          <li><strong>Groq, Inc.</strong> — AI inference for chat and content generation.</li>
-          <li><strong>Vercel</strong> — hosting and infrastructure.</li>
+          <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
+          <li><strong>Anthropic</strong>: primary AI inference for chat and content generation.</li>
+          <li><strong>Groq, Inc.</strong>: fallback AI inference and workspace tool planning.</li>
+          <li><strong>Tavily</strong>: optional live web search.</li>
+          <li><strong>Vercel</strong>: hosting and infrastructure.</li>
         </ul>
         <p>Your use of the Service is also subject to the terms and privacy policies of these third-party providers. We are not responsible for the practices of any third-party service.</p>
       </Section>
 
       <Section title="8. Intellectual Property">
-        <p>All rights in the Selrano platform — including the software, design, branding, logo, and documentation — are owned by or licensed to Selrano. Nothing in these Terms grants you any right to use our trademarks, trade names, or logos without our prior written consent.</p>
+        <p>All rights in the Selrano platform, including the software, design, branding, logo, and documentation, are owned by or licensed to Selrano. Nothing in these Terms grants you any right to use our trademarks, trade names, or logos without our prior written consent.</p>
       </Section>
 
       <Section title="9. Privacy">
@@ -91,7 +93,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="10. Fees and Payment">
-        <p>Selrano is currently provided free of charge. We reserve the right to introduce paid plans or features in the future. We will provide advance notice of any pricing changes. If you do not accept new pricing terms, you may terminate your account prior to the effective date.</p>
+        <p>Selrano offers free and paid features. We reserve the right to change paid plans or features in the future. We will provide advance notice of material pricing changes. If you do not accept new pricing terms, you may terminate your account prior to the effective date.</p>
       </Section>
 
       <Section title="11. Disclaimers">
@@ -99,12 +101,12 @@ export default function TermsPage() {
       </Section>
 
       <Section title="12. Limitation of Liability">
-        <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, Selrano AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AGENTS, AND LICENSORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES — INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR OTHER INTANGIBLE LOSSES — ARISING FROM OR RELATED TO YOUR USE OF OR INABILITY TO USE THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+        <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, MIRROR AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AGENTS, AND LICENSORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING FROM OR RELATED TO YOUR USE OF OR INABILITY TO USE THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
         <p>OUR TOTAL LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED THE GREATER OF (A) THE AMOUNT YOU PAID TO US IN THE TWELVE MONTHS PRIOR TO THE CLAIM OR (B) ONE HUNDRED U.S. DOLLARS ($100).</p>
       </Section>
 
       <Section title="13. Indemnification">
-        <p>You agree to defend, indemnify, and hold harmless Selrano and its affiliates from and against any claims, liabilities, damages, losses, and expenses — including reasonable legal fees — arising out of or in any way connected with your access to or use of the Service, your User Content, or your violation of these Terms.</p>
+        <p>You agree to defend, indemnify, and hold harmless Selrano and its affiliates from and against any claims, liabilities, damages, losses, and expenses, including reasonable legal fees, arising out of or in any way connected with your access to or use of the Service, your User Content, or your violation of these Terms.</p>
       </Section>
 
       <Section title="14. Termination">

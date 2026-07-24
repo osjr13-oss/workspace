@@ -39,7 +39,8 @@ export type ChatThread = {
   updated_at: string;
 };
 
-export type Citation = {
+export type FileCitation = {
+  kind?: "file";
   marker: string;
   fileId: string;
   fileName: string;
@@ -47,6 +48,16 @@ export type Citation = {
   charStart: number | null;
   charEnd: number | null;
 };
+
+export type WebCitation = {
+  kind: "web";
+  marker: string;
+  title: string;
+  url: string;
+  snippet: string;
+};
+
+export type Citation = FileCitation | WebCitation;
 
 export type ChatMessage = {
   id: string;

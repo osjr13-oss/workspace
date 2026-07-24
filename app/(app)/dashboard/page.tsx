@@ -29,7 +29,7 @@ export default function DashboardPage() {
       }
       setName(displayName.split(" ")[0] || "there");
       // flashcards also has a public-read policy (for the /d/[slug] share
-      // page), so its count needs an explicit user_id filter — otherwise
+      // page), so its count needs an explicit user_id filter. Otherwise
       // every public deck's cards from every user get counted here too.
       const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),

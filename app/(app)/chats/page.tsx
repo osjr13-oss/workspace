@@ -2,28 +2,15 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { ChatComposer } from "@/components/chat-composer";
+import { ChatMessageBubble } from "@/components/chat-message";
+import { ThinkingTrace } from "@/components/thinking-trace";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import { CitationBadge } from "@/components/citation-badge";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
+import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-/** Turns "[1]" markers into markdown links ReactMarkdown will render, so the
- * `a` override below can swap them for clickable citation badges. */
-function withCitationLinks(content: string) {
-  return content.replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
-}
-
-/** react-markdown sanitizes link URLs by default and strips any scheme it
- * doesn't recognize (http/https/mailto/...) down to an empty href — which
- * silently ate our "citation:n" links. Let those through unchanged, and keep
- * the default sanitizer for every other URL. */
-function urlTransform(url: string) {
-  return url.startsWith("citation:") ? url : defaultUrlTransform(url);
-}
 
 export default function ChatsPage() {
   return (
@@ -44,7 +31,7 @@ function ChatsContent() {
   const [projectId, setProjectId] = useState(initialProject || "");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   async function loadThreads() {
@@ -85,22 +72,22 @@ function ChatsContent() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  async function send(event: React.FormEvent) {
-    event.preventDefault();
-    if (!text.trim()) return;
-    const prompt = text;
-    setText("");
+  async function requestReply(options: {
+    message?: string;
+    editMessageId?: string;
+    regenerateMessageId?: string;
+  }) {
     setLoading(true);
-    setMessages((current) => [
-      ...current,
-      { id: "pending-user", thread_id: threadId || "pending", user_id: "", role: "user", content: prompt, created_at: new Date().toISOString() }
-    ]);
 
     try {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, threadId, projectId: projectId || null })
+        body: JSON.stringify({
+          ...options,
+          threadId,
+          projectId: projectId || null
+        })
       });
 
       if (!response.ok || !response.body) {
@@ -153,16 +140,61 @@ function ChatsContent() {
     }
   }
 
-  async function deleteThread() {
-    if (!threadId) return;
+  async function send(event: React.FormEvent) {
+    event.preventDefault();
+    const prompt = removeEmDashes(text).trim();
+    if (!prompt) return;
+    setText("");
+    setMessages((current) => [
+      ...current,
+      {
+        id: "pending-user",
+        thread_id: threadId || "pending",
+        user_id: "",
+        role: "user",
+        content: prompt,
+        created_at: new Date().toISOString()
+      }
+    ]);
+    await requestReply({ message: prompt });
+  }
+
+  async function editAndResend(messageId: string, content: string) {
+    setMessages((current) => {
+      const index = current.findIndex((message) => message.id === messageId);
+      if (index === -1) return current;
+      return current
+        .slice(0, index + 1)
+        .map((message) =>
+          message.id === messageId
+            ? { ...message, content: removeEmDashes(content) }
+            : message
+        );
+    });
+    await requestReply({ message: removeEmDashes(content), editMessageId: messageId });
+  }
+
+  async function regenerate(messageId: string) {
+    setMessages((current) => {
+      const index = current.findIndex((message) => message.id === messageId);
+      return index === -1 ? current : current.slice(0, index);
+    });
+    await requestReply({ regenerateMessageId: messageId });
+  }
+
+  async function deleteThread(targetThreadId: string) {
     if (!confirm("Delete this conversation? All messages will be permanently removed.")) return;
-    setDeleting(true);
+    setDeletingThreadId(targetThreadId);
     const supabase = createSupabaseBrowserClient();
-    await supabase.from("chat_threads").delete().eq("id", threadId);
-    setThreadId(null);
-    setMessages([]);
-    await loadThreads();
-    setDeleting(false);
+    const { error } = await supabase.from("chat_threads").delete().eq("id", targetThreadId);
+    if (!error) {
+      setThreads((current) => current.filter((thread) => thread.id !== targetThreadId));
+      if (threadId === targetThreadId) {
+        setThreadId(null);
+        setMessages([]);
+      }
+    }
+    setDeletingThreadId(null);
   }
 
   return (
@@ -181,15 +213,28 @@ function ChatsContent() {
         {threadId ? <p className="mt-2 px-2 text-xs text-[var(--muted)]">Start a new conversation to change project context.</p> : null}
         <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto">
           {threads.map((thread) => (
-            <button
-              key={thread.id}
-              type="button"
-              onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
-              className={`w-full rounded-2xl p-4 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
-            >
-              <p className="font-extrabold">{thread.title}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
-            </button>
+            <div key={thread.id} className="group/thread relative">
+              <button
+                type="button"
+                onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
+                className={`w-full rounded-2xl p-4 pr-12 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
+              >
+                <p className="truncate font-extrabold">{removeEmDashes(thread.title)}</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteThread(thread.id)}
+                disabled={deletingThreadId === thread.id}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-[var(--muted)] opacity-100 transition hover:bg-white hover:text-[var(--critical)] focus:opacity-100 sm:opacity-0 sm:group-hover/thread:opacity-100 ${
+                  threadId === thread.id ? "sm:opacity-100" : ""
+                }`}
+                aria-label={`Delete ${removeEmDashes(thread.title)}`}
+                title="Delete conversation"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
           ))}
         </div>
       </aside>
@@ -203,8 +248,8 @@ function ChatsContent() {
           {threadId ? (
             <button
               type="button"
-              onClick={deleteThread}
-              disabled={deleting}
+              onClick={() => deleteThread(threadId)}
+              disabled={deletingThreadId === threadId}
               title="Delete conversation"
               className="btn-secondary shrink-0 text-[var(--critical)]"
             >
@@ -212,57 +257,30 @@ function ChatsContent() {
             </button>
           ) : null}
         </div>
-        <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+        <div ref={listRef} className="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-7 sm:px-8 lg:px-10">
           {messages.length ? (
             messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[78%] rounded-[18px] border border-[var(--border)] p-4 text-sm leading-6 ${message.role === "user" ? "bg-[var(--text)] text-white" : "bg-white/72 text-[var(--muted-strong)]"}`}>
-                  {message.role === "user" ? (
-                    message.content
-                  ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      urlTransform={urlTransform}
-                      className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-extrabold prose-headings:tracking-tight prose-code:text-xs prose-pre:text-xs"
-                      components={
-                        message.citations?.length
-                          ? {
-                              a: ({ href, children }) => {
-                                const marker = href?.startsWith("citation:") ? href.slice("citation:".length) : null;
-                                const citation = marker ? message.citations?.find((c) => c.marker === marker) : null;
-                                if (citation) return <CitationBadge citation={citation} />;
-                                return (
-                                  <a href={href} target="_blank" rel="noreferrer">
-                                    {children}
-                                  </a>
-                                );
-                              }
-                            }
-                          : undefined
-                      }
-                    >
-                      {message.citations?.length ? withCitationLinks(message.content) : message.content}
-                    </ReactMarkdown>
-                  )}
-                </div>
-              </div>
+              <ChatMessageBubble
+                key={message.id}
+                message={message}
+                busy={loading}
+                onEdit={editAndResend}
+                onRegenerate={regenerate}
+              />
             ))
           ) : (
             <div className="grid h-full place-items-center text-center">
               <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Ask Selrano anything.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Use a project to include its notes, files, and flashcards.</p>
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Talk to Selrano.</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere, or add a project when your own material should guide the answer.</p>
               </div>
             </div>
           )}
-          {loading && !messages.some((message) => message.id === "streaming") ? <div className="status-pill">Thinking</div> : null}
+          {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
-            <input aria-label="Chat message" className="min-h-11 flex-1 bg-transparent px-4 text-sm outline-none" value={text} onChange={(event) => setText(event.target.value)} placeholder="Ask anything, or paste text to transform..." />
-            <button type="submit" className="btn-primary min-h-11 px-4" disabled={loading}>
-              <Send size={18} />
-            </button>
+            <ChatComposer value={text} disabled={loading} onChange={setText} />
           </div>
         </form>
       </section>

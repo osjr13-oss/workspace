@@ -33,6 +33,7 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "ANTHROPIC_API_KEY",
   "GROQ_API_KEY",
   "GROQ_MODEL"
 ];
@@ -41,7 +42,7 @@ const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM", "SUPPORT_INBOX"];
 
-const optionalRag = ["EMBEDDING_API_KEY"];
+const optionalRag = ["EMBEDDING_API_KEY", "TAVILY_API_KEY"];
 
 function status(key) {
   const v = env[key];

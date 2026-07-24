@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       runWelcomeEmailRecoveryBatch(),
       runLifecycleEmailBatch()
     ]);
+    console.info("[cron/lifecycle-emails] completed", { welcome, lifecycle });
     return NextResponse.json({ success: true, welcome, lifecycle });
   } catch (error) {
     const msg = serializeError(error);

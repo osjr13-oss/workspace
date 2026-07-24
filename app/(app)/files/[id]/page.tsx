@@ -13,7 +13,7 @@ import type { WorkspaceFile } from "@/lib/types";
 /**
  * PDF extraction (see extractText in app/api/files/upload/route.ts) inserts a
  * "\n" after nearly every text item, mirroring pdf-parse's own default line
- * detection — real prose ends up with a line break after almost every word.
+ * detection. Real prose ends up with a line break after almost every word.
  * Display-only reflow: collapse those into spaces while keeping genuine
  * paragraph gaps (2+ blank lines) as line breaks. Must never touch the
  * underlying text used to compute charStart/charEnd, only what's rendered.

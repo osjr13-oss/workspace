@@ -6,7 +6,7 @@ import { searchChunksFullText } from "@/lib/retrieve-context";
  *
  * Every tool runs through the caller's authenticated Supabase client, so row-level
  * security and ownership triggers guarantee a user can only ever read or write
- * their own data — the model cannot reach anyone else's workspace.
+ * their own data. The model cannot reach anyone else's workspace.
  */
 export const toolDefinitions = [
   {

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <article className="prose-Selrano">
+    <article className="prose-selrano">
       <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
@@ -53,9 +53,11 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content are transmitted to <strong>Groq, Inc.</strong> for AI inference processing. This is necessary to generate AI responses.</p>
+        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content may be transmitted to <strong>Anthropic</strong> for primary AI inference or <strong>Groq, Inc.</strong> for fallback processing. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
         <ul>
+          <li>Data sent to Anthropic is governed by <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="underline">Anthropic&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
+          <li>Data sent to Tavily is governed by <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Tavily&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
           <li>We recommend you do not submit sensitive personal information, passwords, financial data, or confidential third-party data through AI features.</li>
         </ul>
@@ -64,7 +66,7 @@ export default function PrivacyPage() {
       <Section title="4. How We Share Your Information">
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), and Groq (AI inference) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), Anthropic and Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
@@ -73,7 +75,7 @@ export default function PrivacyPage() {
       <Section title="5. Data Storage and Security">
         <p>Your data is stored securely on Supabase&apos;s infrastructure (PostgreSQL database and private object storage). We implement the following safeguards:</p>
         <ul>
-          <li><strong>Row-level security (RLS):</strong> database policies ensure each user can only access their own data — your data is never accessible to other users.</li>
+          <li><strong>Row-level security (RLS):</strong> database policies ensure each user can only access their own data. Your data is never accessible to other users.</li>
           <li><strong>Encrypted storage:</strong> all data is encrypted at rest and in transit (HTTPS/TLS).</li>
           <li><strong>Private file storage:</strong> uploaded files are stored in a private bucket accessible only to your account.</li>
           <li><strong>Hashed passwords:</strong> passwords are never stored in plain text.</li>

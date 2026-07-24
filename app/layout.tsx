@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     default: brand.name,
-    template: `%s — ${brand.name}`
+    template: `%s | ${brand.name}`
   },
   description: brand.tagline,
   metadataBase: new URL(brand.urls.app),

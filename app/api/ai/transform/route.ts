@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
-import { callGroq } from "@/lib/groq";
+import { completeAi, configuredAiModel } from "@/lib/ai";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { removeEmDashes } from "@/lib/text";
 
 export const runtime = "nodejs";
 
@@ -23,28 +24,29 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = (await request.json()) as { action?: string; text?: string };
-    if (!body.text?.trim()) return NextResponse.json({ error: "Text is required" }, { status: 400 });
+    const sourceText = removeEmDashes(body.text || "").trim();
+    if (!sourceText) return NextResponse.json({ error: "Text is required" }, { status: 400 });
     if (!body.action || !allowedActions.has(body.action)) return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
 
     const limitError = await reserveAiRequest(supabase, user.id, "transform", {
-      model: process.env.GROQ_MODEL || "groq",
-      input_chars: body.text.length
+      model: configuredAiModel(),
+      input_chars: sourceText.length
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
-    const result = await callGroq([
+    const result = await completeAi([
       {
         role: "system",
         content:
-          "You are Selrano, a calm academic workspace assistant. Transform the user's text exactly as requested. Preserve meaning, avoid hype, and return only the transformed content."
+          "You are Selrano, an adaptive AI workspace assistant. Transform the user's text exactly as requested. Preserve meaning, avoid hype, never use an em dash, and return only the transformed content."
       },
       {
         role: "user",
-        content: `Action: ${body.action}\n\nText:\n${body.text}`
+        content: `Action: ${body.action}\n\nText:\n${sourceText}`
       }
     ]);
 
-    return NextResponse.json({ result });
+    return NextResponse.json({ result: removeEmDashes(result.text), provider: result.provider });
   } catch (error) {
     const message = serializeError(error);
     console.error("[transform]", message, error);

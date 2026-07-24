@@ -1,4 +1,5 @@
 import { requireEnv } from "@/lib/env";
+import { removeEmDashes } from "@/lib/text";
 
 type GroqMessage = {
   role: "system" | "user" | "assistant";
@@ -109,8 +110,9 @@ export async function streamGroq(
         const json = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
         const token = json.choices?.[0]?.delta?.content;
         if (token) {
-          full += token;
-          options.onToken(token);
+          const normalized = removeEmDashes(token);
+          full += normalized;
+          options.onToken(normalized);
         }
       } catch {
         // ignore keep-alive lines and any non-JSON noise
@@ -144,5 +146,5 @@ export async function callGroq(messages: GroqMessage[], options?: { temperature?
     choices?: Array<{ message?: { content?: string } }>;
   };
 
-  return payload.choices?.[0]?.message?.content?.trim() || "";
+  return removeEmDashes(payload.choices?.[0]?.message?.content?.trim() || "");
 }

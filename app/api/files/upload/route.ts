@@ -140,7 +140,7 @@ async function extractText(name: string, mimeType: string, bytes: Buffer): Promi
     const rawPages: string[] = [];
 
     // Custom pagerender captures each page's text separately (mirrors pdf-parse's
-    // own default renderer) so we can compute per-page character ranges below —
+    // own default renderer) so we can compute per-page character ranges below.
     // the stock API only ever returns one flattened string with no boundaries.
     const result = await pdfParse(bytes, {
       pagerender: async (pageData) => {
@@ -162,7 +162,7 @@ async function extractText(name: string, mimeType: string, bytes: Buffer): Promi
 
     // pdf-parse builds ret.text as `${acc}\n\n${pageText}` starting from "" for
     // every page (including the first), so the raw text always starts with a
-    // leading "\n\n". Mirror that exact join to compute each page's character
+    // leading "\n\n". Replicate that exact join to compute each page's character
     // range, then shift by whatever .trim() below removes from the front so the
     // ranges stay valid against the trimmed text we actually store and chunk.
     const raw = result.text;

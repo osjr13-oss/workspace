@@ -13,7 +13,7 @@ export default function LandingPage() {
             <a href="#features">Features</a>
             <Link href="/pricing">Pricing</Link>
             <Link href="/guides">Guides</Link>
-            <a href="#workspace">Workspace</a>
+            <a href="#workspace">Preview</a>
             <Link href="/signin">Sign in</Link>
             <Link href="/signup" className="btn-primary">
               Get started
@@ -28,10 +28,10 @@ export default function LandingPage() {
       <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pt-20">
         <div>
           <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-            A calm AI workspace for your notes, files, and study sessions.
+            An AI workspace that learns how you think and write.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
-            Keep projects, notes, uploaded readings, grounded chat, flashcards, and review in one place so your material stays organized and usable.
+            Talk through ideas, work with your own files, search the live web, and get responses that adapt to your voice without losing the facts.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/signup" className="btn-primary">
@@ -44,9 +44,9 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 grid max-w-2xl gap-3 text-sm font-bold text-[var(--muted-strong)] sm:grid-cols-3">
             {[
-              { label: "Materials", value: "Notes and files stay together" },
-              { label: "Context", value: "Chat uses your sources" },
-              { label: "Review", value: "Practice when repetition helps" }
+              { label: "Voice", value: "Responses learn your style" },
+              { label: "Context", value: "Your sources stay grounded" },
+              { label: "Continuity", value: "Useful details carry forward" }
             ].map((item) => (
               <div key={item.label} className="border-l border-[var(--border-strong)] pl-3">
                 <p className="text-xs uppercase tracking-[0.1em] text-[var(--muted)]">{item.label}</p>
@@ -59,7 +59,7 @@ export default function LandingPage() {
         <div id="workspace" className="panel overflow-hidden p-4">
           <div className="grid min-h-[520px] grid-cols-[190px_1fr] overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--background-elevated)] max-sm:grid-cols-1">
             <aside className="border-r border-[var(--border)] p-4 max-sm:hidden">
-              {["Home", "Files", "Flashcards", "Study", "Chats", "Notes"].map((item, index) => (
+              {["Chats", "Workspace", "Projects", "Files", "Notes", "Flashcards"].map((item, index) => (
                 <div
                   key={item}
                   className={`mb-2 rounded-2xl px-3 py-3 text-sm font-bold ${
@@ -71,27 +71,27 @@ export default function LandingPage() {
               ))}
             </aside>
             <div className="p-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Study plan</p>
-              <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Bio midterm workspace</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">Notes, files, chats, and review material in one project.</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
+              <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
+              <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
               <div className="panel mt-10 flex items-center justify-between p-5 shadow-none">
                 <div className="flex items-center gap-4">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
                     <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Ctx</span>
                   </span>
                   <div>
-                    <p className="font-extrabold">Ask with project context</p>
-                    <p className="text-sm text-[var(--muted)]">Use uploaded lectures, notes, and cards as source material.</p>
+                    <p className="font-extrabold">Your context, when it matters</p>
+                    <p className="text-sm text-[var(--muted)]">Use notes, files, and live sources without mixing them up.</p>
                   </div>
                 </div>
                 <ArrowRight size={20} />
               </div>
               <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 {[
-                  { title: "Recent note", body: "Cell transport summary" },
-                  { title: "Source file", body: "Cell biology week 4.pdf" },
-                  { title: "Grounded chat", body: "Explain active transport using my lecture." },
-                  { title: "Review", body: "18 cards due today." }
+                  { title: "Style", body: "Direct, concise, and shaped around how you communicate." },
+                  { title: "Memory", body: "Useful preferences and ongoing work stay available." },
+                  { title: "Sources", body: "Project files and web results remain clearly cited." },
+                  { title: "Control", body: "Edit, resend, regenerate, and keep moving." }
                 ].map((item) => (
                   <div key={item.title} className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5">
                     <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
@@ -107,9 +107,9 @@ export default function LandingPage() {
       <section id="workflow" className="mx-auto max-w-7xl px-5 pb-16 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-3">
           {[
-            { label: "Material", title: "Gather the material", body: "Upload PDFs, DOCX files, text, or Markdown and keep everything organized by project." },
-            { label: "Context", title: "Work with context", body: "Ask questions, draft, summarize, and reason with answers grounded in your own materials." },
-            { label: "Review", title: "Review what matters", body: "Turn important ideas into cards when repetition is useful, then keep track of what is due." }
+            { label: "Start", title: "Say what is on your mind", body: "Ask a question, paste a rough idea, or bring in something you are already working through." },
+            { label: "Ground", title: "Add the right context", body: "Connect a project so Selrano can use your notes and files, or let it search the web when current information matters." },
+            { label: "Adapt", title: "Make the answer yours", body: "Selrano learns your communication style and remembers durable preferences while keeping sourced facts separate." }
           ].map((step) => {
             return (
               <article key={step.title} className="panel p-6">
@@ -124,11 +124,11 @@ export default function LandingPage() {
 
       <section id="features" className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         {[
-          { label: "Chat", title: "Project-aware answers", body: "Ask questions with notes, files, and flashcards as source context." },
-          { label: "Notes", title: "Structured writing", body: "Write study notes with a clean Markdown editor and preview." },
-          { label: "Files", title: "Source library", body: "Upload documents, extract text, and reuse them across your work." },
-          { label: "Review", title: "Flashcards when useful", body: "Create decks when repetition helps, then review due cards inside the same workspace." },
-          { label: "Transform", title: "Text into next steps", body: "Summarize, sharpen, expand, outline, and turn pasted text into useful study notes." }
+          { label: "Chat", title: "A conversation that adapts", body: "Get direct answers that increasingly match the way you think and write." },
+          { label: "Memory", title: "Continuity across chats", body: "Keep durable preferences, projects, and ongoing threads available when they help." },
+          { label: "Sources", title: "Grounded when it counts", body: "Use private files, notes, and live web results with clear source boundaries." },
+          { label: "Workspace", title: "Your material stays useful", body: "Organize projects, notes, documents, flashcards, and review around the conversation." },
+          { label: "Control", title: "Shape every response", body: "Edit your message, resend it, regenerate the answer, and correct text locally." }
         ].map((feature) => {
           return (
             <article key={feature.title} className="glass-card p-6">
@@ -142,14 +142,14 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
         <div className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10">
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one project</p>
-          <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">Bring your material into one workspace.</h2>
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one thought</p>
+          <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">A better conversation starts by listening.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
-            Start free with projects, uploads, notes, study review, and AI chat that uses your material.
+            Start free with adaptive chat, projects, uploads, notes, and grounded answers that use your material.
           </p>
           <div className="mt-6">
             <Link href="/signup" className="btn-invert">
-              Create workspace
+              Start talking
               <ArrowRight size={18} />
             </Link>
           </div>

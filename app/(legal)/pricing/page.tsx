@@ -14,7 +14,7 @@ export default function PricingPage() {
       <p className="text-sm font-bold text-[var(--muted)]">Pricing</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em]">Simple plans for real work</h1>
       <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-strong)]">
-        Start free. Upgrade when you need more AI capacity, projects, and larger file uploads. Cancel anytime.
+        Start free. Upgrade when Selrano becomes part of your daily workflow and you need more room for projects and files. Cancel anytime.
       </p>
 
       <div className="mt-10">

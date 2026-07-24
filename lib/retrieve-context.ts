@@ -64,7 +64,7 @@ export async function searchProjectChunks(
 
 /**
  * Free keyword (full-text) search over the user's uploaded file chunks, ranked by
- * relevance. Needs no embedding provider — it uses the search_chunks_fts() Postgres
+ * relevance. It needs no embedding provider because it uses the search_chunks_fts() Postgres
  * function backed by a tsvector index. Pass projectId to scope to one project, or
  * null to search all of the user's files.
  */

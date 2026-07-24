@@ -25,7 +25,8 @@ const CAMPAIGNS: Campaign[] = [
   { key: "tip_upload", minDays: 4, maxDays: 8, eligible: (s) => s.files === 0 },
   { key: "tip_flashcards", minDays: 7, maxDays: 14, eligible: (s) => s.decks === 0 },
   { key: "tip_study", minDays: 10, maxDays: 21, eligible: (s) => s.decks > 0 && s.studyReviews === 0 },
-  { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 }
+  { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 },
+  { key: "weekly_digest", minDays: 7, maxDays: 36500, eligible: () => true }
 ];
 
 const MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS = 7;
@@ -33,6 +34,13 @@ const MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS = 7;
 function daysSince(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+function weeklyDigestLogKey(date = new Date()) {
+  const monday = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const daysFromMonday = (monday.getUTCDay() + 6) % 7;
+  monday.setUTCDate(monday.getUTCDate() - daysFromMonday);
+  return `weekly_digest_${monday.toISOString().slice(0, 10)}`;
 }
 
 async function loadStats(admin: SupabaseClient, userId: string): Promise<UserStats> {
@@ -123,20 +131,52 @@ export async function runLifecycleEmailBatch() {
       for (const campaign of CAMPAIGNS) {
         if (accountAge < campaign.minDays || accountAge > campaign.maxDays) continue;
         if (!campaign.eligible(stats)) continue;
-        if (await alreadySent(admin, user.id, campaign.key)) continue;
+        const logKey = campaign.key === "weekly_digest" ? weeklyDigestLogKey() : campaign.key;
+        if (await alreadySent(admin, user.id, logKey)) continue;
 
-        const template = lifecycleEmail(campaign.key, name);
-        const result = await sendEmail({
-          to: user.email,
-          subject: template.subject,
-          html: template.html,
-          replyTo: process.env.SUPPORT_INBOX || undefined
-        });
+        const template = lifecycleEmail(campaign.key, name, stats);
+        const { error: claimError } = await admin
+          .from("lifecycle_email_log")
+          .insert({ user_id: user.id, email_key: logKey });
+        if (claimError) {
+          skipped += 1;
+          console.error("[lifecycle-email] could not claim send", {
+            userId: user.id,
+            campaign: campaign.key,
+            error: claimError.message
+          });
+          break;
+        }
 
-        if (result.ok) {
-          await admin.from("lifecycle_email_log").insert({ user_id: user.id, email_key: campaign.key });
-          sent += 1;
-        } else {
+        try {
+          const result = await sendEmail({
+            to: user.email,
+            subject: template.subject,
+            html: template.html,
+            replyTo: process.env.SUPPORT_INBOX || undefined
+          });
+
+          if (result.ok) {
+            sent += 1;
+          } else {
+            await admin
+              .from("lifecycle_email_log")
+              .delete()
+              .eq("user_id", user.id)
+              .eq("email_key", logKey);
+            skipped += 1;
+          }
+        } catch (error) {
+          await admin
+            .from("lifecycle_email_log")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("email_key", logKey);
+          console.error("[lifecycle-email] send failed", {
+            userId: user.id,
+            campaign: campaign.key,
+            error: error instanceof Error ? error.message : String(error)
+          });
           skipped += 1;
         }
 

@@ -248,7 +248,7 @@ function FlashcardsContent() {
           emptyDescription="Add cards manually or generate them from a note or file, then come back to practice."
           finishedTitle="Practice complete"
           finishedDescription="You flipped through every card in this deck. Study mode still handles due-card review and scheduling."
-          footerNote="Practice anytime — this does not change your study schedule."
+          footerNote="Practice anytime. This does not change your study schedule."
         />
       </div>
     );
@@ -392,7 +392,7 @@ function FlashcardsContent() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
-                  {selectedDeck.name} — {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
+                  {selectedDeck.name}: {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button

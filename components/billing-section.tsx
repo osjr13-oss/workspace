@@ -169,7 +169,7 @@ export function BillingSection() {
         ) : status.stripeConfigured ? (
           <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading}>
             <Sparkles size={18} />
-            {actionLoading ? "Redirecting…" : `Upgrade to Pro — $${PLANS.pro.priceMonthly}/mo`}
+            {actionLoading ? "Redirecting…" : `Upgrade to Pro, $${PLANS.pro.priceMonthly}/mo`}
           </button>
         ) : (
           <Link href="/pricing" className="btn-primary">
