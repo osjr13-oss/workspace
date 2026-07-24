@@ -200,27 +200,27 @@ select {
   padding: 15px 16px;
 }
 
-.prose-Selrano {
+.prose-selrano {
   color: var(--muted-strong);
   font-size: 14px;
   line-height: 1.7;
 }
 
-.prose-Selrano h1,
-.prose-Selrano h2,
-.prose-Selrano h3 {
+.prose-selrano h1,
+.prose-selrano h2,
+.prose-selrano h3 {
   color: var(--text);
   font-weight: 800;
 }
 
-.prose-Selrano code {
+.prose-selrano code {
   border-radius: 8px;
   background: var(--surface-subtle);
   padding: 2px 6px;
   color: var(--text);
 }
 
-.prose-Selrano pre {
+.prose-selrano pre {
   overflow: auto;
   border-radius: 14px;
   background: #15181f;

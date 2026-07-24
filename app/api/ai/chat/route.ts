@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions } from "@/lib/ai-tools";
-import { callGroqWithTools, streamGroq, type GroqChatMessage } from "@/lib/groq";
+import { configuredAiModel, streamAi } from "@/lib/ai";
+import { extractMemories, retrieveMemories } from "@/lib/content-memory";
+import { callGroqWithTools, type GroqChatMessage } from "@/lib/groq";
 import { searchChunksFullText, searchProjectChunks, type RetrievedChunk } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
+import { ingestUserStyle } from "@/lib/style-profile";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { removeEmDashes } from "@/lib/text";
+import { shouldSearchWeb, webSearch } from "@/lib/web-search";
 import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -15,11 +20,75 @@ export async function POST(request: Request) {
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = (await request.json()) as { message?: string; threadId?: string | null; projectId?: string | null };
-    if (!body.message?.trim()) return NextResponse.json({ error: "Message is required" }, { status: 400 });
+    const body = (await request.json()) as {
+      message?: string;
+      threadId?: string | null;
+      projectId?: string | null;
+      editMessageId?: string;
+      regenerateMessageId?: string;
+    };
+    let userContent = removeEmDashes(body.message || "").trim();
 
     let threadId = body.threadId || null;
     let projectId = body.projectId || null;
+    let editTarget:
+      | { id: string; thread_id: string; created_at: string }
+      | null = null;
+    let regenerateTarget:
+      | { id: string; thread_id: string; created_at: string }
+      | null = null;
+
+    if (body.editMessageId) {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("id, thread_id, role, created_at")
+        .eq("id", body.editMessageId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data || data.role !== "user") {
+        return NextResponse.json({ error: "Editable message not found" }, { status: 404 });
+      }
+      if (!userContent) {
+        return NextResponse.json({ error: "Message is required" }, { status: 400 });
+      }
+      editTarget = data;
+      threadId = data.thread_id;
+    }
+
+    if (body.regenerateMessageId) {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("id, thread_id, role, created_at")
+        .eq("id", body.regenerateMessageId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data || data.role !== "assistant") {
+        return NextResponse.json({ error: "Regeneratable message not found" }, { status: 404 });
+      }
+
+      const { data: previousUser, error: previousUserError } = await supabase
+        .from("chat_messages")
+        .select("content")
+        .eq("thread_id", data.thread_id)
+        .eq("user_id", user.id)
+        .eq("role", "user")
+        .lt("created_at", data.created_at)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (previousUserError) throw previousUserError;
+      if (!previousUser) {
+        return NextResponse.json({ error: "No user message was found to regenerate from" }, { status: 400 });
+      }
+
+      regenerateTarget = data;
+      threadId = data.thread_id;
+      userContent = removeEmDashes(previousUser.content || "").trim();
+    }
+
+    if (!userContent) return NextResponse.json({ error: "Message is required" }, { status: 400 });
 
     if (threadId) {
       const { data: thread, error: threadError } = await supabase
@@ -43,13 +112,40 @@ export async function POST(request: Request) {
     }
 
     const limitError = await reserveAiRequest(supabase, user.id, "chat", {
-      model: process.env.GROQ_MODEL || "groq",
-      input_chars: body.message.length
+      model: configuredAiModel(),
+      input_chars: userContent.length
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
+    if (editTarget) {
+      const { error: updateError } = await supabase
+        .from("chat_messages")
+        .update({ content: userContent })
+        .eq("id", editTarget.id)
+        .eq("user_id", user.id);
+      if (updateError) throw updateError;
+
+      const { error: deleteError } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("thread_id", editTarget.thread_id)
+        .eq("user_id", user.id)
+        .gt("created_at", editTarget.created_at);
+      if (deleteError) throw deleteError;
+    }
+
+    if (regenerateTarget) {
+      const { error: deleteError } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("thread_id", regenerateTarget.thread_id)
+        .eq("user_id", user.id)
+        .gte("created_at", regenerateTarget.created_at);
+      if (deleteError) throw deleteError;
+    }
+
     if (!threadId) {
-      const title = body.message.slice(0, 72);
+      const title = userContent.slice(0, 72);
       const { data, error } = await supabase
         .from("chat_threads")
         .insert({ user_id: user.id, project_id: projectId, title })
@@ -59,25 +155,64 @@ export async function POST(request: Request) {
       threadId = data.id;
     }
 
-    const { error: userMessageError } = await supabase.from("chat_messages").insert({
-      user_id: user.id,
-      thread_id: threadId,
-      role: "user",
-      content: body.message
-    });
-    if (userMessageError) throw userMessageError;
+    if (!editTarget && !regenerateTarget) {
+      const { error: userMessageError } = await supabase.from("chat_messages").insert({
+        user_id: user.id,
+        thread_id: threadId,
+        role: "user",
+        content: userContent
+      });
+      if (userMessageError) throw userMessageError;
+    }
 
-    const [historyResult, context] = await Promise.all([
-      supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(16),
-      loadProjectContext(supabase, projectId, body.message)
+    const [historyResult, context, styleProfile, memories, webResults] = await Promise.all([
+      supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(16),
+      loadProjectContext(supabase, projectId, userContent),
+      ingestUserStyle(supabase, user.id, userContent),
+      retrieveMemories(supabase, user.id, userContent),
+      shouldSearchWeb(userContent) ? webSearch(userContent) : Promise.resolve([])
     ]);
+
+    const webCitations: Record<string, Citation> = {};
+    const webContext = webResults
+      .map((result, index) => {
+        const marker = String(Object.keys(context.citations).length + index + 1);
+        webCitations[marker] = {
+          kind: "web",
+          marker,
+          title: result.title,
+          url: result.url,
+          snippet: result.snippet
+        };
+        return `[${marker}] ${result.title}\nURL: ${result.url}\n${result.snippet}`;
+      })
+      .join("\n\n");
+    const allCitations = { ...context.citations, ...webCitations };
 
     const messages = [
       {
         role: "system" as const,
         content:
-          "You are Selrano, an AI built into an academic workspace. Be direct and conversational — answer the question immediately without preamble, intros, or sign-offs. Never start with 'I can help with...' or list your own capabilities. Never use bullet points or numbered lists unless the user explicitly asks for them or the content is genuinely list-like. Write in plain prose. Keep responses tight — say what needs to be said, nothing more. If the user's project context is relevant, use it naturally without announcing that you're doing so. If you don't know something, say so plainly. When project context is provided, treat it as the source of truth for facts about the user's own notes and files — do not add claims about that material beyond what the context supports, even if you know more generally, and if the context doesn't cover the question, say so plainly instead of guessing. This grounding rule only applies to claims about the user's own material; answer unrelated general questions normally. When you state a fact drawn from the project context, add the matching reference id in brackets right after the claim, like this: <claim> [1]. Only cite ids that were actually provided. Do not invent citations."
+          "You are Selrano, an adaptive AI workspace assistant. Answer directly without preamble or sign-offs. Never start by listing your capabilities. Use bullets or numbered lists only when requested or when the content is genuinely list-like. Write in plain prose and keep responses focused. Never use an em dash. If project context is relevant, use it naturally without announcing that you are doing so. Treat project context as the source of truth for facts about the user's own notes and files. Do not add unsupported claims about those materials. If the context does not cover the question, say so plainly instead of guessing. This grounding rule applies only to the user's own material. Answer unrelated general questions normally. When stating a fact drawn from project context, add the matching reference id in brackets immediately after the claim, like this: <claim> [1]. Cite only ids that were provided."
       },
+      ...(styleProfile?.styleDirective
+        ? [
+            {
+              role: "system" as const,
+              content: `Communication preferences learned from the user: ${styleProfile.styleDirective}`
+            }
+          ]
+        : []),
+      ...(memories.length
+        ? [
+            {
+              role: "system" as const,
+              content:
+                "Durable personal context learned from earlier conversations follows. Use it only when relevant. It is not source evidence and must never be cited as project material.\n" +
+                memories.map((memory) => `- ${memory}`).join("\n")
+            }
+          ]
+        : []),
       ...(context.text
         ? [
             {
@@ -94,16 +229,33 @@ export async function POST(request: Request) {
               }
             ]
           : []),
-      ...((historyResult.data || []) as Array<{ role: "user" | "assistant"; content: string }>).map((message) => ({
-        role: message.role,
-        content: message.content
-      }))
+      ...(webContext
+        ? [
+            {
+              role: "system" as const,
+              content:
+                "Live web search results follow. Use them for current information and cite relevant claims with the provided numeric markers. Do not invent citations.\n\n" +
+                webContext
+            }
+          ]
+        : []),
+      ...([
+        ...((historyResult.data || []) as Array<{
+          role: "user" | "assistant";
+          content: string;
+        }>)
+      ]
+        .reverse()
+        .map((message) => ({
+          role: message.role,
+          content: removeEmDashes(message.content)
+        })))
     ];
 
     if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
     const finalThreadId = threadId;
 
-    const streamMessages = shouldUseWorkspaceTools(body.message)
+    const streamMessages = shouldUseWorkspaceTools(userContent)
       ? await prepareToolMessages(messages, {
         supabase,
         userId: user.id,
@@ -119,44 +271,46 @@ export async function POST(request: Request) {
       async start(controller) {
         let answer = "";
         try {
-          await streamGroq(streamMessages, {
+          await streamAi(streamMessages, {
             temperature: 0.6,
             onToken: (token) => {
-              answer += token;
-              controller.enqueue(encoder.encode(token));
+              const normalized = removeEmDashes(token);
+              answer += normalized;
+              controller.enqueue(encoder.encode(normalized));
             }
           });
         } catch (error) {
           console.error("[chat] stream failed", serializeError(error), error);
           if (!answer) {
-            answer = "Sorry — something went wrong generating that response. Please try again.";
+            answer = "Sorry, something went wrong generating that response. Please try again.";
             controller.enqueue(encoder.encode(answer));
           }
         } finally {
           // Persist before closing so the browser's post-stream reload is
           // guaranteed to find the same complete (or partial) assistant reply.
           // Wrapped so a persistence failure (network blip, transient DB
-          // error) can never prevent controller.close() below — otherwise
+          // error) can never prevent controller.close() below. Otherwise
           // the stream never signals completion and the client hangs
           // waiting for more data that will never arrive.
           try {
             if (answer) {
               const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
               const citations = usedMarkers
-                .map((marker) => context.citations[marker])
+                .map((marker) => allCitations[marker])
                 .filter((citation): citation is Citation => Boolean(citation));
 
               const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
                 user_id: user.id,
                 thread_id: finalThreadId,
                 role: "assistant",
-                content: answer.trim(),
+                content: removeEmDashes(answer.trim()),
                 citations
               });
               if (assistantMessageError) {
                 console.error("[chat] persist assistant message failed", assistantMessageError);
               }
               await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+              await extractMemories(supabase, user.id, userContent, answer);
             }
           } catch (persistError) {
             console.error("[chat] persist assistant message threw", serializeError(persistError));
@@ -171,7 +325,8 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
-        "X-Thread-Id": finalThreadId
+        "X-Thread-Id": finalThreadId,
+        "X-AI-Model": configuredAiModel()
       }
     });
   } catch (error) {
@@ -271,7 +426,7 @@ async function loadProjectContext(
   // Ranked hits (semantic or full-text) are treated as strong evidence; the
   // fallback path (arbitrary first chunks of a file, used only when neither
   // ranked search found anything) is labeled unranked so the model doesn't
-  // treat it as strong evidence either — see the grounding instruction above.
+  // treat it as strong evidence either. See the grounding instruction above.
   const rankedChunks: RetrievedChunk[] = semanticChunks.length ? semanticChunks : ftsChunks;
   const fallbackSources: RetrievedChunk[] = rankedChunks.length
     ? []

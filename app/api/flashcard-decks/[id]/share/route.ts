@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         .single();
 
       if (!error) return NextResponse.json({ deck: data });
-      // Unique violation on share_slug — regenerate and retry.
+    // A unique violation on share_slug means regenerate and retry.
       if (error.code !== "23505") throw error;
     }
 

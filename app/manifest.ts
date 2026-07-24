@@ -6,13 +6,13 @@ export default function manifest(): MetadataRoute.Manifest {
     name: brand.name,
     short_name: brand.name,
     description: brand.tagline,
-    start_url: "/dashboard",
+    start_url: "/chats",
     scope: "/",
     display: "standalone",
     orientation: "any",
     background_color: brand.colors.background,
     theme_color: brand.colors.background,
-    categories: ["education", "productivity"],
+    categories: ["productivity", "utilities"],
     icons: [
       {
         src: "/icon",

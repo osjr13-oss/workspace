@@ -31,7 +31,7 @@ export type LocatedChunk = {
  * jump back to the exact passage a claim came from. Unlike chunkText, this
  * operates directly on the untouched text (no whitespace collapsing) so
  * charStart/charEnd are valid slice offsets into the same string stored on
- * files.extracted_text — collapsing whitespace first would desync the two.
+ * files.extracted_text. Collapsing whitespace first would desync the two.
  */
 export function chunkTextWithLocations(text: string, pages: TextPage[] = [], maxLength = 1800): LocatedChunk[] {
   if (!text.trim()) return [];

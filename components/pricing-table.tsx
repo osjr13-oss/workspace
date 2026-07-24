@@ -31,7 +31,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
                 <li key={row.label} className="flex items-start gap-3 text-sm">
                   <Check size={16} className="mt-0.5 shrink-0 text-[var(--low)]" />
                   <span>
-                    <strong>{isPro ? row.pro : row.free}</strong> — {row.label}
+                    <strong>{isPro ? row.pro : row.free}</strong>: {row.label}
                   </span>
                 </li>
               ))}

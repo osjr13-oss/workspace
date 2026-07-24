@@ -83,7 +83,7 @@ export default function StudyPage() {
 
   const finishedDescription =
     totalDue > cards.length
-      ? `You reviewed this batch. ${totalDue - cards.length} more card${totalDue - cards.length === 1 ? " is" : "s are"} due — refresh to keep going.`
+      ? `You reviewed this batch. ${totalDue - cards.length} more card${totalDue - cards.length === 1 ? " is" : "s are"} due. Refresh to keep going.`
       : "You reviewed every card that was due.";
 
   return (

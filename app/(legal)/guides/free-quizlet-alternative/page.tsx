@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function FreeQuizletAlternativeGuide() {
   return (
-    <article className="prose-Selrano">
+    <article className="prose-selrano">
       <p className="text-sm font-bold text-[var(--muted)]">Guide</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">{guide.title}</h1>
       <p className="mt-4 text-base leading-7 text-[var(--muted-strong)]">

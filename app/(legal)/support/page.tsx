@@ -48,7 +48,7 @@ export default function SupportPage() {
         <div className="glass-card p-5">
           <HelpCircle size={20} />
           <p className="mt-4 text-sm font-extrabold">All inquiries</p>
-          <p className="mt-2 text-sm text-[var(--muted-strong)]">Privacy, security, and account questions — same address.</p>
+          <p className="mt-2 text-sm text-[var(--muted-strong)]">Privacy, security, and account questions use the same address.</p>
         </div>
       </div>
 

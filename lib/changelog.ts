@@ -1,6 +1,6 @@
 /**
  * Changelog entries, newest first. Add a new entry here whenever a feature ships
- * — this file is the only thing the /changelog page reads, so no other code
+ * This file is the only thing the /changelog page reads, so no other code
  * changes are needed to post an update.
  */
 export type ChangelogEntry = {
@@ -15,35 +15,35 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-07-15",
     title: "Practice any deck anytime",
     description:
-      "Open a deck from Flashcards and flip through every card whenever you want. Study mode stays for due-card review and spaced repetition — practice never messes with your schedule.",
+      "Open a deck from Flashcards and flip through every card whenever you want. Study mode stays for due-card review and spaced repetition, so practice never changes your schedule.",
     tag: "Improved"
   },
   {
     date: "2026-07-15",
     title: "Save shared decks to your workspace",
     description:
-      "On any public deck link, tap Add to my workspace to copy the cards into your account — or sign up and land right back on the deck to save it.",
+      "On any public deck link, tap Add to my workspace to copy the cards into your account, or sign up and return to the deck to save it.",
     tag: "New"
   },
   {
     date: "2026-07-14",
     title: "Inline citations in AI chat",
     description:
-      "Answers grounded in your notes and files now carry clickable citation markers — click one to jump straight to the exact passage, and page for PDFs, it came from.",
+      "Answers grounded in your notes and files now carry clickable citation markers. Click one to jump straight to the exact passage and PDF page it came from.",
     tag: "New"
   },
   {
     date: "2026-07-14",
     title: "Chat says when your material doesn't cover it",
     description:
-      "When your project's notes and files don't have anything relevant to a question, Selrano now says so plainly instead of quietly falling back on general knowledge.",
+      "When your project's notes and files do not have anything relevant to a question, Selrano now says so plainly instead of quietly falling back on general knowledge.",
     tag: "Improved"
   },
   {
     date: "2026-07-11",
     title: "Share flashcard decks publicly",
     description:
-      "Flip any deck to public from the Flashcards page and get a shareable link — anyone can study it, no account required, and it's fully readable to search engines.",
+      "Flip any deck to public from the Flashcards page and get a shareable link. Anyone can study it without an account, and it is fully readable to search engines.",
     tag: "New"
   },
   {
@@ -56,7 +56,7 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-07-10",
     title: "AI actions in chat",
     description:
-      "Ask Selrano to do things, not just answer — \"make me 10 flashcards on this chapter\" or \"draft a note summarizing this\" and it does it, using your own notes and files as context.",
+      "Ask Selrano to do things, not just answer. Try \"make me 10 flashcards on this chapter\" or \"draft a note summarizing this\" and it will use your own notes and files as context.",
     tag: "New"
   },
   {

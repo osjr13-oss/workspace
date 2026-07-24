@@ -39,7 +39,7 @@ export function ReferralSection() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API unavailable — the link is still visible to copy manually.
+      // Clipboard API unavailable. The link is still visible to copy manually.
     }
   }
 

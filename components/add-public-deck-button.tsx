@@ -72,7 +72,7 @@ export function AddPublicDeckButton({
           <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">
             {isAuthenticated
               ? `Add “${deckName}” to your workspace so you can practice and review it anytime.`
-              : `Upload your notes and get flashcards like this in seconds — or save “${deckName}” to your own workspace.`}
+              : `Upload your notes and get flashcards like this in seconds, or save “${deckName}” to your own workspace.`}
           </p>
         </div>
         {isAuthenticated ? (

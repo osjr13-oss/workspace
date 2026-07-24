@@ -6,11 +6,11 @@ const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@selrano.c
 
 export const brand = {
   name: "Selrano",
-  tagline: "A workspace for thinking, writing, and studying.",
+  tagline: "An AI workspace that learns how you think and write.",
   legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "Selrano",
 
   emails: {
-    /** Public contact — one inbox for now; legal pages use this too */
+    /** Public contact. Legal pages use this address too. */
     support: supportEmail,
     hello: supportEmail,
     security: supportEmail,
@@ -31,7 +31,7 @@ export const brand = {
 
   support: {
     responseSla: "1 business day",
-    hours: "Monday–Friday, 9:00–17:00 US Eastern"
+    hours: "Monday-Friday, 9:00-17:00 US Eastern"
   },
 
   colors: {

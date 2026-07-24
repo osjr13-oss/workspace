@@ -2,28 +2,14 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { ChatComposer } from "@/components/chat-composer";
+import { ChatMessageBubble } from "@/components/chat-message";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import { CitationBadge } from "@/components/citation-badge";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
+import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-/** Turns "[1]" markers into markdown links ReactMarkdown will render, so the
- * `a` override below can swap them for clickable citation badges. */
-function withCitationLinks(content: string) {
-  return content.replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
-}
-
-/** react-markdown sanitizes link URLs by default and strips any scheme it
- * doesn't recognize (http/https/mailto/...) down to an empty href — which
- * silently ate our "citation:n" links. Let those through unchanged, and keep
- * the default sanitizer for every other URL. */
-function urlTransform(url: string) {
-  return url.startsWith("citation:") ? url : defaultUrlTransform(url);
-}
 
 export default function ChatsPage() {
   return (
@@ -85,22 +71,22 @@ function ChatsContent() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  async function send(event: React.FormEvent) {
-    event.preventDefault();
-    if (!text.trim()) return;
-    const prompt = text;
-    setText("");
+  async function requestReply(options: {
+    message?: string;
+    editMessageId?: string;
+    regenerateMessageId?: string;
+  }) {
     setLoading(true);
-    setMessages((current) => [
-      ...current,
-      { id: "pending-user", thread_id: threadId || "pending", user_id: "", role: "user", content: prompt, created_at: new Date().toISOString() }
-    ]);
 
     try {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, threadId, projectId: projectId || null })
+        body: JSON.stringify({
+          ...options,
+          threadId,
+          projectId: projectId || null
+        })
       });
 
       if (!response.ok || !response.body) {
@@ -153,6 +139,48 @@ function ChatsContent() {
     }
   }
 
+  async function send(event: React.FormEvent) {
+    event.preventDefault();
+    const prompt = removeEmDashes(text).trim();
+    if (!prompt) return;
+    setText("");
+    setMessages((current) => [
+      ...current,
+      {
+        id: "pending-user",
+        thread_id: threadId || "pending",
+        user_id: "",
+        role: "user",
+        content: prompt,
+        created_at: new Date().toISOString()
+      }
+    ]);
+    await requestReply({ message: prompt });
+  }
+
+  async function editAndResend(messageId: string, content: string) {
+    setMessages((current) => {
+      const index = current.findIndex((message) => message.id === messageId);
+      if (index === -1) return current;
+      return current
+        .slice(0, index + 1)
+        .map((message) =>
+          message.id === messageId
+            ? { ...message, content: removeEmDashes(content) }
+            : message
+        );
+    });
+    await requestReply({ message: removeEmDashes(content), editMessageId: messageId });
+  }
+
+  async function regenerate(messageId: string) {
+    setMessages((current) => {
+      const index = current.findIndex((message) => message.id === messageId);
+      return index === -1 ? current : current.slice(0, index);
+    });
+    await requestReply({ regenerateMessageId: messageId });
+  }
+
   async function deleteThread() {
     if (!threadId) return;
     if (!confirm("Delete this conversation? All messages will be permanently removed.")) return;
@@ -187,7 +215,7 @@ function ChatsContent() {
               onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
               className={`w-full rounded-2xl p-4 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
             >
-              <p className="font-extrabold">{thread.title}</p>
+              <p className="font-extrabold">{removeEmDashes(thread.title)}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
             </button>
           ))}
@@ -215,43 +243,19 @@ function ChatsContent() {
         <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length ? (
             messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[78%] rounded-[18px] border border-[var(--border)] p-4 text-sm leading-6 ${message.role === "user" ? "bg-[var(--text)] text-white" : "bg-white/72 text-[var(--muted-strong)]"}`}>
-                  {message.role === "user" ? (
-                    message.content
-                  ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      urlTransform={urlTransform}
-                      className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-extrabold prose-headings:tracking-tight prose-code:text-xs prose-pre:text-xs"
-                      components={
-                        message.citations?.length
-                          ? {
-                              a: ({ href, children }) => {
-                                const marker = href?.startsWith("citation:") ? href.slice("citation:".length) : null;
-                                const citation = marker ? message.citations?.find((c) => c.marker === marker) : null;
-                                if (citation) return <CitationBadge citation={citation} />;
-                                return (
-                                  <a href={href} target="_blank" rel="noreferrer">
-                                    {children}
-                                  </a>
-                                );
-                              }
-                            }
-                          : undefined
-                      }
-                    >
-                      {message.citations?.length ? withCitationLinks(message.content) : message.content}
-                    </ReactMarkdown>
-                  )}
-                </div>
-              </div>
+              <ChatMessageBubble
+                key={message.id}
+                message={message}
+                busy={loading}
+                onEdit={editAndResend}
+                onRegenerate={regenerate}
+              />
             ))
           ) : (
             <div className="grid h-full place-items-center text-center">
               <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Ask Selrano anything.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Use a project to include its notes, files, and flashcards.</p>
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Talk to Selrano.</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere, or add a project when your own material should guide the answer.</p>
               </div>
             </div>
           )}
@@ -259,10 +263,7 @@ function ChatsContent() {
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
-            <input aria-label="Chat message" className="min-h-11 flex-1 bg-transparent px-4 text-sm outline-none" value={text} onChange={(event) => setText(event.target.value)} placeholder="Ask anything, or paste text to transform..." />
-            <button type="submit" className="btn-primary min-h-11 px-4" disabled={loading}>
-              <Send size={18} />
-            </button>
+            <ChatComposer value={text} disabled={loading} onChange={setText} />
           </div>
         </form>
       </section>

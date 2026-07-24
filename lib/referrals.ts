@@ -8,7 +8,7 @@ const MAX_CODE_ATTEMPTS = 5;
 
 /**
  * Lazily assigns a referral code the first time it's read. Writes go through
- * the service role because user_limits has no client-side update policy —
+ * the service role because user_limits has no client-side update policy.
  * all mutation of tier/limit fields is server-controlled by design.
  */
 export async function getOrCreateReferralCode(userId: string): Promise<string> {
@@ -64,7 +64,7 @@ export async function getReferralStats(supabase: SupabaseClient, userId: string)
 /**
  * Records a referral for a newly-signed-up user and grants the referrer a
  * Pro-equivalent bonus once they cross REFERRALS_REQUIRED. Called server-side
- * only (auth callback / welcome flow), never reachable from the client —
+ * only (auth callback / welcome flow), never reachable from the client.
  * the referrals table has no client insert policy.
  */
 export async function captureReferral(code: string | null | undefined, referredUserId: string): Promise<void> {
@@ -86,7 +86,7 @@ export async function captureReferral(code: string | null | undefined, referredU
     .insert({ referrer_id: referrer.user_id, referred_id: referredUserId });
 
   if (insertError) {
-    // Unique violation means this user was already credited to someone (or retried) — no-op.
+    // A unique violation means this user was already credited to someone or retried.
     if (insertError.code === "23505") return;
     console.error("[referrals] capture failed", insertError);
     return;

@@ -1,6 +1,6 @@
 /**
  * Guide article registry. Add an entry here and create the matching page
- * under app/(legal)/guides/[slug]/ — both the guides index and the sitemap
+ * under app/(legal)/guides/[slug]/. Both the guides index and the sitemap
  * read this file, so nothing else needs to change to publish one.
  */
 export type Guide = {

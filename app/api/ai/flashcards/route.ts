@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
-import { callGroq } from "@/lib/groq";
+import { completeAi, configuredAiModel } from "@/lib/ai";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { removeEmDashes } from "@/lib/text";
 
 export const runtime = "nodejs";
 
@@ -38,21 +39,21 @@ export async function POST(request: Request) {
     if (!sourceText) return NextResponse.json({ error: "No source text found" }, { status: 400 });
 
     const limitError = await reserveAiRequest(supabase, user.id, "flashcards", {
-      model: process.env.GROQ_MODEL || "groq",
+      model: configuredAiModel(),
       input_chars: sourceText.length
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
-    const result = await callGroq([
+    const result = await completeAi([
       {
         role: "system",
         content:
-          'Create 8 to 12 concise study flashcards. Return strict JSON only with this shape: {"cards":[{"front":"question","back":"answer"}]}.'
+          'Create 8 to 12 concise study flashcards. Never use an em dash. Return strict JSON only with this shape: {"cards":[{"front":"question","back":"answer"}]}.'
       },
-      { role: "user", content: sourceText.slice(0, 12000) }
+      { role: "user", content: removeEmDashes(sourceText.slice(0, 12000)) }
     ]);
 
-    const parsed = parseCards(result);
+    const parsed = parseCards(result.text);
     if (!parsed.length) return NextResponse.json({ error: "Model did not return usable cards" }, { status: 500 });
 
     const dueAt = new Date().toISOString();
