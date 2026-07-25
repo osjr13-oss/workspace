@@ -12,6 +12,34 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-24",
+    title: "A calmer, more capable chat",
+    description:
+      "Prompts now sit in clean message cards, answers use a more readable editorial layout, and every completed response includes copy, read-aloud, and regenerate controls. A three-stage thinking trace shows what Selrano is doing while you wait.",
+    tag: "Improved"
+  },
+  {
+    date: "2026-07-24",
+    title: "Memory that reaches back",
+    description:
+      "Selrano can build durable memories from earlier conversations when an established account has no saved memories yet. Direct questions about what Selrano knows now retrieve the strongest facts instead of relying only on matching words.",
+    tag: "Fixed"
+  },
+  {
+    date: "2026-07-24",
+    title: "Weekly workspace check-ins",
+    description:
+      "People who opt into updates can now receive a useful weekly summary even when they are active. Delivery is claimed before sending to prevent duplicates, and failed sends release the claim for a later retry.",
+    tag: "Improved"
+  },
+  {
+    date: "2026-07-24",
+    title: "Faster conversation cleanup",
+    description:
+      "Delete a conversation directly from the chat list without opening it first. The Study area also has a sharper, more modern navigation icon.",
+    tag: "Improved"
+  },
+  {
     date: "2026-07-15",
     title: "Practice any deck anytime",
     description:

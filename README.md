@@ -2,11 +2,13 @@
 
 Selrano is a personal AI workspace that learns how you think and write. Chat is the primary experience, supported by projects, notes, private files, web search, review tools, and flashcards.
 
+The current chat uses Anthropic first with Groq fallback, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+
 ## Local Setup
 
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env.local` and fill in Supabase, Anthropic, and Groq values.
-3. Review the migration history and apply only migrations that are not already present in the target database. The new personalization tables are defined in `20260724000000_selrano_personalization.sql`.
+3. Review the migration history and live schema before applying anything. The personalization tables are defined in `20260724000000_selrano_personalization.sql`, but the production tables already exist even though that filename is not present in tracked production migration history.
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
 5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
 6. Start the app with `npm run dev`.
@@ -72,4 +74,6 @@ npm run typecheck
 npm run lint
 npm audit --omit=dev --audit-level=high
 npm run build
+rg -n '\x{2014}' app components lib
+git diff --check
 ```

@@ -20,10 +20,13 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 16. `migrations/20260711001827_restore_service_role_table_grants.sql` — restore live server access across public tables after production migration drift
 17. `migrations/20260711120000_public_deck_sharing.sql` — public share links for flashcard decks (`is_public`, `share_slug`), additive anon-read RLS policies
 18. `migrations/20260711120500_referral_unlock.sql` — referral codes, `referrals` table, and Pro-equivalent bonus recognized by `reserve_ai_usage`/`enforce_plan_resource_limits`
+19. `migrations/20260724000000_selrano_personalization.sql` — style profiles and durable content memories
 
 ## Existing production environments
 
 Production historically received some numbered migrations outside the migration-history table. Do not replay the entire list against an existing database. Compare remote migration history and schema first, then apply a focused, idempotent reconciliation migration.
+
+The July 24 inspection confirmed that the live production database already contains `style_profiles`, `content_memories`, and `lifecycle_email_log`, even though the personalization migration filename is not present in tracked remote migration history. Do not apply the personalization migration blindly.
 
 ## Auth redirect URLs
 
@@ -46,6 +49,8 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_MODEL` (optional, defaults to `claude-sonnet-4-6`)
 - `GROQ_API_KEY`
 - `GROQ_MODEL`
 - `EMBEDDING_API_KEY` (optional, enables RAG over uploaded files)
