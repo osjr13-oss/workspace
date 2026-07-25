@@ -47,6 +47,8 @@ export async function callGroqWithTools(
 
   if (!response.ok) {
     const detail = await response.text();
+    const recovered = recoverMalformedToolCall(detail);
+    if (recovered) return recovered;
     throw new Error(`Groq tool request failed: ${detail}`);
   }
 
@@ -55,6 +57,41 @@ export async function callGroqWithTools(
   };
 
   return payload.choices?.[0]?.message ?? { role: "assistant", content: "" };
+}
+
+/**
+ * llama-3.3-70b-versatile occasionally emits a tool call as inline text like
+ * `<function=web_search {"query": "..."}>` instead of structured JSON. Groq's
+ * API rejects this itself (code "tool_use_failed") before we see real
+ * `tool_calls`, but the rejected text still carries a well-formed call, so we
+ * parse it out rather than losing the tool call entirely.
+ */
+function recoverMalformedToolCall(errorBody: string): GroqAssistantMessage | null {
+  let parsed: { error?: { code?: string; failed_generation?: string } };
+  try {
+    parsed = JSON.parse(errorBody);
+  } catch {
+    return null;
+  }
+
+  const failedGeneration = parsed.error?.failed_generation;
+  if (parsed.error?.code !== "tool_use_failed" || !failedGeneration) return null;
+
+  const match = failedGeneration.match(/<function=([a-zA-Z_]\w*)\s*(\{[\s\S]*?\})/);
+  if (!match) return null;
+
+  const [, name, argsJson] = match;
+  try {
+    JSON.parse(argsJson);
+  } catch {
+    return null;
+  }
+
+  return {
+    role: "assistant",
+    content: null,
+    tool_calls: [{ id: `recovered_${Date.now()}`, type: "function", function: { name, arguments: argsJson } }]
+  };
 }
 
 /**
