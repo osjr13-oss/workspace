@@ -6,12 +6,6 @@ export type WebSearchResult = {
   snippet: string;
 };
 
-export function shouldSearchWeb(message: string) {
-  return /\b(?:latest|current|currently|today|tonight|recent|recently|news|price|weather|schedule|score|search the web|search online|look up online|find online)\b/i.test(
-    message
-  );
-}
-
 export async function webSearch(query: string): Promise<WebSearchResult[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (!apiKey) return [];

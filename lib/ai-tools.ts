@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { searchChunksFullText } from "@/lib/retrieve-context";
+import { webSearch } from "@/lib/web-search";
+import type { Citation } from "@/lib/types";
 
 /**
  * Tools the chat AI can invoke for explicit workspace action requests.
@@ -19,6 +21,21 @@ export const toolDefinitions = [
         type: "object",
         properties: {
           query: { type: "string", description: "What to look for, in plain words." }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description:
+        "Search the live web for current, real-time, or recent information. Use this whenever you are not confident your training data is current enough to answer well: news, prices, recent releases, current events, or anything about people, products, or facts that may have changed since your training cutoff.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "What to search for." }
         },
         required: ["query"]
       }
@@ -71,6 +88,10 @@ export type ToolContext = {
   supabase: SupabaseClient;
   userId: string;
   projectId: string | null;
+  // Web search results need numbered citation markers, shared across calls so
+  // markers stay unique alongside any project-context citations already assigned.
+  webCitations: Record<string, Citation>;
+  citationOffset: number;
 };
 
 /** Run a single tool call and return a short text result for the model to read. */
@@ -78,6 +99,8 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
   switch (name) {
     case "search_workspace":
       return searchWorkspace(ctx, String(args.query ?? ""));
+    case "web_search":
+      return runWebSearch(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
     case "create_flashcards":
@@ -85,6 +108,22 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+async function runWebSearch(ctx: ToolContext, query: string): Promise<string> {
+  const trimmed = query.trim();
+  if (!trimmed) return "No search query was provided.";
+
+  const results = await webSearch(trimmed);
+  if (!results.length) return "No current web results were found for that search.";
+
+  return results
+    .map((result) => {
+      const marker = String(ctx.citationOffset + Object.keys(ctx.webCitations).length + 1);
+      ctx.webCitations[marker] = { kind: "web", marker, title: result.title, url: result.url, snippet: result.snippet };
+      return `[${marker}] ${result.title}\nURL: ${result.url}\n${result.snippet}`;
+    })
+    .join("\n\n");
 }
 
 async function searchWorkspace(ctx: ToolContext, query: string): Promise<string> {

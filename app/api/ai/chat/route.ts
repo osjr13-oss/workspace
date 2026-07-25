@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
-import { executeTool, toolDefinitions } from "@/lib/ai-tools";
+import { executeTool, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
 import { configuredAiModel, streamAi } from "@/lib/ai";
 import { extractMemories, retrieveMemories } from "@/lib/content-memory";
 import { callGroqWithTools, type GroqChatMessage } from "@/lib/groq";
@@ -9,7 +9,6 @@ import { serializeError } from "@/lib/serialize-error";
 import { ingestUserStyle } from "@/lib/style-profile";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { removeEmDashes } from "@/lib/text";
-import { shouldSearchWeb, webSearch } from "@/lib/web-search";
 import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -165,29 +164,12 @@ export async function POST(request: Request) {
       if (userMessageError) throw userMessageError;
     }
 
-    const [historyResult, context, styleProfile, memories, webResults] = await Promise.all([
+    const [historyResult, context, styleProfile, memories] = await Promise.all([
       supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(16),
       loadProjectContext(supabase, projectId, userContent),
       ingestUserStyle(supabase, user.id, userContent),
-      retrieveMemories(supabase, user.id, userContent),
-      shouldSearchWeb(userContent) ? webSearch(userContent) : Promise.resolve([])
+      retrieveMemories(supabase, user.id, userContent)
     ]);
-
-    const webCitations: Record<string, Citation> = {};
-    const webContext = webResults
-      .map((result, index) => {
-        const marker = String(Object.keys(context.citations).length + index + 1);
-        webCitations[marker] = {
-          kind: "web",
-          marker,
-          title: result.title,
-          url: result.url,
-          snippet: result.snippet
-        };
-        return `[${marker}] ${result.title}\nURL: ${result.url}\n${result.snippet}`;
-      })
-      .join("\n\n");
-    const allCitations = { ...context.citations, ...webCitations };
 
     const messages = [
       {
@@ -229,16 +211,6 @@ export async function POST(request: Request) {
               }
             ]
           : []),
-      ...(webContext
-        ? [
-            {
-              role: "system" as const,
-              content:
-                "Live web search results follow. Use them for current information and cite relevant claims with the provided numeric markers. Do not invent citations.\n\n" +
-                webContext
-            }
-          ]
-        : []),
       ...([
         ...((historyResult.data || []) as Array<{
           role: "user" | "assistant";
@@ -255,13 +227,13 @@ export async function POST(request: Request) {
     if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
     const finalThreadId = threadId;
 
-    const streamMessages = shouldUseWorkspaceTools(userContent)
-      ? await prepareToolMessages(messages, {
-        supabase,
-        userId: user.id,
-        projectId
-      })
-      : messages;
+    const { messages: streamMessages, webCitations } = await prepareToolMessages(messages, {
+      supabase,
+      userId: user.id,
+      projectId,
+      citationOffset: Object.keys(context.citations).length
+    });
+    const allCitations = { ...context.citations, ...webCitations };
 
     const encoder = new TextEncoder();
 
@@ -336,24 +308,31 @@ export async function POST(request: Request) {
   }
 }
 
-function shouldUseWorkspaceTools(message: string): boolean {
-  const mentionsOwnedMaterial = /\b(?:my|this)\s+(?:notes?|files?|documents?|materials?|workspace|project)\b/i;
-  const requestsCreation = /\b(?:create|make|draft|save|add|generate|build|turn)\b[\s\S]{0,80}\b(?:notes?|flashcards?|study cards?|decks?)\b/i;
-  const requestsSearch = /\b(?:search|find|look up|look for)\b[\s\S]{0,80}\b(?:notes?|files?|documents?|materials?|workspace|project)\b/i;
-  return mentionsOwnedMaterial.test(message) || requestsCreation.test(message) || requestsSearch.test(message);
-}
-
 async function prepareToolMessages(
   baseMessages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-  ctx: { supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"]; userId: string; projectId: string | null }
-): Promise<GroqChatMessage[]> {
+  ctx: {
+    supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"];
+    userId: string;
+    projectId: string | null;
+    citationOffset: number;
+  }
+): Promise<{ messages: GroqChatMessage[]; webCitations: Record<string, Citation> }> {
   const actionGuide = {
     role: "system" as const,
     content:
-      "You can take actions in the user's workspace with the provided tools: search their notes and files, create a note, or create a flashcard deck. When the user asks you to do one of these, call the matching tool rather than describing how. Only create content when the user clearly asks for it. After using tools, briefly confirm what you did in plain prose."
+      "You can take actions with the provided tools: search the user's notes and files, search the live web, create a note, or create a flashcard deck. Call web_search whenever you are not confident your training data is current enough to answer well, such as news, prices, recent releases, or anything that may have changed since your training cutoff. Call the workspace tools only when the user clearly asks about their own materials or asks you to create something. After using tools, answer normally in plain prose. Cite web search results using the bracketed reference id each result provides, like this: <claim> [1]. Cite only ids that were given to you."
   };
 
   const toolMessages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];
+  const webCitations: Record<string, Citation> = {};
+  const toolCtx: ToolContext = {
+    supabase: ctx.supabase,
+    userId: ctx.userId,
+    projectId: ctx.projectId,
+    webCitations,
+    citationOffset: ctx.citationOffset
+  };
+
   let reply;
   try {
     reply = await callGroqWithTools(toolMessages, toolDefinitions, { temperature: 0.4 });
@@ -361,24 +340,24 @@ async function prepareToolMessages(
     // A malformed or unavailable tool request should never prevent a normal
     // streamed answer from reaching the user.
     console.error("[chat] tool call failed, falling back to streamed answer", serializeError(error));
-    return baseMessages;
+    return { messages: baseMessages, webCitations };
   }
 
-  if (!reply.tool_calls?.length) return baseMessages;
+  if (!reply.tool_calls?.length) return { messages: baseMessages, webCitations };
 
   toolMessages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });
   for (const call of reply.tool_calls) {
     let result: string;
     try {
       const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
-      result = await executeTool(call.function.name, args, ctx);
+      result = await executeTool(call.function.name, args, toolCtx);
     } catch (error) {
       result = `Error running ${call.function.name}: ${serializeError(error)}`;
     }
     toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
   }
 
-  return toolMessages;
+  return { messages: toolMessages, webCitations };
 }
 
 type FallbackChunkRow = {
