@@ -10,7 +10,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
 - Do not market exact AI message allowances on public pricing or acquisition pages. Authenticated billing may show a user's current usage and plan limit for transparency.
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.
-- Normal chat responses stream incrementally. Explicit workspace requests can search the user's materials, create notes, and create flashcard decks, then stream the final response.
+- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, create notes, or create flashcard decks, then stream the final response.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Groq keys, Resend keys, customer content, or browser-session data.
 - Preserve user changes in the working tree and never delete production/test data without explicit approval.
@@ -34,8 +34,8 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, workspace tools, streaming, and message persistence.
 - `lib/ai.ts` — Anthropic-first completion and streaming with Groq fallback before any token has been emitted.
-- `lib/groq.ts` — Groq Chat Completions, SSE parsing, and tool-call transport.
-- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions.
+- `lib/groq.ts` — Groq Chat Completions, SSE parsing, tool-call transport, and recovery from malformed tool-call output.
+- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions plus the `web_search` tool (backed by `lib/web-search.ts`).
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable fact extraction, historical backfill, explicit recall, and relevance ranking.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.

@@ -7,7 +7,7 @@ This branch transforms the existing Selrano application into an adaptive, chat-f
 - Chat is the primary signed-in destination.
 - Claude Sonnet 4.6 is the primary AI model.
 - Groq remains the automatic fallback.
-- Tavily provides optional current web sources when a prompt needs them.
+- Tavily provides current web sources through a `web_search` tool the model calls when it judges a question needs them (see `docs/HANDOFF.md` for the July 25 reliability fixes).
 - Style learning and durable content memory are stored separately.
 - Users can edit a message and regenerate an assistant response.
 - Local autocorrect improves common typing mistakes before submission.

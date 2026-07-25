@@ -12,6 +12,20 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-07-25",
+    title: "Web search that actually works",
+    description:
+      "Ask about anything time-sensitive, like news, prices, or a recent release, and Selrano now reliably searches the web and cites what it finds. The AI decides when a question needs current information instead of relying on specific trigger words.",
+    tag: "Fixed"
+  },
+  {
+    date: "2026-07-25",
+    title: "A cleaner plan and billing page",
+    description:
+      "Removed the redundant usage counters from Settings. Also replaced a generic sparkle icon across the app with clearer ones: a crown for Pro, and the Selrano mark on shared decks.",
+    tag: "Improved"
+  },
+  {
     date: "2026-07-24",
     title: "A calmer, more capable chat",
     description:

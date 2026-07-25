@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **July 24, 2026**
+Last updated: **July 25, 2026**
 
 ## Current state
 
@@ -13,8 +13,8 @@ Last updated: **July 24, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `6c5d771`, merging the adaptive AI transformation and the July 24 chat, email, memory, and pricing improvements.
-- The merge was pushed to `main`. The resulting Vercel production deployment was not independently observed from this environment.
+- Current main commit: `e9fd5f5`, following the July 25 fixes for live web search and a Settings/icon cleanup on top of the July 24 adaptive AI transformation merge (`6c5d771`).
+- All three July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) were pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` and direct production checks from this environment.
 
 ## Product positioning and UI direction
 
@@ -78,6 +78,10 @@ Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and
 - Public pricing and guide copy no longer advertise exact AI message allowances.
 - Opted-in accounts at least seven days old are eligible for a weekly workspace check-in, subject to a seven-day minimum between lifecycle emails.
 - Lifecycle sends are claimed in the log before delivery to prevent duplicates. A failed send removes its claim so it can be retried.
+- The chat AI tool-decision pass now runs on every message instead of only messages matching a keyword gate, and offers `web_search` alongside the existing workspace tools so the model itself judges when it needs current information.
+- Malformed Groq tool-call output (`llama-3.3-70b-versatile` occasionally emits `<function=...>` as plain text instead of structured JSON) is parsed and recovered from the rejected error body instead of being silently discarded.
+- The Settings billing panel no longer shows the redundant AI today/Projects/Decks usage counters.
+- Generic sparkle iconography was replaced with context-specific icons: a crown for Pro/premium actions, the Selrano brand mark for "Made with Selrano" attribution, and the existing wand icon unified across all AI-transform actions (flashcard generation, note transforms, quick actions).
 
 ## Production database
 
@@ -115,7 +119,7 @@ The July 24 memory investigation found historical user messages but no content-m
 3. Persist the user message.
 4. Load recent conversation history, project context, style profile, and relevant durable memories.
 5. If an established account has no memories, extract durable facts from earlier user messages before answering.
-6. Route explicit workspace requests through authenticated tools.
+6. Run the tool-decision pass on every message, offering workspace search, live web search, note creation, and flashcard creation; the model decides which, if any, to call.
 7. Stream Anthropic text when configured. Fall back to Groq only if Anthropic fails before any text is emitted.
 8. Remove em dashes at every model-output boundary.
 9. Persist the assistant response before closing the browser stream.
@@ -123,6 +127,8 @@ The July 24 memory investigation found historical user messages but no content-m
 11. Reload the thread from database truth.
 
 Do not reintroduce an environment switch for streaming, AI actions, or full-text search.
+
+The July 25 investigation found that web search was gated by a keyword regex that missed most real current-info questions (for example "what is X"), and separately that Groq's `llama-3.3-70b-versatile` sometimes emits tool calls as malformed inline text that its own API rejects. Both were fixed and confirmed via production logs: `web_search` is now a model-callable tool run on every message, and malformed tool-call output is parsed and recovered instead of discarded.
 
 ## Validation and release
 
@@ -141,16 +147,21 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Known limitations and next priorities
 
-1. Confirm the `6c5d771` Vercel production deployment, then smoke-test premium chat rendering, direct list deletion, and explicit memory recall on the real account.
-2. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
-3. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
-4. Address Supabase performance-advisor warnings: missing foreign-key indexes and RLS policies that call `auth.uid()` without a scalar subquery.
-5. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
-6. Add production error tracking and product analytics before scaling paid acquisition.
-7. Add automated browser regression coverage for signup, notes, upload, chat streaming, memory backfill, flashcard generation, study, billing state, and logout.
+1. Smoke-test premium chat rendering, direct list deletion, and explicit memory recall on the real account — not yet independently confirmed since the July 24 adaptive-AI merge.
+2. The Groq malformed-tool-call recovery in `lib/groq.ts` parses one known failure shape from `llama-3.3-70b-versatile`; it is a targeted workaround, not a guaranteed fix if Groq's output format drifts further. Watch production logs for `[chat] tool call failed` entries that are not recovered.
+3. Supabase `HEAD .../select=id` count queries (`projects`, `notes`, `files`, `flashcards`) were observed returning 503 in production logs during the 2026-07-25 investigation. Not yet root-caused; investigate before it affects visible dashboard counts.
+4. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
+5. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
+6. Address Supabase performance-advisor warnings: missing foreign-key indexes and RLS policies that call `auth.uid()` without a scalar subquery.
+7. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
+8. Add production error tracking and product analytics before scaling paid acquisition.
+9. Add automated browser regression coverage for signup, notes, upload, chat streaming, memory backfill, flashcard generation, study, billing state, and logout.
 
 ## Recent release commits
 
+- `e9fd5f5` — remove usage stat cards from Settings and use more specific icons
+- `de0b2c2` — recover malformed Groq function calls instead of dropping them
+- `79d56c3` — make web search a model-callable tool instead of a keyword gate
 - `6c5d771` — merge the adaptive Selrano AI experience into `main`
 - `9c9a4b1` — polish chat and repair lifecycle systems
 - `6556d2f` — transform Selrano into an adaptive AI workspace
