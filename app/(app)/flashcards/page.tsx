@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Trash2, Wand2 } from "lucide-react";
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
@@ -303,7 +303,7 @@ function FlashcardsContent() {
               className="btn-primary shrink-0"
               disabled={!source || !deckId || working}
             >
-              <Sparkles size={18} />
+              <Wand2 size={18} />
               {working ? "Generating…" : "Generate"}
             </button>
           </div>

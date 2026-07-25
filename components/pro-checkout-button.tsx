@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Crown } from "lucide-react";
 
 export function ProCheckoutButton({ className = "btn-primary w-full justify-center" }: { className?: string }) {
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export function ProCheckoutButton({ className = "btn-primary w-full justify-cent
   return (
     <div>
       <button type="button" className={className} onClick={checkout} disabled={loading}>
-        <Sparkles size={18} />
+        <Crown size={18} />
         {loading ? "Redirecting..." : "Upgrade to Pro"}
       </button>
       {message ? <p className="mt-3 text-sm font-bold text-[var(--critical)]">{message}</p> : null}

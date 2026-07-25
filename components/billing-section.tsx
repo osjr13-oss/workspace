@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CreditCard, Sparkles } from "lucide-react";
+import { CreditCard, Crown } from "lucide-react";
 import { PLANS } from "@/lib/plans";
 
 type BillingStatus = {
@@ -135,27 +135,9 @@ export function BillingSection() {
           </p>
         </div>
         <span className={`status-pill ${isPro ? "border-[var(--border-strong)] bg-[var(--surface-strong)]" : ""}`}>
-          {isPro ? <Sparkles size={14} /> : null}
+          {isPro ? <Crown size={14} /> : null}
           {status.planName}
         </span>
-      </div>
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <UsageStat label="AI today" value={`${status.usage.aiToday} / ${status.limits.dailyAiRequests}`} />
-        <UsageStat
-          label="Projects"
-          value={
-            status.limits.maxProjects === null
-              ? String(status.usage.projects)
-              : `${status.usage.projects} / ${status.limits.maxProjects}`
-          }
-        />
-        <UsageStat
-          label="Decks"
-          value={
-            status.limits.maxDecks === null ? String(status.usage.decks) : `${status.usage.decks} / ${status.limits.maxDecks}`
-          }
-        />
       </div>
 
       <p className="mt-4 text-xs text-[var(--muted)]">File uploads up to {status.limits.maxFileMb} MB on your plan.</p>
@@ -168,12 +150,12 @@ export function BillingSection() {
           </button>
         ) : status.stripeConfigured ? (
           <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading}>
-            <Sparkles size={18} />
+            <Crown size={18} />
             {actionLoading ? "Redirecting…" : `Upgrade to Pro, $${PLANS.pro.priceMonthly}/mo`}
           </button>
         ) : (
           <Link href="/pricing" className="btn-primary">
-            <Sparkles size={18} />
+            <Crown size={18} />
             View Pro
           </Link>
         )}
@@ -190,14 +172,5 @@ export function BillingSection() {
 
       {message ? <p className="mt-4 text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
     </section>
-  );
-}
-
-function UsageStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-white/60 px-4 py-3">
-      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</p>
-      <p className="mt-1 text-lg font-extrabold">{value}</p>
-    </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FolderPlus, Sparkles } from "lucide-react";
+import { FolderPlus } from "lucide-react";
 import { brand } from "@/lib/brand";
 
 type AddPublicDeckButtonProps = {
@@ -67,7 +68,7 @@ export function AddPublicDeckButton({
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-sm font-extrabold">
-            <Sparkles size={16} /> Made with {brand.name}
+            <Image src="/logo.svg" alt="" width={16} height={16} /> Made with {brand.name}
           </p>
           <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">
             {isAuthenticated

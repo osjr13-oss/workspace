@@ -7,3 +7,5 @@ out
 *.tsbuildinfo
 meridian-*-qa.png
 .DS_Store
+.vercel
+.env*
