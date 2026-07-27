@@ -85,6 +85,52 @@ select {
   background: var(--surface-hover);
 }
 
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(
+    var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
+    var(--spot-color, rgba(21, 24, 31, 0.55)),
+    transparent 62%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
+    var(--spot-glow, rgba(21, 24, 31, 0.05)),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.spotlight[data-active="true"]::before,
+.spotlight[data-active="true"]::after {
+  opacity: 1;
+}
+
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
