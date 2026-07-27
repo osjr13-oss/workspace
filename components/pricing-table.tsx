@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { ProCheckoutButton } from "@/components/pro-checkout-button";
+import { SpotlightCard } from "@/components/spotlight-card";
 import { PLANS } from "@/lib/plans";
 
 const rows = [
@@ -19,7 +20,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
         const plan = PLANS[key];
         const isPro = key === "pro";
         return (
-          <div key={key} className={`panel p-7 ${isPro ? "border-[var(--border-strong)]" : ""}`}>
+          <SpotlightCard key={key} className={`panel p-7 ${isPro ? "border-[var(--border-strong)]" : ""}`}>
             <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{plan.name}</p>
             <p className="mt-3 text-4xl font-extrabold tracking-[-0.04em]">
               {plan.priceMonthly === 0 ? "Free" : `$${plan.priceMonthly}`}
@@ -47,7 +48,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
                 )}
               </div>
             ) : null}
-          </div>
+          </SpotlightCard>
         );
       })}
     </div>

@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { LandingCta } from "@/components/landing-cta";
 import { LandingPreview } from "@/components/landing-preview";
 import { Reveal } from "@/components/reveal";
+import { SpotlightCard } from "@/components/spotlight-card";
 
 export default function LandingPage() {
   return (
@@ -68,11 +69,11 @@ export default function LandingPage() {
           ].map((step, index) => {
             return (
               <Reveal key={step.title} delay={index * 0.08}>
-                <article className="panel p-6 transition-transform duration-300 hover:-translate-y-1">
+                <SpotlightCard className="panel p-6 transition-transform duration-300 hover:-translate-y-1">
                   <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{step.label}</p>
                   <h2 className="mt-5 text-lg font-extrabold tracking-[-0.01em]">{step.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{step.body}</p>
-                </article>
+                </SpotlightCard>
               </Reveal>
             );
           })}
@@ -89,18 +90,23 @@ export default function LandingPage() {
         ].map((feature, index) => {
           return (
             <Reveal key={feature.title} delay={index * 0.06}>
-              <article className="glass-card h-full p-6">
+              <SpotlightCard className="glass-card h-full p-6">
                 <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{feature.label}</p>
                 <h3 className="mt-5 text-base font-extrabold tracking-[-0.01em]">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{feature.body}</p>
-              </article>
+              </SpotlightCard>
             </Reveal>
           );
         })}
       </section>
 
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
-        <div className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10">
+        <SpotlightCard
+          className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10"
+          color="rgba(255,255,255,0.9)"
+          glow="rgba(255,255,255,0.08)"
+          size="420px"
+        >
           <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one thought</p>
           <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">A better conversation starts by listening.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
@@ -112,7 +118,7 @@ export default function LandingPage() {
               <ArrowRight size={18} />
             </Link>
           </div>
-        </div>
+        </SpotlightCard>
       </section>
 
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
