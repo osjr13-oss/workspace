@@ -1,35 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ExternalLink, LifeBuoy } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { SupportContactForm } from "@/components/support-contact-form";
+import { useWorkspaceSession } from "@/components/workspace-session";
 import { brand } from "@/lib/brand";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function HelpPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email || "");
-      const meta = data.user?.user_metadata?.full_name || "";
-      if (meta) setName(meta);
-      else if (data.user) {
-        supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (profile?.full_name) setName(profile.full_name);
-          });
-      }
-    });
-  }, []);
+  const { email, fullName } = useWorkspaceSession();
 
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
@@ -58,7 +37,7 @@ export default function HelpPage() {
         </div>
       </section>
 
-      <SupportContactForm defaultName={name} defaultEmail={email} />
+      <SupportContactForm defaultName={fullName} defaultEmail={email} />
 
       <div className="flex flex-wrap gap-3 text-sm font-bold">
         <Link href={brand.urls.security} className="btn-secondary" target="_blank" rel="noopener noreferrer">

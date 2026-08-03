@@ -4,75 +4,83 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { FirstRunActivation } from "@/components/first-run-activation";
+import { PageLoading } from "@/components/page-loading";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { QuickActions } from "@/components/quick-actions";
+import { useWorkspaceSession } from "@/components/workspace-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { ChatThread, Project, WorkspaceFile } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [name, setName] = useState("there");
+  const { user, firstName } = useWorkspaceSession();
   const [projects, setProjects] = useState<Project[]>([]);
   const [chats, setChats] = useState<ChatThread[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [counts, setCounts] = useState({ projects: 0, notes: 0, files: 0, flashcards: 0 });
   const [starterProjectId, setStarterProjectId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
+    let cancelled = false;
+
     async function load() {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      let displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "there";
-      if (user) {
-        const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
-        if (profile?.full_name) displayName = profile.full_name;
-      }
-      setName(displayName.split(" ")[0] || "there");
-
       try {
-        const bootstrapResponse = await fetch("/api/onboarding/bootstrap", { method: "POST" });
-        if (bootstrapResponse.ok) {
-          const bootstrap = await bootstrapResponse.json();
-          if (bootstrap.project?.id) setStarterProjectId(bootstrap.project.id as string);
+        try {
+          const bootstrapResponse = await fetch("/api/onboarding/bootstrap", { method: "POST" });
+          if (bootstrapResponse.ok) {
+            const bootstrap = await bootstrapResponse.json();
+            if (!cancelled && bootstrap.project?.id) setStarterProjectId(bootstrap.project.id as string);
+          }
+        } catch {
+          // Bootstrap is best-effort; the dashboard still loads without it.
         }
-      } catch {
-        // Bootstrap is best-effort; the dashboard still loads without it.
-      }
 
-      // flashcards also has a public-read policy (for the /d/[slug] share
-      // page), so its count needs an explicit user_id filter. Otherwise
-      // every public deck's cards from every user get counted here too.
-      const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
-        supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
-        supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),
-        supabase.from("files").select("*").order("created_at", { ascending: false }).limit(3),
-        supabase.from("projects").select("id", { count: "exact", head: true }),
-        supabase.from("notes").select("id", { count: "exact", head: true }),
-        supabase.from("files").select("id", { count: "exact", head: true }),
-        user ? supabase.from("flashcards").select("id", { count: "exact", head: true }).eq("user_id", user.id) : Promise.resolve({ count: 0 })
-      ]);
-      setProjects((projectsResult.data as Project[]) || []);
-      setChats((chatsResult.data as ChatThread[]) || []);
-      setFiles((filesResult.data as WorkspaceFile[]) || []);
-      setCounts({
-        projects: projectCountResult.count || 0,
-        notes: notesResult.count || 0,
-        files: fileCountResult.count || 0,
-        flashcards: cardsResult.count || 0
-      });
+        // flashcards also has a public-read policy (for the /d/[slug] share
+        // page), so its count needs an explicit user_id filter. Otherwise
+        // every public deck's cards from every user get counted here too.
+        const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
+          supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
+          supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),
+          supabase.from("files").select("*").order("created_at", { ascending: false }).limit(3),
+          supabase.from("projects").select("id", { count: "exact", head: true }),
+          supabase.from("notes").select("id", { count: "exact", head: true }),
+          supabase.from("files").select("id", { count: "exact", head: true }),
+          supabase.from("flashcards").select("id", { count: "exact", head: true }).eq("user_id", user.id)
+        ]);
+        if (cancelled) return;
+        setProjects((projectsResult.data as Project[]) || []);
+        setChats((chatsResult.data as ChatThread[]) || []);
+        setFiles((filesResult.data as WorkspaceFile[]) || []);
+        setCounts({
+          projects: projectCountResult.count || 0,
+          notes: notesResult.count || 0,
+          files: fileCountResult.count || 0,
+          flashcards: cardsResult.count || 0
+        });
+      } finally {
+        if (!cancelled) setReady(true);
+      }
     }
-    load();
-  }, []);
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
 
   const askHref = starterProjectId ? `/chats?project=${starterProjectId}` : "/chats";
   const hasMaterial = counts.notes > 0 || counts.files > 0;
   const hasChat = chats.length > 0;
 
+  if (!ready) {
+    return <PageLoading label="Loading home…" />;
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Home">
+      <WorkspaceHeader title={`Good ${getDayPart()}, ${firstName}.`} eyebrow="Home">
         <Link href={askHref} className="btn-primary">
           <Plus size={18} />
           New chat
@@ -80,6 +88,7 @@ export default function DashboardPage() {
       </WorkspaceHeader>
 
       <FirstRunActivation
+        ready={ready}
         projectId={starterProjectId}
         hasMaterial={hasMaterial}
         hasChat={hasChat}
