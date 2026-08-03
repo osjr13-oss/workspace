@@ -6,7 +6,9 @@ import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Trash2, Wand2 } from "
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { PageLoading } from "@/components/page-loading";
 import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
+import { useWorkspaceSession } from "@/components/workspace-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Flashcard, FlashcardDeck, Note, Project, WorkspaceFile } from "@/lib/types";
 
@@ -20,6 +22,7 @@ export default function FlashcardsPage() {
 
 function FlashcardsContent() {
   const searchParams = useSearchParams();
+  const { user } = useWorkspaceSession();
   const { modal, promptFromResponse } = useUpgradePrompt();
   const projectFilter = searchParams.get("project");
   const deckFromQuery = searchParams.get("deck");
@@ -46,13 +49,10 @@ function FlashcardsContent() {
   const [sharingDeckId, setSharingDeckId] = useState("");
   const [copiedDeckId, setCopiedDeckId] = useState("");
   const [practicing, setPracticing] = useState(false);
+  const [ready, setReady] = useState(false);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) return;
     // Explicit user_id filters, not just RLS: flashcard_decks/flashcards also
     // have an additive public-read policy (for the /d/[slug] share page), so
     // an unfiltered query here would mix every public deck from every user
@@ -78,6 +78,7 @@ function FlashcardsContent() {
       setDeckId(loadedDecks[0].id);
       deckIdRef.current = loadedDecks[0].id;
     }
+    setReady(true);
   }
 
   useEffect(() => {
@@ -123,11 +124,6 @@ function FlashcardsContent() {
     event.preventDefault();
     if (!deckId) return;
     const supabase = createSupabaseBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Your session has expired. Please refresh the page and sign in again.");
-      return;
-    }
     const { error } = await supabase.from("flashcards").insert({
       front,
       back,
@@ -238,6 +234,8 @@ function FlashcardsContent() {
   const visibleCards = deckId ? cards.filter((c) => c.deck_id === deckId) : cards;
   const practiceCards = [...visibleCards].reverse();
   const selectedDeck = decks.find((d) => d.id === deckId);
+
+  if (!ready) return <PageLoading label="Loading flashcards…" />;
 
   if (practicing && selectedDeck) {
     return (

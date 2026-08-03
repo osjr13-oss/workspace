@@ -7,48 +7,46 @@ import { BillingSection } from "@/components/billing-section";
 import { PublishStarterDecks } from "@/components/publish-starter-decks";
 import { ReferralSection } from "@/components/referral-section";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { useWorkspaceSession } from "@/components/workspace-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
+  const session = useWorkspaceSession();
+  const [email] = useState(session.email);
+  const [fullName, setFullName] = useState(session.fullName);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [lifecycleEmails, setLifecycleEmails] = useState(false);
+  const [lifecycleEmails, setLifecycleEmails] = useState<boolean | null>(null);
   const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      setEmail(data.user?.email || "");
-      const metadataName = data.user?.user_metadata?.full_name || "";
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, lifecycle_emails")
-        .eq("id", data.user.id)
-        .single();
-      setFullName(profile?.full_name || metadataName);
-      setLifecycleEmails(profile?.lifecycle_emails === true);
-    });
-  }, []);
+    let cancelled = false;
+    async function loadPrefs() {
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("lifecycle_emails")
+          .eq("id", session.user.id)
+          .single();
+        if (!cancelled) setLifecycleEmails(profile?.lifecycle_emails === true);
+      } catch {
+        if (!cancelled) setLifecycleEmails(false);
+      }
+    }
+    void loadPrefs();
+    return () => {
+      cancelled = true;
+    };
+  }, [session.user.id]);
 
   async function toggleLifecycleEmails(enabled: boolean) {
     setSavingEmailPrefs(true);
     setMessage("");
     try {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setMessage("You must be signed in.");
-        return;
-      }
-
       const response = await fetch("/api/account/email-preferences", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -73,14 +71,7 @@ export default function SettingsPage() {
     event.preventDefault();
     setSaving(true);
     const supabase = createSupabaseBrowserClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setMessage("You must be signed in to save.");
-      setSaving(false);
-      return;
-    }
+    const user = session.user;
 
     const { error: authError } = await supabase.auth.updateUser({ data: { full_name: fullName } });
     if (authError) {
@@ -125,12 +116,12 @@ export default function SettingsPage() {
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           A useful weekly workspace check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
         </p>
-        <label className="mt-5 flex cursor-pointer items-center gap-3">
+        <label className={`mt-5 flex items-center gap-3 ${lifecycleEmails === null ? "cursor-default opacity-60" : "cursor-pointer"}`}>
           <input
             type="checkbox"
             className="h-4 w-4 rounded border-[var(--border)]"
-            checked={lifecycleEmails}
-            disabled={savingEmailPrefs}
+            checked={lifecycleEmails === true}
+            disabled={savingEmailPrefs || lifecycleEmails === null}
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
           <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>

@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { ThinkingTrace } from "@/components/thinking-trace";
+import { PageLoading } from "@/components/page-loading";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -34,6 +35,7 @@ function ChatsContent() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   async function loadThreads() {
@@ -58,11 +60,27 @@ function ChatsContent() {
   }
 
   useEffect(() => {
-    loadThreads();
+    let cancelled = false;
+    async function bootstrap() {
+      try {
+        await loadThreads();
+        if (threadId) await loadMessages(threadId);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    }
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
+    // Initial load only; thread switches use the threadId effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     loadMessages(threadId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
 
   useEffect(() => {
@@ -203,6 +221,8 @@ function ChatsContent() {
     }
     setDeletingThreadId(null);
   }
+
+  if (!ready) return <PageLoading label="Loading chats…" />;
 
   return (
     <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
