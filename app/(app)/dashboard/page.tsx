@@ -74,10 +74,6 @@ export default function DashboardPage() {
   const hasMaterial = counts.notes > 0 || counts.files > 0;
   const hasChat = chats.length > 0;
 
-  if (!ready) {
-    return <PageLoading label="Loading home…" />;
-  }
-
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title={`Good ${getDayPart()}, ${firstName}.`} eyebrow="Home">
@@ -87,60 +83,66 @@ export default function DashboardPage() {
         </Link>
       </WorkspaceHeader>
 
-      <FirstRunActivation
-        ready={ready}
-        projectId={starterProjectId}
-        hasMaterial={hasMaterial}
-        hasChat={hasChat}
-      />
+      {!ready ? <PageLoading label="Loading home…" /> : null}
 
-      <Link href={askHref} className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
-        <div className="flex items-center gap-4">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-            <MessageSquare size={21} />
-          </span>
-          <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Ask your workspace a question</h2>
-            <p className="text-sm text-[var(--muted)]">Use a project to include notes, files, and flashcards as context.</p>
-          </div>
-        </div>
-        <Plus size={20} />
-      </Link>
+      {ready ? (
+        <>
+          <FirstRunActivation
+            ready={ready}
+            projectId={starterProjectId}
+            hasMaterial={hasMaterial}
+            hasChat={hasChat}
+          />
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />
-        <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
-        <Stat icon={<Files size={20} />} label="Files" value={counts.files.toString()} />
-        <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <PanelList title="Recent chats" href="/chats" empty="No chats yet">
-          {chats.map((chat) => (
-            <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
-              <span className="font-bold">{chat.title}</span>
-              <span className="text-sm text-[var(--muted)]">{formatRelative(chat.updated_at)}</span>
-            </Link>
-          ))}
-        </PanelList>
-        <PanelList title="Projects" href="/projects" empty="No projects yet">
-          {projects.map((project) => (
-            <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
-              <span className="font-bold">{project.name}</span>
-              <span className="text-sm text-[var(--muted)]">{formatRelative(project.updated_at)}</span>
-            </Link>
-          ))}
-        </PanelList>
-        <PanelList title="Recent files" href="/files" empty="No files uploaded">
-          {files.map((file) => (
-            <div key={file.id} className="flex items-center justify-between rounded-2xl px-3 py-3">
-              <span className="font-bold">{file.name}</span>
-              <span className="status-pill">{file.extraction_status}</span>
+          <Link href={askHref} className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
+            <div className="flex items-center gap-4">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
+                <MessageSquare size={21} />
+              </span>
+              <div>
+                <h2 className="text-base font-extrabold tracking-[-0.01em]">Ask your workspace a question</h2>
+                <p className="text-sm text-[var(--muted)]">Use a project to include notes, files, and flashcards as context.</p>
+              </div>
             </div>
-          ))}
-        </PanelList>
-        <QuickActions />
-      </section>
+            <Plus size={20} />
+          </Link>
+
+          <section className="grid gap-4 md:grid-cols-4">
+            <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />
+            <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
+            <Stat icon={<Files size={20} />} label="Files" value={counts.files.toString()} />
+            <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <PanelList title="Recent chats" href="/chats" empty="No chats yet">
+              {chats.map((chat) => (
+                <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
+                  <span className="font-bold">{chat.title}</span>
+                  <span className="text-sm text-[var(--muted)]">{formatRelative(chat.updated_at)}</span>
+                </Link>
+              ))}
+            </PanelList>
+            <PanelList title="Projects" href="/projects" empty="No projects yet">
+              {projects.map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
+                  <span className="font-bold">{project.name}</span>
+                  <span className="text-sm text-[var(--muted)]">{formatRelative(project.updated_at)}</span>
+                </Link>
+              ))}
+            </PanelList>
+            <PanelList title="Recent files" href="/files" empty="No files uploaded">
+              {files.map((file) => (
+                <div key={file.id} className="flex items-center justify-between rounded-2xl px-3 py-3">
+                  <span className="font-bold">{file.name}</span>
+                  <span className="status-pill">{file.extraction_status}</span>
+                </div>
+              ))}
+            </PanelList>
+            <QuickActions />
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }
