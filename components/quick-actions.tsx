@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { Wand2 } from "lucide-react";
-import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 
 const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Turn into bullet points", "Turn into study notes", "Turn into email"];
 
 export function QuickActions({ initialText = "" }: { initialText?: string }) {
-  const { modal, promptFromResponse } = useUpgradePrompt();
   const [text, setText] = useState(initialText);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState("");
@@ -28,10 +26,7 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
         body: JSON.stringify({ action, text })
       });
       const payload = await response.json();
-      if (!response.ok) {
-        if (promptFromResponse(response.status, payload)) return;
-        throw new Error(payload.error || "AI action failed.");
-      }
+      if (!response.ok) throw new Error(payload.error || "AI action failed.");
       setResult(payload.result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "AI action failed.");
@@ -42,7 +37,6 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
 
   return (
     <section className="panel p-5">
-      {modal}
       <div className="flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--text)] text-white">
           <Wand2 size={18} />

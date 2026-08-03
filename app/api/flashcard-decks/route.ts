@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const limitError = await assertDeckLimit(supabase, user.id);
-    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit", reason: "decks" }, { status: 403 });
+    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit" }, { status: 403 });
 
     const body = (await request.json()) as { name?: string; projectId?: string | null };
     if (!body.name?.trim()) return NextResponse.json({ error: "Deck name is required" }, { status: 400 });

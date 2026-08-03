@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { X, CheckCircle2, Zap } from "lucide-react";
 import { ProCheckoutButton } from "@/components/pro-checkout-button";
 import { PLANS } from "@/lib/plans";
-import type { UpgradeReason } from "@/lib/upgrade-reason";
 
-export type { UpgradeReason };
+export type UpgradeReason = "projects" | "decks" | "ai_limit" | "file_size" | "general";
 
 const REASON_TITLES: Record<UpgradeReason, string> = {
   projects: "Project limit reached",

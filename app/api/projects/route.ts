@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const limitError = await assertProjectLimit(supabase, user.id);
-    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit", reason: "projects" }, { status: 403 });
+    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit" }, { status: 403 });
 
     const body = (await request.json()) as { name?: string; description?: string | null };
     if (!body.name?.trim()) return NextResponse.json({ error: "Project name is required" }, { status: 400 });

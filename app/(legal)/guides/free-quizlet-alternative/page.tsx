@@ -61,10 +61,10 @@ export default function FreeQuizletAlternativeGuide() {
       <h2 className="mt-10 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">Pricing, honestly</h2>
       <p className="mt-3 text-base leading-7">
         Quizlet Plus runs about $3/month billed annually, or roughly $8/month billed monthly, and its free tier is hard
-        to beat on price for basic flashcard use. {brand.name} has a free plan with room for a few projects and decks,
-        plus AI chat and generation for everyday study; Pro is $19/month if you need higher limits and larger uploads.
-        If price is the only factor and your material is already common, Quizlet&apos;s free tier likely wins. The trade is
-        scope: one tool for your material versus one price for a single feature.
+        to beat on price for basic flashcard use. {brand.name}&apos;s free plan includes 20 AI actions a day across chat,
+        flashcard generation, and text transforms combined, plus 3 projects and 5 decks; Pro is $19/month for higher
+        limits. If price is the only factor and your material is already common, Quizlet&apos;s free tier likely wins. The
+        trade is scope: one tool for your material versus one price for a single feature.
       </p>
 
       <div className="mt-10 overflow-x-auto">

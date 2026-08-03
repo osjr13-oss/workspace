@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     const limitError = await assertDeckLimit(supabase, user.id);
-    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit", reason: "decks" }, { status: 403 });
+    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit" }, { status: 403 });
 
     const { data: sourceCards, error: cardsError } = await supabase
       .from("flashcards")

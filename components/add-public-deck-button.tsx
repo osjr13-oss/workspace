@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FolderPlus } from "lucide-react";
-import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { brand } from "@/lib/brand";
 
 type AddPublicDeckButtonProps = {
@@ -22,7 +21,6 @@ export function AddPublicDeckButton({
   autoAdd = false
 }: AddPublicDeckButtonProps) {
   const router = useRouter();
-  const { modal, promptFromResponse } = useUpgradePrompt();
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const autoStarted = useRef(false);
@@ -46,7 +44,6 @@ export function AddPublicDeckButton({
         return;
       }
       if (!res.ok) {
-        if (promptFromResponse(res.status, payload)) return;
         setError(payload.error || "Could not add this deck to your workspace.");
         return;
       }
@@ -68,7 +65,6 @@ export function AddPublicDeckButton({
 
   return (
     <div className="glass-card mt-12 flex flex-col gap-4 p-7">
-      {modal}
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-sm font-extrabold">

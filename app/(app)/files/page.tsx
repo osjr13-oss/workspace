@@ -7,7 +7,6 @@ import { Trash2, Upload as UploadIcon } from "lucide-react";
 import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
-import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
 import type { Project, WorkspaceFile } from "@/lib/types";
@@ -22,7 +21,6 @@ export default function FilesPage() {
 
 function FilesContent() {
   const searchParams = useSearchParams();
-  const { modal, promptFromResponse } = useUpgradePrompt();
   const projectFilter = searchParams.get("project");
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -86,7 +84,6 @@ function FilesContent() {
       });
       const signed = await signResponse.json().catch(() => ({}));
       if (!signResponse.ok || !signed.storagePath || !signed.token) {
-        if (promptFromResponse(signResponse.status, signed)) return;
         throw new Error(signed.error || "Could not prepare the upload.");
       }
 
@@ -99,10 +96,7 @@ function FilesContent() {
         body: JSON.stringify({ ...metadata, storagePath: signed.storagePath })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        if (promptFromResponse(response.status, payload)) return;
-        throw new Error(payload.error || "File processing failed.");
-      }
+      if (!response.ok) throw new Error(payload.error || "File processing failed.");
       setMessage("File uploaded and processed.");
       setFile(null);
       await load();
@@ -116,7 +110,6 @@ function FilesContent() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      {modal}
       <WorkspaceHeader title="Files" eyebrow="Workspace" />
       <form onSubmit={upload} className="panel grid gap-3 p-5 lg:grid-cols-[1fr_240px_auto]">
         <label className="flex min-h-12 items-center rounded-full border border-dashed border-[var(--border-strong)] bg-white/70 px-5 text-sm font-bold text-[var(--muted-strong)]">

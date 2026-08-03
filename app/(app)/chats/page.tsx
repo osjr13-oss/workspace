@@ -7,7 +7,6 @@ import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { ThinkingTrace } from "@/components/thinking-trace";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import { removeEmDashes } from "@/lib/text";
@@ -23,7 +22,6 @@ export default function ChatsPage() {
 
 function ChatsContent() {
   const searchParams = useSearchParams();
-  const { modal, promptFromResponse } = useUpgradePrompt();
   const initialThread = searchParams.get("thread");
   const initialProject = searchParams.get("project");
   const [threads, setThreads] = useState<ChatThread[]>([]);
@@ -94,11 +92,6 @@ function ChatsContent() {
 
       if (!response.ok || !response.body) {
         const payload = await response.json().catch(() => ({}));
-        if (promptFromResponse(response.status, payload)) {
-          setMessages((current) => current.filter((message) => message.id !== "pending-user"));
-          setLoading(false);
-          return;
-        }
         setMessages((current) => [
           ...current.filter((message) => message.id !== "pending-user"),
           { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: payload.error || "Chat failed.", created_at: new Date().toISOString() }
@@ -206,7 +199,6 @@ function ChatsContent() {
 
   return (
     <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
-      {modal}
       <aside className="panel flex min-h-0 flex-col p-4">
         <WorkspaceHeader title="Chats" eyebrow="AI" />
         <button type="button" onClick={() => { setThreadId(null); setMessages([]); }} className="btn-primary mt-5">
