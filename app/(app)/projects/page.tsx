@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
 export default function ProjectsPage() {
+  const { modal, promptFromResponse } = useUpgradePrompt();
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -36,7 +38,10 @@ export default function ProjectsPage() {
         body: JSON.stringify({ name, description: description || null })
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || "Could not create project.");
+      if (!res.ok) {
+        if (promptFromResponse(res.status, payload)) return;
+        throw new Error(payload.error || "Could not create project.");
+      }
       setName("");
       setDescription("");
       await load();
@@ -66,6 +71,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+      {modal}
       <WorkspaceHeader title="Projects" eyebrow="Workspace" />
 
       <form onSubmit={createProject} className="panel flex flex-wrap items-center gap-3 p-5">

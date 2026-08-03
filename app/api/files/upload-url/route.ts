@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const limits = await getUserLimits(supabase, user.id);
     const sizeError = assertFileSizeLimit(size, limits);
-    if (sizeError) return NextResponse.json({ error: sizeError, code: "plan_limit" }, { status: 403 });
+    if (sizeError) return NextResponse.json({ error: sizeError, code: "plan_limit", reason: "file_size" }, { status: 403 });
 
     if (projectId) {
       const { data: project, error: projectError } = await supabase
