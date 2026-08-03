@@ -103,8 +103,6 @@ export default function LandingPage() {
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
         <SpotlightCard
           className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10"
-          color="rgba(255,255,255,0.9)"
-          glow="rgba(255,255,255,0.08)"
           size="420px"
         >
           <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one thought</p>

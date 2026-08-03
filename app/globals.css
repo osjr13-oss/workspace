@@ -98,12 +98,15 @@ select {
   padding: 1.5px;
   background: radial-gradient(
     var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
-    var(--spot-color, rgba(21, 24, 31, 0.55)),
+    var(--spot-color, rgba(255, 255, 255, 0.9)),
     transparent 62%
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  /* Auto-inverts the ring against whatever is behind it, so the border
+     stays visible on dark, light, or mid-tone surfaces alike. */
+  mix-blend-mode: var(--spot-blend, difference);
   opacity: 0;
   transition: opacity 260ms ease;
   pointer-events: none;
@@ -117,9 +120,10 @@ select {
   border-radius: inherit;
   background: radial-gradient(
     var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
-    var(--spot-glow, rgba(21, 24, 31, 0.05)),
+    var(--spot-glow, rgba(255, 255, 255, 0.12)),
     transparent 60%
   );
+  mix-blend-mode: var(--spot-glow-blend, overlay);
   opacity: 0;
   transition: opacity 260ms ease;
   pointer-events: none;

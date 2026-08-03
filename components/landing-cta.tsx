@@ -14,9 +14,6 @@ export function LandingCta() {
       className="btn-primary spotlight group"
       style={{
         ...spotlightProps.style,
-        // brighter, warmer ring on the dark button
-        ["--spot-color" as string]: "rgba(255,255,255,0.85)",
-        ["--spot-glow" as string]: "rgba(255,255,255,0.14)",
         ["--spot-size" as string]: "140px",
       }}
       ref={spotlightProps.ref}

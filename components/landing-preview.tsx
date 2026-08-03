@@ -24,8 +24,6 @@ export function LandingPreview() {
       className="panel spotlight overflow-hidden p-4"
       style={{
         ...spotlightProps.style,
-        ["--spot-color" as string]: "rgba(21,24,31,0.5)",
-        ["--spot-glow" as string]: "rgba(21,24,31,0.045)",
         ["--spot-size" as string]: "360px",
       }}
       ref={spotlightProps.ref}
