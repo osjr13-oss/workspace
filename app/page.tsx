@@ -2,6 +2,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { SiteFooter } from "@/components/site-footer";
+import { LandingCta } from "@/components/landing-cta";
+import { LandingPreview } from "@/components/landing-preview";
+import { Reveal } from "@/components/reveal";
+import { SpotlightCard } from "@/components/spotlight-card";
 
 export default function LandingPage() {
   return (
@@ -34,10 +38,7 @@ export default function LandingPage() {
             Talk through ideas, work with your own files, search the live web, and get responses that adapt to your voice without losing the facts.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/signup" className="btn-primary">
-              Get started free
-              <ArrowRight size={18} />
-            </Link>
+            <LandingCta />
             <Link href="#workflow" className="btn-secondary">
               See how it works
             </Link>
@@ -56,52 +57,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div id="workspace" className="panel overflow-hidden p-4">
-          <div className="grid min-h-[520px] grid-cols-[190px_1fr] overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--background-elevated)] max-sm:grid-cols-1">
-            <aside className="border-r border-[var(--border)] p-4 max-sm:hidden">
-              {["Chats", "Workspace", "Projects", "Files", "Notes", "Flashcards"].map((item, index) => (
-                <div
-                  key={item}
-                  className={`mb-2 rounded-2xl px-3 py-3 text-sm font-bold ${
-                    index === 0 ? "bg-[var(--surface-subtle)] text-[var(--text)]" : "text-[var(--muted)]"
-                  }`}
-                >
-                  {item}
-                </div>
-              ))}
-            </aside>
-            <div className="p-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
-              <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
-              <div className="panel mt-10 flex items-center justify-between p-5 shadow-none">
-                <div className="flex items-center gap-4">
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-                    <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Ctx</span>
-                  </span>
-                  <div>
-                    <p className="font-extrabold">Your context, when it matters</p>
-                    <p className="text-sm text-[var(--muted)]">Use notes, files, and live sources without mixing them up.</p>
-                  </div>
-                </div>
-                <ArrowRight size={20} />
-              </div>
-              <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                {[
-                  { title: "Style", body: "Direct, concise, and shaped around how you communicate." },
-                  { title: "Memory", body: "Useful preferences and ongoing work stay available." },
-                  { title: "Sources", body: "Project files and web results remain clearly cited." },
-                  { title: "Control", body: "Edit, resend, regenerate, and keep moving." }
-                ].map((item) => (
-                  <div key={item.title} className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5">
-                    <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
-                    <p className="mt-6 text-sm font-bold leading-6 text-[var(--muted-strong)]">{item.body}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <LandingPreview />
       </section>
 
       <section id="workflow" className="mx-auto max-w-7xl px-5 pb-16 sm:px-6">
@@ -110,13 +66,15 @@ export default function LandingPage() {
             { label: "Start", title: "Say what is on your mind", body: "Ask a question, paste a rough idea, or bring in something you are already working through." },
             { label: "Ground", title: "Add the right context", body: "Connect a project so Selrano can use your notes and files, or let it search the web when current information matters." },
             { label: "Adapt", title: "Make the answer yours", body: "Selrano learns your communication style and remembers durable preferences while keeping sourced facts separate." }
-          ].map((step) => {
+          ].map((step, index) => {
             return (
-              <article key={step.title} className="panel p-6">
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{step.label}</p>
-                <h2 className="mt-5 text-lg font-extrabold tracking-[-0.01em]">{step.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{step.body}</p>
-              </article>
+              <Reveal key={step.title} delay={index * 0.08}>
+                <SpotlightCard className="panel p-6 transition-transform duration-300 hover:-translate-y-1">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{step.label}</p>
+                  <h2 className="mt-5 text-lg font-extrabold tracking-[-0.01em]">{step.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{step.body}</p>
+                </SpotlightCard>
+              </Reveal>
             );
           })}
         </div>
@@ -129,19 +87,24 @@ export default function LandingPage() {
           { label: "Sources", title: "Grounded when it counts", body: "Use private files, notes, and live web results with clear source boundaries." },
           { label: "Workspace", title: "Your material stays useful", body: "Organize projects, notes, documents, flashcards, and review around the conversation." },
           { label: "Control", title: "Shape every response", body: "Edit your message, resend it, regenerate the answer, and correct text locally." }
-        ].map((feature) => {
+        ].map((feature, index) => {
           return (
-            <article key={feature.title} className="glass-card p-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{feature.label}</p>
-              <h3 className="mt-5 text-base font-extrabold tracking-[-0.01em]">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{feature.body}</p>
-            </article>
+            <Reveal key={feature.title} delay={index * 0.06}>
+              <SpotlightCard className="glass-card h-full p-6">
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{feature.label}</p>
+                <h3 className="mt-5 text-base font-extrabold tracking-[-0.01em]">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{feature.body}</p>
+              </SpotlightCard>
+            </Reveal>
           );
         })}
       </section>
 
       <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-6">
-        <div className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10">
+        <SpotlightCard
+          className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10"
+          size="420px"
+        >
           <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one thought</p>
           <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">A better conversation starts by listening.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
@@ -153,7 +116,7 @@ export default function LandingPage() {
               <ArrowRight size={18} />
             </Link>
           </div>
-        </div>
+        </SpotlightCard>
       </section>
 
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
