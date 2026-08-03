@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **July 25, 2026**
+Last updated: **August 3, 2026**
 
 ## Current state
 
@@ -13,8 +13,8 @@ Last updated: **July 25, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `e9fd5f5`, following the July 25 fixes for live web search and a Settings/icon cleanup on top of the July 24 adaptive AI transformation merge (`6c5d771`).
-- All three July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) were pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` and direct production checks from this environment.
+- Current main commit: `2b1a908`, merging the `landing-page-aesthetics` branch (cursor-spotlight and scroll-reveal treatment for the landing page and pricing cards) on top of the July 25 web-search/icon fixes and the July 24 adaptive AI transformation merge (`6c5d771`).
+- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were all pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Product positioning and UI direction
 
@@ -82,6 +82,7 @@ Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and
 - Malformed Groq tool-call output (`llama-3.3-70b-versatile` occasionally emits `<function=...>` as plain text instead of structured JSON) is parsed and recovered from the rejected error body instead of being silently discarded.
 - The Settings billing panel no longer shows the redundant AI today/Projects/Decks usage counters.
 - Generic sparkle iconography was replaced with context-specific icons: a crown for Pro/premium actions, the Selrano brand mark for "Made with Selrano" attribution, and the existing wand icon unified across all AI-transform actions (flashcard generation, note transforms, quick actions).
+- The landing page and pricing cards use a cursor-tracking spotlight/glow border (`components/spotlight-card.tsx`, `components/use-spotlight.ts`) and scroll-in reveal animation (`components/reveal.tsx`), built on a new `framer-motion` dependency. See `DESIGN_SYSTEM.md`'s Motion section for the reusable pattern.
 
 ## Production database
 
@@ -159,6 +160,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
+- `2b1a908` — merge `landing-page-aesthetics`: spotlight/reveal treatment for the landing page and pricing cards
 - `e9fd5f5` — remove usage stat cards from Settings and use more specific icons
 - `de0b2c2` — recover malformed Groq function calls instead of dropping them
 - `79d56c3` — make web search a model-callable tool instead of a keyword gate

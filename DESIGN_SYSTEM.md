@@ -367,9 +367,13 @@ Keep animations short and purposeful.
 |---|---|---|
 | Hover lift (cards, buttons) | `160–180ms` | `ease` |
 | Border/background color | `160ms` | `ease` |
+| Cursor spotlight (card border/glow) | `260ms` opacity | `ease` |
+| Scroll reveal (landing sections) | `550ms` | custom (`[0.22, 1, 0.36, 1]`) |
 | Page transitions | avoid — use instant |  |
 
 **The one hover rule:** interactive surfaces lift `translateY(-1px)` or `translateY(-2px)` on hover. Never use scale. Never use opacity fades for hover.
+
+**Reusable motion components:** `components/spotlight-card.tsx` (a cursor-tracking spotlight border/glow, via the `components/use-spotlight.ts` hook and the `.spotlight` class in `globals.css`) and `components/reveal.tsx` (fade-and-rise on scroll into view) are the established implementations, built on `framer-motion`. Reach for these instead of writing new hover/scroll-animation logic.
 
 ---
 

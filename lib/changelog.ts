@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-08-03",
+    title: "A more polished landing page",
+    description:
+      "The homepage and pricing cards now have a subtle cursor-tracking glow and a gentle reveal as you scroll, making the first look at Selrano feel more crafted.",
+    tag: "Improved"
+  },
+  {
     date: "2026-07-25",
     title: "Web search that actually works",
     description:
