@@ -7,7 +7,6 @@ import { Trash2, Upload as UploadIcon } from "lucide-react";
 import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
-import { PageLoading } from "@/components/page-loading";
 import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
@@ -33,7 +32,6 @@ function FilesContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -42,7 +40,6 @@ function FilesContent() {
     const [filesResult, projectsResult] = await Promise.all([query, supabase.from("projects").select("*").order("name")]);
     setFiles((filesResult.data as WorkspaceFile[]) || []);
     setProjects((projectsResult.data as Project[]) || []);
-    setReady(true);
   }
 
   useEffect(() => {
@@ -116,8 +113,6 @@ function FilesContent() {
       setUploadProgress(0);
     }
   }
-
-  if (!ready) return <PageLoading label="Loading files…" />;
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">

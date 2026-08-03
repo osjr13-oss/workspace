@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
-import { PageLoading } from "@/components/page-loading";
 import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate } from "@/lib/format";
@@ -16,8 +15,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -25,16 +23,13 @@ export default function ProjectsPage() {
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase.from("projects").select("*").order("updated_at", { ascending: false });
     setProjects((data as Project[]) || []);
-    setReady(true);
   }
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function createProject(event: React.FormEvent) {
     event.preventDefault();
-    setCreating(true);
+    setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/projects", {
@@ -53,7 +48,7 @@ export default function ProjectsPage() {
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not create project.");
     } finally {
-      setCreating(false);
+      setLoading(false);
     }
   }
 
@@ -74,8 +69,6 @@ export default function ProjectsPage() {
     }
   }
 
-  if (!ready) return <PageLoading label="Loading projects…" />;
-
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       {modal}
@@ -84,11 +77,18 @@ export default function ProjectsPage() {
       <form onSubmit={createProject} className="panel flex flex-wrap items-center gap-3 p-5">
         <input aria-label="Project name" className="input-premium min-w-0 flex-1 px-5" placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} required />
         <input aria-label="Project description" className="input-premium min-w-[200px] flex-[2] px-5" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <button type="submit" className="btn-primary shrink-0" disabled={creating}>
+        <button type="submit" className="btn-primary shrink-0" disabled={loading}>
           <Plus size={18} />
-          {creating ? "Creating…" : "Create project"}
+          {loading ? "Creating…" : "Create project"}
         </button>
-        {error ? <p className="w-full text-sm font-bold text-[var(--critical)]">{error}</p> : null}
+        {error ? (
+          <p className="w-full text-sm font-bold text-[var(--critical)]">
+            {error}{" "}
+            <Link href="/pricing" className="text-[var(--text)] underline">
+              View plans
+            </Link>
+          </p>
+        ) : null}
       </form>
 
       {projects.length ? (

@@ -4,33 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import {
-  WorkspaceSessionProvider,
-  displayNameFromUser,
-  type WorkspaceSession
-} from "@/components/workspace-session";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [session, setSession] = useState<WorkspaceSession | null | undefined>(undefined);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
   const [envError, setEnvError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function hydrateUser(user: User) {
-      const supabase = createSupabaseBrowserClient();
-      // Show metadata-backed name immediately, then refine from profiles.
-      const initial = displayNameFromUser(user);
-      if (!cancelled) {
-        setSession({ user, ...initial });
-      }
-
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
-      if (cancelled) return;
-      setSession({ user, ...displayNameFromUser(user, profile?.full_name) });
-    }
-
     try {
       const supabase = createSupabaseBrowserClient();
       supabase.auth.getUser().then(({ data }) => {
@@ -39,24 +19,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           router.replace(`/signin?next=${encodeURIComponent(next)}`);
           return;
         }
-        void hydrateUser(data.user);
+        setUser(data.user);
       });
 
       const {
         data: { subscription }
-      } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-        if (!nextSession?.user) {
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session?.user) {
           const next = `${window.location.pathname}${window.location.search}`;
           router.replace(`/signin?next=${encodeURIComponent(next)}`);
           return;
         }
-        void hydrateUser(nextSession.user);
+        setUser(session.user);
       });
 
-      return () => {
-        cancelled = true;
-        subscription.unsubscribe();
-      };
+      return () => subscription.unsubscribe();
     } catch (error) {
       setEnvError(error instanceof Error ? error.message : "Configuration is missing.");
     }
@@ -76,7 +53,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (session === undefined || session === null) {
+  if (user === undefined) {
     return (
       <main className="grid min-h-screen place-items-center">
         <div className="status-pill">Loading workspace</div>
@@ -84,5 +61,5 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <WorkspaceSessionProvider value={session}>{children}</WorkspaceSessionProvider>;
+  return children;
 }

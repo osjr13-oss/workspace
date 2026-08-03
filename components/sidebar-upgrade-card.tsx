@@ -18,19 +18,11 @@ export function SidebarUpgradeCard() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setStatus({ tier: data.tier, stripeConfigured: data.stripeConfigured });
-        else setStatus({ tier: "free", stripeConfigured: false });
       })
-      .catch(() => setStatus({ tier: "free", stripeConfigured: false }));
+      .catch(() => {});
   }, []);
 
-  if (!status) {
-    return (
-      <div
-        className="mt-4 min-h-[132px] rounded-2xl border border-[var(--border)] bg-[var(--surface-subtle)]"
-        aria-hidden="true"
-      />
-    );
-  }
+  if (!status) return null;
 
   if (status.tier === "pro") {
     return (

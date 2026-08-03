@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
-import { PageLoading } from "@/components/page-loading";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import { useWorkspaceSession } from "@/components/workspace-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Flashcard } from "@/lib/types";
 
@@ -16,18 +14,23 @@ import type { Flashcard } from "@/lib/types";
 const BATCH_SIZE = 300;
 
 export default function StudyPage() {
-  const { user } = useWorkspaceSession();
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [totalDue, setTotalDue] = useState(0);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [ready, setReady] = useState(false);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
     setLoadError("");
     setError("");
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoadError("Your session has expired. Please refresh the page and sign in again.");
+      return;
+    }
     const dueFilter = `due_at.is.null,due_at.lte.${new Date().toISOString()}`;
     // Explicit user_id filter: flashcards also has a public-read policy (for
     // the /d/[slug] share page), so this would otherwise pull other users'
@@ -44,23 +47,19 @@ export default function StudyPage() {
     ]);
     if (cardsResult.error) {
       setLoadError(cardsResult.error.message || "Could not load cards.");
-      setReady(true);
       return;
     }
     if (countResult.error) {
       setLoadError(countResult.error.message || "Could not load the study queue.");
-      setReady(true);
       return;
     }
     setCards((cardsResult.data as Flashcard[]) || []);
     setTotalDue(countResult.count || 0);
-    setReady(true);
   }
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id]);
+    load();
+  }, []);
 
   async function review(cardId: string, correct: boolean) {
     setWorking(true);
@@ -86,8 +85,6 @@ export default function StudyPage() {
     totalDue > cards.length
       ? `You reviewed this batch. ${totalDue - cards.length} more card${totalDue - cards.length === 1 ? " is" : "s are"} due. Refresh to keep going.`
       : "You reviewed every card that was due.";
-
-  if (!ready) return <PageLoading label="Loading study…" />;
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">

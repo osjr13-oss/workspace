@@ -7,15 +7,13 @@ import { Check, FileUp, FolderOpen, MessageSquare, X } from "lucide-react";
 const STORAGE_KEY = "selrano_activation_dismissed";
 
 type FirstRunActivationProps = {
-  ready: boolean;
   projectId: string | null;
   hasMaterial: boolean;
   hasChat: boolean;
 };
 
-export function FirstRunActivation({ ready, projectId, hasMaterial, hasChat }: FirstRunActivationProps) {
-  // null = localStorage not read yet; stay hidden to avoid a flash for established users.
-  const [dismissed, setDismissed] = useState<boolean | null>(null);
+export function FirstRunActivation({ projectId, hasMaterial, hasChat }: FirstRunActivationProps) {
+  const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
     try {
@@ -25,19 +23,7 @@ export function FirstRunActivation({ ready, projectId, hasMaterial, hasChat }: F
     }
   }, []);
 
-  useEffect(() => {
-    // Established workspaces should never flash the checklist again.
-    if (!ready) return;
-    if (!(hasMaterial && hasChat)) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // ignore
-    }
-    setDismissed(true);
-  }, [ready, hasMaterial, hasChat]);
-
-  if (!ready || dismissed === null || dismissed || (hasMaterial && hasChat)) return null;
+  if (dismissed || (hasMaterial && hasChat)) return null;
 
   function dismiss() {
     try {

@@ -6,8 +6,6 @@ import { Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
-import { PageLoading } from "@/components/page-loading";
-import { useWorkspaceSession } from "@/components/workspace-session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { Note, Project } from "@/lib/types";
@@ -22,17 +20,15 @@ export default function NotesPage() {
 
 function NotesContent() {
   const searchParams = useSearchParams();
-  const { user } = useWorkspaceSession();
   const projectFilter = searchParams.get("project");
   const [notes, setNotes] = useState<Note[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState("Untitled note");
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [ready, setReady] = useState(false);
   const selected = useMemo(() => notes.find((note) => note.id === selectedId) || null, [notes, selectedId]);
 
   async function load() {
@@ -45,7 +41,6 @@ function NotesContent() {
     setProjects((projectsResult.data as Project[]) || []);
     if (!selectedId && loadedNotes[0]) selectNote(loadedNotes[0]);
     if (projectFilter) setProjectId(projectFilter);
-    setReady(true);
   }
 
   useEffect(() => {
@@ -72,8 +67,13 @@ function NotesContent() {
     setMessage("");
     try {
       const supabase = createSupabaseBrowserClient();
-      const noteTitle = title.trim() || "Untitled note";
-      const payload = { title: noteTitle, content, project_id: projectId || null, user_id: user.id, updated_at: new Date().toISOString() };
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("Your session has expired. Please sign in again.");
+      const payload = { title, content, project_id: projectId || null, user_id: user.id, updated_at: new Date().toISOString() };
       if (selectedId) {
         const { error } = await supabase.from("notes").update(payload).eq("id", selectedId);
         if (error) throw error;
@@ -126,8 +126,6 @@ function NotesContent() {
       setSaving(false);
     }
   }
-
-  if (!ready) return <PageLoading label="Loading notes…" />;
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
