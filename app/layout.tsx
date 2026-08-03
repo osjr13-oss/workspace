@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { PwaProvider } from "@/components/pwa-provider";
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
@@ -53,6 +54,7 @@ export default function RootLayout({
       <body>
         {children}
         <PwaProvider />
+        <Analytics />
       </body>
     </html>
   );
