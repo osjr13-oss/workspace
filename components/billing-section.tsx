@@ -171,6 +171,36 @@ export function BillingSection() {
       ) : null}
 
       {message ? <p className="mt-4 text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
+
+      {!isPro ? (
+        <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-subtle)] p-5">
+          <h3 className="text-sm font-extrabold tracking-[-0.01em] text-[var(--text)]">
+            Earn 30 Days of Free Pro Access
+          </h3>
+          <p className="mt-1 text-xs text-[var(--muted-strong)] leading-relaxed">
+            Invite 3 friends to create an account on Selrano. When 3 friends sign up, your account automatically unlocks 30 days of full Pro limits.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={`${typeof window !== "undefined" ? window.location.origin : "https://selrano.com"}/signup?ref=free_pro`}
+              className="input-premium h-9 text-xs px-3 py-0 flex-1 font-mono select-all"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const url = `${window.location.origin}/signup?ref=free_pro`;
+                navigator.clipboard.writeText(url);
+                setMessage("Referral link copied to clipboard!");
+              }}
+              className="btn-secondary h-9 px-4 text-xs shrink-0"
+            >
+              Copy link
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

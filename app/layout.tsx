@@ -49,8 +49,40 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${brand.urls.app}/#website`,
+        "url": brand.urls.app,
+        "name": brand.name,
+        "description": brand.tagline
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${brand.urls.app}/#application`,
+        "name": brand.name,
+        "operatingSystem": "All",
+        "applicationCategory": "ProductivityApplication",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "An adaptive personal AI workspace for project materials, notes, private file uploads, grounded chat, and study review."
+      }
+    ]
+  };
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         {children}
         <PwaProvider />

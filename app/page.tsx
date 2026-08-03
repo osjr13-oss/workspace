@@ -6,6 +6,7 @@ import { LandingCta } from "@/components/landing-cta";
 import { LandingPreview } from "@/components/landing-preview";
 import { Reveal } from "@/components/reveal";
 import { SpotlightCard } from "@/components/spotlight-card";
+import { LandingSandbox } from "@/components/landing-sandbox";
 
 export default function LandingPage() {
   return (
@@ -59,6 +60,8 @@ export default function LandingPage() {
 
         <LandingPreview />
       </section>
+
+      <LandingSandbox />
 
       <section id="workflow" className="mx-auto max-w-7xl px-5 pb-16 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-3">

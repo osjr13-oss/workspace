@@ -17,6 +17,7 @@ import {
   Settings
 } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
+import { SidebarUpgradeCard } from "@/components/sidebar-upgrade-card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
@@ -80,6 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+        <SidebarUpgradeCard />
         <div className="mt-auto border-t border-[var(--border)] pt-5">
           <Link
             href="/help"
