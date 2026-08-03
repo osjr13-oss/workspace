@@ -25,8 +25,16 @@ type BillingStatus = {
   stripeConfigured: boolean;
 };
 
+type ReferralStatus = {
+  referralLink: string;
+  referralCount: number;
+  required: number;
+  bonusActive: boolean;
+};
+
 export function BillingSection() {
   const [status, setStatus] = useState<BillingStatus | null>(null);
+  const [referral, setReferral] = useState<ReferralStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,6 +52,26 @@ export function BillingSection() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/referrals")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.referralLink) {
+          setReferral({
+            referralLink: data.referralLink as string,
+            referralCount: Number(data.referralCount) || 0,
+            required: Number(data.required) || 3,
+            bonusActive: Boolean(data.bonusActive)
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,25 +208,38 @@ export function BillingSection() {
           <p className="mt-1 text-xs text-[var(--muted-strong)] leading-relaxed">
             Invite 3 friends to create an account on Selrano. When 3 friends sign up, your account automatically unlocks 30 days of full Pro limits.
           </p>
-          <div className="mt-3 flex items-center gap-2">
-            <input
-              type="text"
-              readOnly
-              value={`${typeof window !== "undefined" ? window.location.origin : "https://selrano.com"}/signup?ref=free_pro`}
-              className="input-premium h-9 text-xs px-3 py-0 flex-1 font-mono select-all"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const url = `${window.location.origin}/signup?ref=free_pro`;
-                navigator.clipboard.writeText(url);
-                setMessage("Referral link copied to clipboard!");
-              }}
-              className="btn-secondary h-9 px-4 text-xs shrink-0"
-            >
-              Copy link
-            </button>
-          </div>
+          {referral ? (
+            <>
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={referral.referralLink}
+                  className="input-premium h-9 text-xs px-3 py-0 flex-1 font-mono select-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(referral.referralLink);
+                    setMessage("Referral link copied to clipboard!");
+                  }}
+                  className="btn-secondary h-9 px-4 text-xs shrink-0"
+                >
+                  Copy link
+                </button>
+              </div>
+              {!referral.bonusActive ? (
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  {Math.max(referral.required - referral.referralCount, 0)} more referral
+                  {Math.max(referral.required - referral.referralCount, 0) === 1 ? "" : "s"} to unlock your free month.
+                </p>
+              ) : (
+                <p className="mt-3 text-xs text-[var(--low)]">Pro referral bonus is active.</p>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-[var(--muted)]">Loading your referral link…</p>
+          )}
         </div>
       ) : null}
     </section>

@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       model: configuredAiModel(),
       input_chars: userContent.length
     });
-    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
+    if (limitError) return NextResponse.json({ error: limitError, code: "plan_limit", reason: "ai_limit" }, { status: 429 });
 
     if (editTarget) {
       const { error: updateError } = await supabase

@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Trash2, Wand2 } from "
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { useUpgradePrompt } from "@/components/use-upgrade-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Flashcard, FlashcardDeck, Note, Project, WorkspaceFile } from "@/lib/types";
 
@@ -19,6 +20,7 @@ export default function FlashcardsPage() {
 
 function FlashcardsContent() {
   const searchParams = useSearchParams();
+  const { modal, promptFromResponse } = useUpgradePrompt();
   const projectFilter = searchParams.get("project");
   const deckFromQuery = searchParams.get("deck");
 
@@ -105,6 +107,7 @@ function FlashcardsContent() {
     });
     const payload = await res.json();
     if (!res.ok) {
+      if (promptFromResponse(res.status, payload)) return;
       alert(payload.error || "Could not create deck.");
       return;
     }
@@ -156,7 +159,11 @@ function FlashcardsContent() {
       });
       const payload = await res.json();
       if (!res.ok) {
-        setGenerateError(payload.error || "Generation failed. Please try again.");
+        if (promptFromResponse(res.status, payload)) {
+          setGenerateError("");
+        } else {
+          setGenerateError(payload.error || "Generation failed. Please try again.");
+        }
       } else {
         setGenerateSuccess(`Generated ${payload.cards} cards successfully!`);
         await load();
@@ -235,6 +242,7 @@ function FlashcardsContent() {
   if (practicing && selectedDeck) {
     return (
       <div className="mx-auto max-w-5xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+        {modal}
         <WorkspaceHeader title={selectedDeck.name} eyebrow="Practice anytime">
           <button type="button" onClick={() => setPracticing(false)} className="btn-secondary">
             <ArrowLeft size={18} />
@@ -256,6 +264,7 @@ function FlashcardsContent() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+      {modal}
       <WorkspaceHeader title="Flashcards" eyebrow="Study system" />
 
       {pageError ? <p className="text-sm font-bold text-[var(--critical)]">{pageError}</p> : null}

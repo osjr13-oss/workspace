@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
+import { FirstRunActivation } from "@/components/first-run-activation";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { QuickActions } from "@/components/quick-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const [chats, setChats] = useState<ChatThread[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [counts, setCounts] = useState({ projects: 0, notes: 0, files: 0, flashcards: 0 });
+  const [starterProjectId, setStarterProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -28,6 +30,17 @@ export default function DashboardPage() {
         if (profile?.full_name) displayName = profile.full_name;
       }
       setName(displayName.split(" ")[0] || "there");
+
+      try {
+        const bootstrapResponse = await fetch("/api/onboarding/bootstrap", { method: "POST" });
+        if (bootstrapResponse.ok) {
+          const bootstrap = await bootstrapResponse.json();
+          if (bootstrap.project?.id) setStarterProjectId(bootstrap.project.id as string);
+        }
+      } catch {
+        // Bootstrap is best-effort; the dashboard still loads without it.
+      }
+
       // flashcards also has a public-read policy (for the /d/[slug] share
       // page), so its count needs an explicit user_id filter. Otherwise
       // every public deck's cards from every user get counted here too.
@@ -53,16 +66,26 @@ export default function DashboardPage() {
     load();
   }, []);
 
+  const askHref = starterProjectId ? `/chats?project=${starterProjectId}` : "/chats";
+  const hasMaterial = counts.notes > 0 || counts.files > 0;
+  const hasChat = chats.length > 0;
+
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Home">
-        <Link href="/chats" className="btn-primary">
+        <Link href={askHref} className="btn-primary">
           <Plus size={18} />
           New chat
         </Link>
       </WorkspaceHeader>
 
-      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
+      <FirstRunActivation
+        projectId={starterProjectId}
+        hasMaterial={hasMaterial}
+        hasChat={hasChat}
+      />
+
+      <Link href={askHref} className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
         <div className="flex items-center gap-4">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
             <MessageSquare size={21} />
