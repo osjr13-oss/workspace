@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { GoalsPanel } from "@/components/goals-panel";
 import { QuickActions } from "@/components/quick-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
@@ -83,6 +84,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
+        <GoalsPanel />
         <PanelList title="Recent chats" href="/chats" empty="No chats yet">
           {chats.map((chat) => (
             <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
