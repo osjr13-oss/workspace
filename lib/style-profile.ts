@@ -76,24 +76,6 @@ function directiveFromDimensions(dimensions: StyleDimensions) {
   return `${length} ${structure} ${energy} ${casing} Never use an em dash.`;
 }
 
-export async function getStyleProfile(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<StyleProfile | null> {
-  const { data, error } = await supabase
-    .from("style_profiles")
-    .select("style_directive, confidence, message_count")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error || !data) return null;
-  return {
-    styleDirective: String(data.style_directive || ""),
-    confidence: Number(data.confidence || 0),
-    messageCount: Number(data.message_count || 0)
-  };
-}
-
 export async function ingestUserStyle(
   supabase: SupabaseClient,
   userId: string,

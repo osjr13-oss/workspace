@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
-import { completeAi, configuredAiModel } from "@/lib/ai";
+import { configuredAiModel } from "@/lib/ai";
+import { generateCardsFromText, insertCards, loadSourceText } from "@/lib/flashcards";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
-import { removeEmDashes } from "@/lib/text";
 
 export const runtime = "nodejs";
 
@@ -44,62 +44,22 @@ export async function POST(request: Request) {
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
-    const result = await completeAi([
-      {
-        role: "system",
-        content:
-          'Create 8 to 12 concise study flashcards. Never use an em dash. Return strict JSON only with this shape: {"cards":[{"front":"question","back":"answer"}]}.'
-      },
-      { role: "user", content: removeEmDashes(sourceText.slice(0, 12000)) }
-    ]);
+    const cards = await generateCardsFromText(sourceText);
+    if (!cards.length) return NextResponse.json({ error: "Model did not return usable cards" }, { status: 500 });
 
-    const parsed = parseCards(result.text);
-    if (!parsed.length) return NextResponse.json({ error: "Model did not return usable cards" }, { status: 500 });
+    const insertError = await insertCards(supabase, {
+      userId: user.id,
+      deckId: body.deckId,
+      projectId: deck.project_id,
+      cards,
+      source: { sourceType: body.sourceType, sourceId: body.sourceId }
+    });
+    if (insertError) throw new Error(insertError);
 
-    const dueAt = new Date().toISOString();
-    const { error } = await supabase.from("flashcards").insert(
-      parsed.map((card) => ({
-        user_id: user.id,
-        deck_id: body.deckId,
-        project_id: deck.project_id,
-        front: card.front,
-        back: card.back,
-        source_type: body.sourceType,
-        source_id: body.sourceId,
-        due_at: dueAt
-      }))
-    );
-    if (error) throw error;
-
-    return NextResponse.json({ cards: parsed.length });
+    return NextResponse.json({ cards: cards.length });
   } catch (error) {
     const message = serializeError(error);
     console.error("[flashcards]", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-async function loadSourceText(
-  supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
-  userId: string,
-  sourceType: "note" | "file",
-  sourceId: string
-) {
-  if (sourceType === "note") {
-    const { data, error } = await supabase.from("notes").select("title, content").eq("id", sourceId).eq("user_id", userId).maybeSingle();
-    if (error) throw error;
-    return data ? `${data.title}\n\n${data.content}` : "";
-  }
-
-  const { data, error } = await supabase.from("files").select("name, extracted_text").eq("id", sourceId).eq("user_id", userId).maybeSingle();
-  if (error) throw error;
-  return data?.extracted_text ? `${data.name}\n\n${data.extracted_text}` : "";
-}
-
-function parseCards(value: string) {
-  const start = value.indexOf("{");
-  const end = value.lastIndexOf("}");
-  if (start === -1 || end === -1) return [];
-  const parsed = JSON.parse(value.slice(start, end + 1)) as { cards?: Array<{ front?: string; back?: string }> };
-  return (parsed.cards || []).filter((card) => card.front && card.back).map((card) => ({ front: card.front!, back: card.back! }));
 }

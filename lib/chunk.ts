@@ -1,22 +1,3 @@
-export function chunkText(text: string, maxLength = 1800) {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
-
-  const chunks: string[] = [];
-  let cursor = 0;
-
-  while (cursor < normalized.length) {
-    const end = Math.min(cursor + maxLength, normalized.length);
-    const slice = normalized.slice(cursor, end);
-    const boundary = end < normalized.length ? Math.max(slice.lastIndexOf(". "), slice.lastIndexOf(" ")) : slice.length;
-    const size = boundary > maxLength * 0.55 ? boundary + 1 : slice.length;
-    chunks.push(normalized.slice(cursor, cursor + size).trim());
-    cursor += size;
-  }
-
-  return chunks.filter(Boolean);
-}
-
 export type TextPage = { pageNumber: number; start: number; end: number };
 
 export type LocatedChunk = {
@@ -28,10 +9,10 @@ export type LocatedChunk = {
 
 /**
  * Page/offset-aware chunker used only by the upload route, so citations can
- * jump back to the exact passage a claim came from. Unlike chunkText, this
- * operates directly on the untouched text (no whitespace collapsing) so
- * charStart/charEnd are valid slice offsets into the same string stored on
- * files.extracted_text. Collapsing whitespace first would desync the two.
+ * jump back to the exact passage a claim came from. It operates directly on the
+ * untouched text (no whitespace collapsing) so charStart/charEnd are valid slice
+ * offsets into the same string stored on files.extracted_text. Collapsing
+ * whitespace first would desync the two.
  */
 export function chunkTextWithLocations(text: string, pages: TextPage[] = [], maxLength = 1800): LocatedChunk[] {
   if (!text.trim()) return [];

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createDeckWithCards, normalizeCards } from "@/lib/flashcards";
 import { searchChunksFullText } from "@/lib/retrieve-context";
 import { webSearch } from "@/lib/web-search";
 import type { Citation } from "@/lib/types";
@@ -168,33 +169,17 @@ async function createNote(ctx: ToolContext, title: string, content: string): Pro
 }
 
 async function createFlashcards(ctx: ToolContext, deckName: string, rawCards: unknown[]): Promise<string> {
-  const cards = rawCards
-    .filter((card): card is { front: unknown; back: unknown } => typeof card === "object" && card !== null)
-    .map((card) => ({ front: String(card.front ?? "").trim(), back: String(card.back ?? "").trim() }))
-    .filter((card) => card.front && card.back);
-
+  const cards = normalizeCards(rawCards);
   if (!cards.length) return "No valid flashcards were provided (each needs a front and a back).";
 
-  const { data: deck, error: deckError } = await ctx.supabase
-    .from("flashcard_decks")
-    .insert({ user_id: ctx.userId, project_id: ctx.projectId, name: deckName.slice(0, 200) })
-    .select("id")
-    .single();
+  const result = await createDeckWithCards(ctx.supabase, {
+    userId: ctx.userId,
+    projectId: ctx.projectId,
+    name: deckName,
+    cards
+  });
 
-  if (deckError) return `Could not create the deck: ${deckError.message}`;
-
-  const dueAt = new Date().toISOString();
-  const { error: cardsError } = await ctx.supabase.from("flashcards").insert(
-    cards.map((card) => ({
-      user_id: ctx.userId,
-      deck_id: deck.id,
-      project_id: ctx.projectId,
-      front: card.front,
-      back: card.back,
-      due_at: dueAt
-    }))
-  );
-
-  if (cardsError) return `Created the deck, but adding cards failed: ${cardsError.message}`;
-  return `Created deck "${deckName}" with ${cards.length} flashcards.`;
+  if ("deckError" in result) return `Could not create the deck: ${result.deckError}`;
+  if ("cardsError" in result) return `Created the deck, but adding cards failed: ${result.cardsError}`;
+  return `Created deck "${deckName}" with ${result.count} flashcards.`;
 }

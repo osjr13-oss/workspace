@@ -8,6 +8,8 @@ type MemoryRow = {
   importance: number;
 };
 
+export type MemoryKind = "durable" | "preference";
+
 function tokenize(value: string) {
   return new Set(
     value
@@ -35,11 +37,20 @@ function isRecallQuery(query: string) {
   );
 }
 
-async function loadMemoryRows(supabase: SupabaseClient, userId: string) {
+/**
+ * Load memories of one kind.
+ *
+ * Chat recall reads 'durable' facts only. Phase 3 adds 'preference' rows, which
+ * describe how the user reacts to worker output ("dismisses flashcards made
+ * from short notes"). Those are context for the Judgment layer and must never
+ * surface in a chat reply, so the kind filter is the boundary between the two.
+ */
+async function loadMemoryRows(supabase: SupabaseClient, userId: string, kind: MemoryKind = "durable") {
   const { data, error } = await supabase
     .from("content_memories")
     .select("id, content, importance")
     .eq("user_id", userId)
+    .eq("kind", kind)
     .order("importance", { ascending: false })
     .order("last_accessed", { ascending: false })
     .limit(50);
@@ -93,7 +104,8 @@ async function storeMemories(
     const { error } = await supabase.from("content_memories").insert({
       user_id: userId,
       content,
-      importance
+      importance,
+      kind: "durable"
     });
     if (error) {
       console.error("[memory] insert failed", error);

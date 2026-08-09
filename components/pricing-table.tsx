@@ -54,28 +54,3 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
     </div>
   );
 }
-
-export function PricingComparison() {
-  return (
-    <div className="panel overflow-hidden">
-      <table className="data-table w-full text-sm">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th>Free</th>
-            <th>Pro</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <td className="font-bold">{row.label}</td>
-              <td>{row.free}</td>
-              <td>{row.pro}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
