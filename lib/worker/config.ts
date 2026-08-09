@@ -21,6 +21,25 @@ export function workerEnabled() {
 }
 
 /**
+ * Whether the scheduled (cron) worker may run.
+ *
+ * Defaults to OFF, unlike workerEnabled(). The scheduler is fully built but
+ * must not start acting on its own until the owner explicitly turns it on by
+ * setting WORKER_CRON_ENABLED=true. Manual Run Now is unaffected, so the two
+ * can be exercised independently.
+ *
+ * The cron entry in vercel.json still fires on schedule; this flag is what makes
+ * the run a no-op, so turning it on is an environment variable change rather
+ * than a deploy.
+ */
+export function workerCronEnabled() {
+  return process.env.WORKER_CRON_ENABLED?.trim().toLowerCase() === "true";
+}
+
+/** How many users one scheduled invocation will process before stopping. */
+export const CRON_USER_BATCH_SIZE = intFromEnv("WORKER_CRON_BATCH_SIZE", 25);
+
+/**
  * Hard stop on tokens per user per day. Deliberately conservative: a run that
  * plans three actions spends roughly one judgment call plus one generation and
  * one self check per action.

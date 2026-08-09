@@ -12,6 +12,27 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-08-08",
+    title: "Selrano now works while you are away",
+    description:
+      "Your feed is the new home screen. Selrano looks at what changed in your workspace, decides what would genuinely help, and has it ready for you to review, keep, or correct. When nothing is needed, it says so plainly instead of inventing busywork. Chat is still here, one click away.",
+    tag: "New"
+  },
+  {
+    date: "2026-08-08",
+    title: "Goals, so Selrano knows what matters",
+    description:
+      "Add an exam or a deadline and link it to a project. Selrano uses it to judge what is urgent, so material tied to something due next week gets attention before something with no date attached.",
+    tag: "New"
+  },
+  {
+    date: "2026-08-08",
+    title: "The support form works again",
+    description:
+      "Messages sent through the support page were being rejected. They now reach us properly.",
+    tag: "Fixed"
+  },
+  {
     date: "2026-08-03",
     title: "A more polished landing page",
     description:

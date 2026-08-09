@@ -10,16 +10,23 @@ export async function PATCH(request: Request) {
     const { user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = (await request.json()) as { lifecycleEmails?: unknown };
-    if (typeof body.lifecycleEmails !== "boolean") {
-      return NextResponse.json({ error: "lifecycleEmails must be a boolean." }, { status: 400 });
+    const body = (await request.json()) as { lifecycleEmails?: unknown; dailyDigest?: unknown };
+
+    const hasLifecycle = typeof body.lifecycleEmails === "boolean";
+    const hasDigest = typeof body.dailyDigest === "boolean";
+    if (!hasLifecycle && !hasDigest) {
+      return NextResponse.json(
+        { error: "lifecycleEmails or dailyDigest must be a boolean." },
+        { status: 400 }
+      );
     }
 
     const admin = createSupabaseAdminClient();
     const { error } = await admin.from("profiles").upsert(
       {
         id: user.id,
-        lifecycle_emails: body.lifecycleEmails,
+        ...(hasLifecycle ? { lifecycle_emails: body.lifecycleEmails as boolean } : {}),
+        ...(hasDigest ? { daily_digest: body.dailyDigest as boolean } : {}),
         updated_at: new Date().toISOString()
       },
       { onConflict: "id" }
@@ -27,7 +34,11 @@ export async function PATCH(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, lifecycleEmails: body.lifecycleEmails });
+    return NextResponse.json({
+      success: true,
+      ...(hasLifecycle ? { lifecycleEmails: body.lifecycleEmails } : {}),
+      ...(hasDigest ? { dailyDigest: body.dailyDigest } : {})
+    });
   } catch (error) {
     const message = serializeError(error);
     console.error("[account/email-preferences]", message, error);

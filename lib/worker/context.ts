@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describeDeadline } from "@/lib/goals";
 import { RECENT_WINDOW_DAYS } from "@/lib/worker/config";
+import { loadPreferenceObservations } from "@/lib/worker/feedback";
 
 /**
  * Everything a run knows before it decides anything.
@@ -46,7 +47,10 @@ export type WorkerContext = {
   lastRunAt: string | null;
   goals: WorkerGoal[];
   sources: WorkerSource[];
+  /** Durable facts about the user (kind='durable'). */
   memories: string[];
+  /** Learned preferences from past feed decisions (kind='preference'). */
+  preferences: string[];
   recentFeedback: WorkerFeedback[];
   counts: { notes: number; files: number; decks: number };
 };
@@ -213,16 +217,21 @@ export async function gatherContext(admin: SupabaseClient, userId: string): Prom
     ((projectRows || []) as Array<{ id: string; name: string }>).map((project) => [project.id, project.name])
   );
 
-  const [lastRunAt, goals, sources, memoryRows, recentFeedback, noteCount, fileCount, deckCount] = await Promise.all([
+  const [lastRunAt, goals, sources, memoryRows, preferences, recentFeedback, noteCount, fileCount, deckCount] =
+    await Promise.all([
     loadLastRunAt(admin, userId),
     loadGoals(admin, userId, projectNames),
     loadSources(admin, userId, projectNames),
+    // Durable facts only. Preference observations are loaded separately so they
+    // can be presented to the model as a distinct, higher-weight signal.
     admin
       .from("content_memories")
       .select("content")
       .eq("user_id", userId)
+      .eq("kind", "durable")
       .order("importance", { ascending: false })
       .limit(12),
+    loadPreferenceObservations(admin, userId),
     loadRecentFeedback(admin, userId),
     admin.from("notes").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("files").select("id", { count: "exact", head: true }).eq("user_id", userId),
@@ -235,6 +244,7 @@ export async function gatherContext(admin: SupabaseClient, userId: string): Prom
     goals,
     sources,
     memories: ((memoryRows.data || []) as Array<{ content: string }>).map((row) => row.content),
+    preferences,
     recentFeedback,
     counts: {
       notes: noteCount.count || 0,
@@ -274,7 +284,12 @@ export function serializeContext(context: WorkerContext): string {
   } else {
     for (const source of available) {
       const project = source.projectName ? `, project: ${source.projectName}` : "";
-      lines.push(`  - [${source.kind}:${source.id}] "${source.title}" (changed ${source.changedAt.slice(0, 10)}${project})`);
+      // The id is printed bare and labelled. It used to be shown as
+      // [note:<uuid>], and the model faithfully copied the "note:" prefix into
+      // source_id, which then matched nothing and got every action silently
+      // dropped by the validator.
+      lines.push(`  - ${source.kind} "${source.title}" (changed ${source.changedAt.slice(0, 10)}${project})`);
+      lines.push(`    source_id: ${source.id}`);
       lines.push(`    excerpt: ${source.excerpt.slice(0, 400)}`);
     }
   }
@@ -284,6 +299,15 @@ export function serializeContext(context: WorkerContext): string {
     lines.push("");
     lines.push("ALREADY HANDLED (do not act on these again, they have not changed):");
     for (const source of skipped) lines.push(`  - "${source.title}"`);
+  }
+
+  // Learned preferences come before general facts and are stated as binding,
+  // because reacting to them is the whole point of the feedback loop.
+  if (context.preferences.length) {
+    lines.push("");
+    lines.push("WHAT YOU HAVE LEARNED ABOUT WHAT THIS USER WANTS:");
+    lines.push("(These come from their own past decisions. Treat them as strong evidence.)");
+    for (const preference of context.preferences) lines.push(`  - ${preference}`);
   }
 
   if (context.memories.length) {

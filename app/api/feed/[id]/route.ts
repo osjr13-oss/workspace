@@ -3,6 +3,7 @@ import { createDeckWithCards, normalizeCards } from "@/lib/flashcards";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { removeEmDashes } from "@/lib/text";
+import { recordFeedDecision } from "@/lib/worker/feedback";
 
 export const runtime = "nodejs";
 
@@ -44,12 +45,24 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: "This item was already decided" }, { status: 409 });
     }
 
+    const projectName = await loadProjectName(supabase, user.id, item.source_type, item.source_id);
+
     if (body.action === "dismiss") {
       const { error } = await supabase
         .from("feed_items")
         .update({ status: "dismissed", decided_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
+
+      // Closing the loop: the next run reads this back as context.
+      await recordFeedDecision(supabase, user.id, "dismissed", {
+        actionType: item.action_type,
+        title: item.title,
+        sourceType: item.source_type,
+        projectName,
+        edited: false
+      });
+
       return NextResponse.json({ status: "dismissed" });
     }
 
@@ -104,6 +117,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       filedId = note.id;
     }
 
+    // An approval that arrived with its own payload is an edit: the user
+    // corrected the generated version before filing it.
+    const edited = Boolean(body.payload);
+
     const { error: updateError } = await supabase
       .from("feed_items")
       .update({
@@ -111,6 +128,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         decided_at: new Date().toISOString(),
         filed_type: filedType,
         filed_id: filedId,
+        edited,
         // Persist the edited version so the feed shows what was actually filed.
         payload,
         title
@@ -119,10 +137,46 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     if (updateError) throw updateError;
 
+    await recordFeedDecision(supabase, user.id, "approved", {
+      actionType: item.action_type,
+      title,
+      sourceType: item.source_type,
+      projectName,
+      edited
+    });
+
     return NextResponse.json({ status: "approved", filedType, filedId });
   } catch (error) {
     const message = serializeError(error);
     console.error("[feed/decide]", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/** Project a feed item's source belongs to, for a more specific observation. */
+async function loadProjectName(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
+  userId: string,
+  sourceType: string | null,
+  sourceId: string | null
+): Promise<string | null> {
+  if (!sourceId || (sourceType !== "note" && sourceType !== "file")) return null;
+
+  const { data: source } = await supabase
+    .from(sourceType === "note" ? "notes" : "files")
+    .select("project_id")
+    .eq("id", sourceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!source?.project_id) return null;
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", source.project_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return project?.name ?? null;
 }

@@ -38,7 +38,7 @@ const JUDGMENT_SCHEMA = {
     actions: {
       type: "array",
       maxItems: MAX_ACTIONS_PER_RUN,
-      description: `Zero to ${MAX_ACTIONS_PER_RUN} things worth producing right now. An empty array is the correct answer when nothing genuinely helps.`,
+      description: `Zero to ${MAX_ACTIONS_PER_RUN} things worth producing right now. Include an action whenever a trigger in the instructions applies; leave the array empty only when none does.`,
       items: {
         type: "object",
         properties: {
@@ -48,7 +48,7 @@ const JUDGMENT_SCHEMA = {
             description: "generate_flashcards makes a deck from one source. write_study_brief writes a short structured brief on one source."
           },
           source_kind: { type: "string", enum: ["note", "file"] },
-          source_id: { type: "string", description: "The exact id shown in brackets next to the material." },
+          source_id: { type: "string", description: "Copy the source_id value shown under the chosen material, exactly as given." },
           reason: {
             type: "string",
             description:
@@ -68,24 +68,25 @@ const JUDGMENT_SCHEMA = {
 
 const SYSTEM_PROMPT = `You decide what a study workspace should produce for its owner while they are away.
 
-You are not a chatbot and you are not trying to be helpful for its own sake. Most days the right answer is to do nothing. Only propose work when a specific, concrete trigger makes it genuinely useful right now.
+Act when there is a concrete trigger. Stay quiet when there is not. Both are correct answers, and which one applies is decided by the evidence below, not by a preference for restraint.
 
-Good triggers:
+Act when any of these is true:
 - A deadline is approaching and the material is linked to that goal.
 - Material was uploaded or edited recently and has not been turned into anything yet.
 - The user has a pattern of wanting this kind of output for this kind of material.
 
-Bad reasons to act:
+Do not act when the only thing you can say is:
 - The material exists.
 - It has been a while since you did something.
-- To appear productive.
+- It might be useful someday.
+
+If a trigger above genuinely applies, propose the action. Do not talk yourself out of useful work that the evidence supports. If none applies, return an empty list and say why in one sentence.
 
 Rules:
 - At most ${MAX_ACTIONS_PER_RUN} actions.
 - Never act on material listed as already handled.
 - Never propose two actions on the same source in one run.
 - Every action needs a reason you can state plainly to the user in one sentence. If you cannot state why it helps right now, do not propose it.
-- Prefer fewer, better actions. Two strong ones beat three where the third is filler.
 - Never use an em dash.`;
 
 type RawAction = { type?: unknown; source_kind?: unknown; source_id?: unknown; reason?: unknown };
@@ -116,7 +117,12 @@ export function validateJudgment(
     const type = String(entry.type ?? "");
     if (!ACTION_TYPES.includes(type as (typeof ACTION_TYPES)[number])) continue;
 
-    const sourceId = String(entry.source_id ?? "").trim();
+    // Tolerate a "note:"/"file:" prefix on the id. The model will echo back
+    // whatever shape it was shown, and a formatting mismatch must not silently
+    // discard otherwise valid work.
+    const sourceId = String(entry.source_id ?? "")
+      .trim()
+      .replace(/^(note|file):/, "");
     const source = byId.get(sourceId);
     // Rejects hallucinated ids, sources belonging to someone else, and anything
     // already acted on at this version, since allowedSources excludes those.
