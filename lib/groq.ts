@@ -160,7 +160,57 @@ export async function streamGroq(
   return full.trim();
 }
 
-export async function callGroq(messages: GroqMessage[], options?: { temperature?: number }) {
+/**
+ * Force Groq to answer by calling exactly one named tool, so the reply arrives
+ * as structured arguments instead of prose that has to be scraped for JSON.
+ *
+ * Returns the raw argument string plus token usage. The caller parses and
+ * validates it; a model can still emit arguments that do not satisfy the schema.
+ */
+export async function callGroqStructured(
+  messages: GroqMessage[],
+  tool: { name: string; description: string; parameters: Record<string, unknown> },
+  options?: { temperature?: number }
+): Promise<{ args: string | null; usage: { inputTokens: number; outputTokens: number } }> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requireEnv("GROQ_API_KEY")}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: requireEnv("GROQ_MODEL"),
+      messages,
+      tools: [{ type: "function", function: tool }],
+      tool_choice: { type: "function", function: { name: tool.name } },
+      temperature: options?.temperature ?? 0.1
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Groq structured request failed: ${detail}`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: GroqAssistantMessage }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+
+  const call = payload.choices?.[0]?.message?.tool_calls?.find((entry) => entry.function?.name === tool.name);
+  return {
+    args: call?.function?.arguments ?? null,
+    usage: {
+      inputTokens: payload.usage?.prompt_tokens ?? 0,
+      outputTokens: payload.usage?.completion_tokens ?? 0
+    }
+  };
+}
+
+export async function callGroq(
+  messages: GroqMessage[],
+  options?: { temperature?: number }
+): Promise<{ text: string; usage: { inputTokens: number; outputTokens: number } }> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -181,7 +231,14 @@ export async function callGroq(messages: GroqMessage[], options?: { temperature?
 
   const payload = (await response.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
 
-  return removeEmDashes(payload.choices?.[0]?.message?.content?.trim() || "");
+  return {
+    text: removeEmDashes(payload.choices?.[0]?.message?.content?.trim() || ""),
+    usage: {
+      inputTokens: payload.usage?.prompt_tokens ?? 0,
+      outputTokens: payload.usage?.completion_tokens ?? 0
+    }
+  };
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
-import { configuredAiModel } from "@/lib/ai";
+import { configuredAiModel, StructuredOutputError } from "@/lib/ai";
 import { generateCardsFromText, insertCards, loadSourceText } from "@/lib/flashcards";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -44,8 +44,19 @@ export async function POST(request: Request) {
     });
     if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
-    const cards = await generateCardsFromText(sourceText);
-    if (!cards.length) return NextResponse.json({ error: "Model did not return usable cards" }, { status: 500 });
+    let cards;
+    try {
+      ({ cards } = await generateCardsFromText(sourceText));
+    } catch (error) {
+      if (error instanceof StructuredOutputError) {
+        console.error("[flashcards] structured output rejected", {
+          provider: error.provider,
+          raw: JSON.stringify(error.raw)?.slice(0, 500)
+        });
+        return NextResponse.json({ error: "Model did not return usable cards" }, { status: 500 });
+      }
+      throw error;
+    }
 
     const insertError = await insertCards(supabase, {
       userId: user.id,

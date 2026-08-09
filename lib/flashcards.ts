@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { completeAi } from "@/lib/ai";
+import { completeStructured, type TokenUsage } from "@/lib/ai";
 import { removeEmDashes } from "@/lib/text";
 
 /**
@@ -34,73 +34,78 @@ export function normalizeCards(raw: unknown[]): FlashcardInput[] {
     .filter((card) => card.front && card.back);
 }
 
+/** JSON schema the model must fill in when generating a deck. */
+const FLASHCARD_TOOL_SCHEMA = {
+  type: "object",
+  properties: {
+    cards: {
+      type: "array",
+      minItems: 1,
+      maxItems: 12,
+      description: "The flashcards, 8 to 12 of them.",
+      items: {
+        type: "object",
+        properties: {
+          front: { type: "string", description: "The question or prompt side." },
+          back: { type: "string", description: "The answer side." }
+        },
+        required: ["front", "back"]
+      }
+    }
+  },
+  required: ["cards"]
+} as const;
+
 /**
- * Pull cards out of a model response shaped like {"cards":[...]}.
+ * Validate the model's tool arguments.
  *
- * This tolerates the model wrapping its JSON in prose by slicing between the
- * first { and the last }. Phase 1 replaces it with schema-validated structured
- * output.
- *
- * Note this deliberately does NOT run normalizeCards. The generate-from-source
- * route has always stored whatever strings the model produced, untrimmed and
- * uncoerced, and Phase 0 is a pure refactor. Routing it through normalizeCards
- * would silently start trimming whitespace and stringifying non-string values.
- * The only change is that a malformed `cards` value now yields an empty result
- * instead of throwing, which the caller already treats as "no usable cards".
+ * The JSON schema is a request, not a guarantee, so the shape is checked in code
+ * before anything reaches the database. Returning null signals a schema failure
+ * to completeStructured; returning cards means every entry has a usable front
+ * and back.
  */
-export function parseGeneratedCards(value: string): FlashcardInput[] {
-  const start = value.indexOf("{");
-  const end = value.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    console.error("[flashcards] model response contained no JSON object", { preview: value.slice(0, 200) });
-    return [];
-  }
+export function validateGeneratedCards(input: unknown): FlashcardInput[] | null {
+  if (!input || typeof input !== "object") return null;
+  const cards = (input as { cards?: unknown }).cards;
+  if (!Array.isArray(cards)) return null;
 
-  let parsed: { cards?: unknown };
-  try {
-    parsed = JSON.parse(value.slice(start, end + 1)) as { cards?: unknown };
-  } catch (error) {
-    console.error("[flashcards] model response was not valid JSON", {
-      preview: value.slice(0, 200),
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return [];
-  }
+  const usable = normalizeCards(cards);
+  if (!usable.length) return null;
 
-  if (!Array.isArray(parsed.cards)) {
-    console.error("[flashcards] model response had no cards array", { cards: typeof parsed.cards });
-    return [];
-  }
-
-  const raw = parsed.cards as Array<{ front?: string; back?: string } | null>;
-  const cards = raw
-    .filter((card) => card && card.front && card.back)
-    .map((card) => ({ front: card!.front as string, back: card!.back as string }));
-
-  // Malformed entries used to throw and surface as a 500. They are dropped now,
-  // so log the drop or a partially broken deck would be silently smaller.
-  if (cards.length < raw.length) {
+  if (usable.length < cards.length) {
     console.error("[flashcards] dropped unusable cards from model output", {
-      received: raw.length,
-      kept: cards.length
+      received: cards.length,
+      kept: usable.length
     });
   }
 
-  return cards;
+  return usable;
 }
 
-/** Ask the model for a deck's worth of cards about some source material. */
-export async function generateCardsFromText(sourceText: string): Promise<FlashcardInput[]> {
-  const result = await completeAi([
-    {
-      role: "system",
-      content:
-        'Create 8 to 12 concise study flashcards. Never use an em dash. Return strict JSON only with this shape: {"cards":[{"front":"question","back":"answer"}]}.'
+/**
+ * Ask the model for a deck's worth of cards about some source material.
+ *
+ * Uses forced tool use, so the cards arrive as structured arguments. The old
+ * path asked for "strict JSON only" in the prompt and then scraped the response
+ * between the first { and the last }, which broke whenever the model wrapped its
+ * answer in prose.
+ */
+export async function generateCardsFromText(
+  sourceText: string
+): Promise<{ cards: FlashcardInput[]; usage: TokenUsage }> {
+  const result = await completeStructured({
+    system:
+      "Create 8 to 12 concise study flashcards from the user's material. Each card needs a self-contained question and a correct, specific answer. Never use an em dash.",
+    user: removeEmDashes(sourceText.slice(0, MAX_SOURCE_CHARS)),
+    tool: {
+      name: "create_flashcards",
+      description: "Return the generated study flashcards.",
+      schema: FLASHCARD_TOOL_SCHEMA as unknown as Record<string, unknown>
     },
-    { role: "user", content: removeEmDashes(sourceText.slice(0, MAX_SOURCE_CHARS)) }
-  ]);
+    validate: validateGeneratedCards
+  });
 
-  return parseGeneratedCards(result.text);
+  return { cards: result.data, usage: result.usage };
 }
 
 /** Read the text of a note or file the user owns. Returns "" when there is none. */
