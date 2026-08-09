@@ -51,12 +51,42 @@ export function normalizeCards(raw: unknown[]): FlashcardInput[] {
 export function parseGeneratedCards(value: string): FlashcardInput[] {
   const start = value.indexOf("{");
   const end = value.lastIndexOf("}");
-  if (start === -1 || end === -1) return [];
-  const parsed = JSON.parse(value.slice(start, end + 1)) as { cards?: unknown };
-  if (!Array.isArray(parsed.cards)) return [];
-  return (parsed.cards as Array<{ front?: string; back?: string }>)
+  if (start === -1 || end === -1) {
+    console.error("[flashcards] model response contained no JSON object", { preview: value.slice(0, 200) });
+    return [];
+  }
+
+  let parsed: { cards?: unknown };
+  try {
+    parsed = JSON.parse(value.slice(start, end + 1)) as { cards?: unknown };
+  } catch (error) {
+    console.error("[flashcards] model response was not valid JSON", {
+      preview: value.slice(0, 200),
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return [];
+  }
+
+  if (!Array.isArray(parsed.cards)) {
+    console.error("[flashcards] model response had no cards array", { cards: typeof parsed.cards });
+    return [];
+  }
+
+  const raw = parsed.cards as Array<{ front?: string; back?: string } | null>;
+  const cards = raw
     .filter((card) => card && card.front && card.back)
-    .map((card) => ({ front: card.front as string, back: card.back as string }));
+    .map((card) => ({ front: card!.front as string, back: card!.back as string }));
+
+  // Malformed entries used to throw and surface as a 500. They are dropped now,
+  // so log the drop or a partially broken deck would be silently smaller.
+  if (cards.length < raw.length) {
+    console.error("[flashcards] dropped unusable cards from model output", {
+      received: raw.length,
+      kept: cards.length
+    });
+  }
+
+  return cards;
 }
 
 /** Ask the model for a deck's worth of cards about some source material. */
