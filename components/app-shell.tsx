@@ -10,6 +10,7 @@ import {
   Files,
   FolderOpen,
   Home,
+  Inbox,
   LifeBuoy,
   LogOut,
   MessageSquare,
@@ -20,6 +21,7 @@ import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
+  { href: "/feed", label: "Feed", icon: Inbox },
   { href: "/chats", label: "Chats", icon: MessageSquare },
   { href: "/dashboard", label: "Workspace", icon: Home },
   { href: "/projects", label: "Projects", icon: FolderOpen },
