@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: brand.name,
     short_name: brand.name,
     description: brand.tagline,
-    start_url: "/chats",
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "any",

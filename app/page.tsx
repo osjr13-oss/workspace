@@ -32,10 +32,10 @@ export default function LandingPage() {
       <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pt-20">
         <div>
           <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-            Your workspace does the work while you are away.
+            An AI workspace that learns how you think and write.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
-            Upload your material, set your deadlines, and close the tab. Selrano reviews what changed, decides what would genuinely help, and has it waiting when you get back. Your job is to review, keep, or correct it.
+            Talk through ideas, work with your own files, search the live web, and get responses that adapt to your voice without losing the facts.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <LandingCta />
@@ -45,9 +45,9 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 grid max-w-2xl gap-3 text-sm font-bold text-[var(--muted-strong)] sm:grid-cols-3">
             {[
-              { label: "Ahead of you", value: "Work is done before you ask" },
-              { label: "Grounded", value: "Built only from your own material" },
-              { label: "Learns", value: "Your corrections change what comes next" }
+              { label: "Voice", value: "Responses learn your style" },
+              { label: "Context", value: "Your sources stay grounded" },
+              { label: "Continuity", value: "Useful details carry forward" }
             ].map((item) => (
               <div key={item.label} className="border-l border-[var(--border-strong)] pl-3">
                 <p className="text-xs uppercase tracking-[0.1em] text-[var(--muted)]">{item.label}</p>

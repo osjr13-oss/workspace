@@ -7,13 +7,12 @@ import { removeEmDashes } from "@/lib/text";
  *
  * Flashcards were previously created in two unrelated places that had drifted
  * apart: the generate-from-source route (app/api/ai/flashcards) and the chat
- * tool (lib/ai-tools). Both hand-rolled card validation and card insertion. The
- * background Worker is the third caller, so the logic lives here once.
+ * tool (lib/ai-tools). Both hand-rolled card validation and card insertion, so
+ * the shared logic lives here once.
  *
  * Every function takes the caller's Supabase client. When that client is the
- * authenticated per-request client, row level security enforces ownership; the
- * explicit user_id on every write keeps service-role callers (the Worker)
- * correctly scoped too.
+ * authenticated per-request client, row level security enforces ownership. The
+ * explicit user_id on every write also keeps privileged server callers scoped.
  */
 
 export type FlashcardInput = { front: string; back: string };

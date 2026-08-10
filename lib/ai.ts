@@ -10,11 +10,7 @@ type SimpleMessage = {
 
 type AiProvider = "anthropic" | "groq";
 
-/**
- * Tokens billed for one model call. Previously discarded; the Worker needs it to
- * enforce a per-user daily token budget, so every path now reports it. Zero
- * means the provider did not return usage, not that the call was free.
- */
+/** Tokens billed for one model call. Zero means the provider did not return usage. */
 export type TokenUsage = {
   inputTokens: number;
   outputTokens: number;

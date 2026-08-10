@@ -7,7 +7,7 @@ import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/chats";
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
 export default function SignInPage() {
@@ -43,7 +43,7 @@ function SignInForm() {
     }
   }
 
-  const signUpHref = nextPath !== "/chats" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup";
+  const signUpHref = nextPath !== "/dashboard" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup";
 
   return (
     <AuthFrame title="Welcome back" copy="Sign in to continue organizing your work.">

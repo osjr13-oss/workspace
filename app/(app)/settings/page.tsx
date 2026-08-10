@@ -16,7 +16,6 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [lifecycleEmails, setLifecycleEmails] = useState(false);
-  const [dailyDigest, setDailyDigest] = useState(false);
   const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -28,12 +27,11 @@ export default function SettingsPage() {
       if (!data.user) return;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, lifecycle_emails, daily_digest")
+        .select("full_name, lifecycle_emails")
         .eq("id", data.user.id)
         .single();
       setFullName(profile?.full_name || metadataName);
       setLifecycleEmails(profile?.lifecycle_emails === true);
-      setDailyDigest(profile?.daily_digest === true);
     });
   }, []);
 
@@ -62,30 +60,6 @@ export default function SettingsPage() {
       } else {
         setLifecycleEmails(enabled);
         setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
-      }
-    } catch {
-      setMessage("Could not update email preferences. Please try again.");
-    } finally {
-      setSavingEmailPrefs(false);
-    }
-  }
-
-  async function toggleDailyDigest(enabled: boolean) {
-    setSavingEmailPrefs(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/account/email-preferences", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dailyDigest: enabled })
-      });
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setMessage(payload?.error || "Could not update email preferences.");
-      } else {
-        setDailyDigest(enabled);
-        setMessage(enabled ? "Daily digest enabled." : "Daily digest turned off.");
       }
     } catch {
       setMessage("Could not update email preferences. Please try again.");
@@ -158,21 +132,6 @@ export default function SettingsPage() {
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
           <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
-        </label>
-        <label className="mt-4 flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 rounded border-[var(--border)]"
-            checked={dailyDigest}
-            disabled={savingEmailPrefs}
-            onChange={(event) => toggleDailyDigest(event.target.checked)}
-          />
-          <span>
-            <span className="text-sm font-semibold">Send a morning digest when Selrano makes something</span>
-            <span className="mt-1 block text-sm text-[var(--muted)]">
-              Only on mornings with new items in your feed. Never a message saying nothing happened.
-            </span>
-          </span>
         </label>
       </section>
 

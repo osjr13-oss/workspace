@@ -94,18 +94,6 @@ export type Flashcard = {
   updated_at: string;
 };
 
-export type UserGoal = {
-  id: string;
-  user_id: string;
-  project_id: string | null;
-  title: string;
-  /** Calendar day (YYYY-MM-DD), not an instant. Null means no deadline. */
-  deadline: string | null;
-  status: "active" | "done";
-  created_at: string;
-  updated_at: string;
-};
-
 export type Profile = {
   id: string;
   full_name: string | null;

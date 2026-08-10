@@ -37,14 +37,7 @@ function isRecallQuery(query: string) {
   );
 }
 
-/**
- * Load memories of one kind.
- *
- * Chat recall reads 'durable' facts only. Phase 3 adds 'preference' rows, which
- * describe how the user reacts to worker output ("dismisses flashcards made
- * from short notes"). Those are context for the Judgment layer and must never
- * surface in a chat reply, so the kind filter is the boundary between the two.
- */
+/** Load memories of one kind. Chat recall reads durable facts only. */
 async function loadMemoryRows(supabase: SupabaseClient, userId: string, kind: MemoryKind = "durable") {
   const { data, error } = await supabase
     .from("content_memories")
