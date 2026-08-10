@@ -7,6 +7,7 @@ import { Trash2, Upload as UploadIcon } from "lucide-react";
 import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
 import type { Project, WorkspaceFile } from "@/lib/types";
@@ -156,7 +157,7 @@ function FilesContent() {
                     <p className="text-xs text-[var(--muted)]">{item.mime_type || "Unknown type"}</p>
                   </td>
                   <td>{fileSize(item.size_bytes)}</td>
-                  <td><span className="status-pill">{item.extraction_status}</span></td>
+                  <td><FileProcessingStatus status={item.extraction_status} /></td>
                   <td>{formatDate(item.created_at)}</td>
                   <td>
                     <button type="button" onClick={() => deleteFile(item)} disabled={deletingId === item.id} title="Delete file" className="text-[var(--muted)] hover:text-[var(--critical)]">

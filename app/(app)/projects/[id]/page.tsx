@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { BookOpen, Brain, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate, formatRelative } from "@/lib/format";
 import { useRouter } from "next/navigation";
@@ -170,7 +171,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <p className="font-extrabold">{file.name}</p>
                         <p className="text-xs text-[var(--muted)]">{file.mime_type || "Unknown type"}</p>
                       </td>
-                      <td><span className="status-pill">{file.extraction_status}</span></td>
+                      <td><FileProcessingStatus status={file.extraction_status} /></td>
                       <td className="text-[var(--muted)]">{formatDate(file.created_at)}</td>
                     </tr>
                   ))}

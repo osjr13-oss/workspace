@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowUpRight, BookOpenText, Files, Globe2, LibraryBig } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSpotlight } from "@/components/use-spotlight";
 
@@ -68,21 +68,43 @@ export function LandingPreview() {
           <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
           <motion.div
-            className="panel mt-10 flex items-center justify-between p-5 shadow-none"
+            className="group panel mt-10 overflow-hidden shadow-none"
             initial={false}
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 300, damping: 24 }}
           >
-            <div className="flex items-center gap-4">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-                <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted-strong)]">Ctx</span>
-              </span>
+            <div className="flex items-start justify-between gap-6 p-6">
               <div>
-                <p className="font-extrabold">Your context, when it matters</p>
-                <p className="text-sm text-[var(--muted)]">Use notes, files, and live sources without mixing them up.</p>
+                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
+                  <LibraryBig size={14} strokeWidth={2.25} />
+                  Grounded workspace
+                </p>
+                <p className="mt-4 text-xl font-extrabold tracking-[-0.025em]">Every source stays in its place.</p>
+                <p className="mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">
+                  Bring notes, files, and live research into one answer without losing where anything came from.
+                </p>
               </div>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--text)] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                <ArrowUpRight size={18} strokeWidth={2.25} />
+              </span>
             </div>
-            <ArrowRight size={20} />
+            <div className="grid grid-cols-3 border-t border-[var(--border)] bg-white/38">
+              {[
+                { label: "Notes", Icon: BookOpenText },
+                { label: "Files", Icon: Files },
+                { label: "Live web", Icon: Globe2 }
+              ].map(({ label, Icon }, index) => (
+                <div
+                  key={label}
+                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-[var(--muted-strong)] ${
+                    index > 0 ? "border-l border-[var(--border)]" : ""
+                  }`}
+                >
+                  <Icon size={15} strokeWidth={2.1} className="text-[var(--muted)]" />
+                  {label}
+                </div>
+              ))}
+            </div>
           </motion.div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {DETAIL_CARDS.map((item) => (

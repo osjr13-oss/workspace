@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { FileProcessingStatus } from "@/components/file-processing-status";
 import { QuickActions } from "@/components/quick-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
@@ -103,7 +104,7 @@ export default function DashboardPage() {
           {files.map((file) => (
             <div key={file.id} className="flex items-center justify-between rounded-2xl px-3 py-3">
               <span className="font-bold">{file.name}</span>
-              <span className="status-pill">{file.extraction_status}</span>
+              <FileProcessingStatus status={file.extraction_status} />
             </div>
           ))}
         </PanelList>
