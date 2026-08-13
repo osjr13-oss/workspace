@@ -219,6 +219,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 16. `20260711001827_restore_service_role_table_grants.sql`
 17. `20260711120000_public_deck_sharing.sql`
 18. `20260711120500_referral_unlock.sql`
+19. `20260813120000_founding_pricing_limits.sql`
 
 Production historically received some numbered migrations outside tracked migration history. Compare the remote schema and migration list before applying anything; prefer a focused idempotent reconciliation over replaying every file.
 

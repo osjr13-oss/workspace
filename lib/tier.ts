@@ -24,7 +24,7 @@ export async function getUserLimits(supabase: SupabaseClient, userId: string): P
   return {
     user_id: userId,
     tier: "free",
-    daily_requests: plan.dailyAiRequests,
+    daily_requests: plan.aiRequests,
     stripe_customer_id: null,
     stripe_subscription_id: null,
     subscription_status: null,
@@ -47,8 +47,9 @@ export function effectiveTier(limits: UserLimitsRow): TierId {
   return isProActive(limits) || hasReferralBonus(limits) ? "pro" : "free";
 }
 
-export function dailyAiLimit(limits: UserLimitsRow) {
-  return getPlan(effectiveTier(limits)).dailyAiRequests;
+/** AI request allowance for the user's effective plan (20/day free, 1500/month pro). */
+export function aiRequestLimit(limits: UserLimitsRow) {
+  return getPlan(effectiveTier(limits)).aiRequests;
 }
 
 export async function assertProjectLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {

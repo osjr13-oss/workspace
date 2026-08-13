@@ -13,7 +13,8 @@ export async function setUserPro(params: {
     {
       user_id: params.userId,
       tier: "pro",
-      daily_requests: PLANS.pro.dailyAiRequests,
+      // Column name is historical; value is the Pro period allowance (1500/month).
+      daily_requests: PLANS.pro.aiRequests,
       stripe_customer_id: params.stripeCustomerId,
       stripe_subscription_id: params.stripeSubscriptionId,
       subscription_status: params.status,
@@ -31,7 +32,7 @@ export async function setUserFree(userId: string) {
     .from("user_limits")
     .update({
       tier: "free",
-      daily_requests: PLANS.free.dailyAiRequests,
+      daily_requests: PLANS.free.aiRequests,
       stripe_subscription_id: null,
       subscription_status: "canceled",
       current_period_end: null,

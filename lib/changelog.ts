@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-08-13",
+    title: "Founding Pro pricing and roomier Free decks",
+    description:
+      "Pro is now $6.99 a month as a founding price, Free includes more flashcard decks, and Pro AI usage is measured by the month instead of the day.",
+    tag: "Improved"
+  },
+  {
     date: "2026-08-03",
     title: "A more polished landing page",
     description:

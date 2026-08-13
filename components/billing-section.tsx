@@ -3,21 +3,25 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CreditCard, Crown } from "lucide-react";
-import { PLANS } from "@/lib/plans";
+import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 type BillingStatus = {
   tier: "free" | "pro";
   planName: string;
   priceMonthly: number;
+  priceKind?: "founding" | "standard";
   subscriptionStatus: string | null;
   currentPeriodEnd: string | null;
   limits: {
+    aiRequests?: number;
+    aiPeriod?: "day" | "month";
     dailyAiRequests: number;
     maxProjects: number | null;
     maxFileMb: number;
     maxDecks: number | null;
   };
   usage: {
+    aiUsed?: number;
     aiToday: number;
     projects: number;
     decks: number;
@@ -121,6 +125,7 @@ export function BillingSection() {
   }
 
   const isPro = status.tier === "pro";
+  const proPriceLabel = formatPlanPrice(PLANS.pro.priceMonthly);
 
   return (
     <section className="panel p-6">
@@ -151,7 +156,7 @@ export function BillingSection() {
         ) : status.stripeConfigured ? (
           <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading}>
             <Crown size={18} />
-            {actionLoading ? "Redirecting…" : `Upgrade to Pro, $${PLANS.pro.priceMonthly}/mo`}
+            {actionLoading ? "Redirecting…" : `Upgrade to Pro, ${proPriceLabel}/mo`}
           </button>
         ) : (
           <Link href="/pricing" className="btn-primary">

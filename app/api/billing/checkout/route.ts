@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { absoluteUrl } from "@/lib/brand";
 import { serializeError } from "@/lib/serialize-error";
-import { getProPriceId, getStripe } from "@/lib/stripe";
+import { PLANS } from "@/lib/plans";
+import { assertFoundingProPrice, getProPriceId, getStripe } from "@/lib/stripe";
 import { getUserLimits, isProActive } from "@/lib/tier";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -19,6 +20,8 @@ export async function POST() {
       return NextResponse.json({ error: "Your Pro subscription is already active." }, { status: 409 });
     }
     const stripe = getStripe();
+    // Refuse checkout if STRIPE_PRO_PRICE_ID still points at the old $19 price.
+    await assertFoundingProPrice();
 
     let customerId = limits.stripe_customer_id;
     if (!customerId) {
@@ -29,7 +32,12 @@ export async function POST() {
       customerId = customer.id;
       const admin = createSupabaseAdminClient();
       const { error: customerSaveError } = await admin.from("user_limits").upsert(
-        { user_id: user.id, tier: "free", daily_requests: 20, stripe_customer_id: customerId },
+        {
+          user_id: user.id,
+          tier: "free",
+          daily_requests: PLANS.free.aiRequests,
+          stripe_customer_id: customerId
+        },
         { onConflict: "user_id" }
       );
       if (customerSaveError) throw customerSaveError;
@@ -50,9 +58,16 @@ export async function POST() {
         success_url: absoluteUrl("/settings?billing=success&session_id={CHECKOUT_SESSION_ID}"),
         cancel_url: absoluteUrl("/pricing?canceled=1"),
         client_reference_id: user.id,
-        metadata: { user_id: user.id },
+        metadata: {
+          user_id: user.id,
+          price_kind: PLANS.pro.priceKind,
+          founding_price_cents: String(PLANS.pro.stripePriceAmountCents)
+        },
         subscription_data: {
-          metadata: { user_id: user.id }
+          metadata: {
+            user_id: user.id,
+            price_kind: PLANS.pro.priceKind
+          }
         },
         allow_promotion_codes: true
       },

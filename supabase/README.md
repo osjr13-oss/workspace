@@ -21,6 +21,7 @@ Run migrations in order in the Supabase SQL editor (or CLI):
 17. `migrations/20260711120000_public_deck_sharing.sql` — public share links for flashcard decks (`is_public`, `share_slug`), additive anon-read RLS policies
 18. `migrations/20260711120500_referral_unlock.sql` — referral codes, `referrals` table, and Pro-equivalent bonus recognized by `reserve_ai_usage`/`enforce_plan_resource_limits`
 19. `migrations/20260724000000_selrano_personalization.sql` — style profiles and durable content memories
+20. `migrations/20260813120000_founding_pricing_limits.sql` — Free deck cap 8; Pro/referral AI quota 1500 per UTC month
 
 ## Existing production environments
 

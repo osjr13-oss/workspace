@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Crown } from "lucide-react";
+import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 export function ProCheckoutButton({ className = "btn-primary w-full justify-center" }: { className?: string }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const priceLabel = formatPlanPrice(PLANS.pro.priceMonthly);
 
   async function checkout() {
     setLoading(true);
@@ -37,7 +39,7 @@ export function ProCheckoutButton({ className = "btn-primary w-full justify-cent
     <div>
       <button type="button" className={className} onClick={checkout} disabled={loading}>
         <Crown size={18} />
-        {loading ? "Redirecting..." : "Upgrade to Pro"}
+        {loading ? "Redirecting..." : `Upgrade to Pro, ${priceLabel}/mo`}
       </button>
       {message ? <p className="mt-3 text-sm font-bold text-[var(--critical)]">{message}</p> : null}
     </div>

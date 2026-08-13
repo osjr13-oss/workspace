@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { ProCheckoutButton } from "@/components/pro-checkout-button";
 import { SpotlightCard } from "@/components/spotlight-card";
-import { PLANS } from "@/lib/plans";
+import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const rows = [
   { label: "Adaptive AI chat", free: "Included", pro: "Included" },
@@ -23,7 +23,7 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
           <SpotlightCard key={key} className={`panel p-7 ${isPro ? "border-[var(--border-strong)]" : ""}`}>
             <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{plan.name}</p>
             <p className="mt-3 text-4xl font-extrabold tracking-[-0.04em]">
-              {plan.priceMonthly === 0 ? "Free" : `$${plan.priceMonthly}`}
+              {plan.priceMonthly === 0 ? "Free" : formatPlanPrice(plan.priceMonthly)}
               {plan.priceMonthly > 0 ? <span className="text-base font-bold text-[var(--muted)]">/mo</span> : null}
             </p>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{plan.tagline}</p>

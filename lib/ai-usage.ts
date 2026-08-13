@@ -1,18 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dailyAiLimit, effectiveTier, getUserLimits } from "@/lib/tier";
+import { getPlan, PLANS } from "@/lib/plans";
+import { aiRequestLimit, effectiveTier, getUserLimits } from "@/lib/tier";
 
 function startOfUtcDay() {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
 }
 
+function startOfUtcMonth() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
 /**
- * Atomically reserve one AI request against the user's daily quota.
+ * Atomically reserve one AI request against the user's quota.
  *
- * Delegates to the reserve_ai_usage() Postgres function, which locks per user+day,
- * checks the limit, and records the usage row in a single transaction. This closes
- * the race where two concurrent requests could each pass a separate check and push
- * the user over their daily limit.
+ * Free: 20 requests per UTC day. Pro (and active referral bonus): 1500 per UTC month.
+ * Delegates to reserve_ai_usage() in Postgres for the locked check + insert.
  *
  * Returns null when the request is allowed, or a user-facing message when the limit
  * has been reached (send it back with HTTP 429).
@@ -39,18 +43,35 @@ export async function reserveAiRequest(
 
   const limits = await getUserLimits(supabase, userId);
   const tier = effectiveTier(limits);
-  const limit = dailyAiLimit(limits);
-  return `Daily AI limit reached (${limit} requests on ${tier === "pro" ? "Pro" : "Free"}). ${
-    tier === "pro" ? "Try again tomorrow." : "Upgrade to Pro for 500/day."
-  }`;
+  const plan = getPlan(tier);
+  const limit = aiRequestLimit(limits);
+  const periodLabel = plan.aiPeriod === "month" ? "month" : "day";
+  const retryHint =
+    tier === "pro"
+      ? "Try again when your monthly allowance resets."
+      : `Upgrade to Pro for ${PLANS.pro.aiRequests}/month.`;
+
+  return `AI limit reached (${limit} requests per ${periodLabel} on ${tier === "pro" ? "Pro" : "Free"}). ${retryHint}`;
 }
 
-export async function getTodayUsageCount(supabase: SupabaseClient, userId: string) {
-  const since = startOfUtcDay();
+export async function getUsageCountSince(supabase: SupabaseClient, userId: string, sinceIso: string) {
   const { count } = await supabase
     .from("ai_usage_events")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .gte("created_at", since);
+    .gte("created_at", sinceIso);
   return count || 0;
+}
+
+export async function getTodayUsageCount(supabase: SupabaseClient, userId: string) {
+  return getUsageCountSince(supabase, userId, startOfUtcDay());
+}
+
+export async function getMonthUsageCount(supabase: SupabaseClient, userId: string) {
+  return getUsageCountSince(supabase, userId, startOfUtcMonth());
+}
+
+/** Usage for the caller's current plan period (UTC day on Free, UTC month on Pro). */
+export async function getPeriodUsageCount(supabase: SupabaseClient, userId: string, period: "day" | "month") {
+  return period === "month" ? getMonthUsageCount(supabase, userId) : getTodayUsageCount(supabase, userId);
 }

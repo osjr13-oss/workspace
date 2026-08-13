@@ -9,7 +9,7 @@ Last updated: **August 3, 2026**
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
 - AI providers: Anthropic first, defaulting to `claude-sonnet-4-6`, with Groq fallback when Anthropic fails before streaming any text
-- Billing: Stripe Free + Pro at $19/month
+- Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
