@@ -63,9 +63,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Desktop Enterprise Sidebar */}
       <aside className="sticky top-0 hidden h-screen flex-col border-r border-[var(--border)] bg-white px-4 py-5 lg:flex">
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center px-2">
           <SelranoLogo href="/dashboard" />
-          <span className="badge badge-brand text-[10px] tracking-wide uppercase">Workspace</span>
         </div>
 
         {/* Quick Actions & Command Palette Trigger */}

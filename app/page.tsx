@@ -32,12 +32,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-5 pt-14 pb-16 sm:px-8 lg:pt-20">
         <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 shadow-xs">
-              <span className="h-2 w-2 rounded-full bg-slate-900" />
-              <span>Durable Memory AI Workspace</span>
-            </div>
-
-            <h1 className="mt-5 text-4xl font-bold tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl text-balance">
+            <h1 className="text-4xl font-bold tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl text-balance">
               A private place to think out loud.
             </h1>
 

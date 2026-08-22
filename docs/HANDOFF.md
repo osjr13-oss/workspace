@@ -13,7 +13,13 @@ Last updated: **August 21, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `a118871` ("reposition Selrano as a private thinking space with durable memory"), pushed August 21, 2026 with the GitHub Actions run green. Main also carries the August 13 founding-pricing commit (`36354bf`: Pro at $6.99/mo founding price, 1500 AI requests per UTC month, Free decks raised to 8) and earlier August feed/scheduler/goals commits (`b255666` and below). The older July positioning notes further down in this file describe pre-pivot state where they have not yet been rewritten.
+- Current main commit: `7f2c23e` ("overhaul UI/UX into enterprise thinking workspace"), pushed August 21, 2026 with the GitHub Actions run green. This completes the full Enterprise design transformation inspired by OpenAI, Apple, Linear, and Stripe:
+  - Enterprise neutral design tokens with hairline borders and multi-tier elevation.
+  - Interactive `OnboardingGuide` component on dashboard for new user onboarding.
+  - Global `Cmd+K` `CommandPalette` for fast navigation and actions.
+  - Two-pane Thinking Studio (`/chats`) with dock composer and citation badges.
+  - Knowledge Hub (`/notes`), Asset Manager (`/files`), Projects Grid (`/projects`), and Memory Inspector Modal (`/settings`).
+  - Hero bento grid landing page and focused authentication flows.
 - The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were pushed to `main` and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Direction change: thinking companion (August 2026)
@@ -174,6 +180,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
+- `7f2c23e` — overhaul UI/UX into enterprise thinking workspace
 - `a118871` — reposition Selrano as a private thinking space with durable memory
 - `a848aae` — add public deck library with subjects and duplicate counts
 - `36354bf` — update founding Pro pricing and plan limits
