@@ -4,7 +4,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 
 ## Product contract
 
-- Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, support, and Stripe billing.
+- Selrano is a production AI product at `https://selrano.com`: a private thinking space with durable memory for chat, notes, projects, private file uploads, grounded web search, support, and Stripe billing.
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
 - Position Selrano as a private thinking space with durable memory: capture a thought, work it through with grounded chat and notes, and let what matters carry forward across conversations. It is also a calm personal workspace for files, projects, and review.
 - Study tools (flashcards, study mode) and the public deck library are retired from navigation but their routes remain live and usable; do not promote them in product or marketing UI, and never make the homepage revolve around them.
@@ -40,7 +40,7 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable fact extraction, historical backfill, explicit recall, and relevance ranking.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.
-- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — opted-in tips, weekly workspace check-ins, deduplication, and failure recovery.
+- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — opted-in onboarding tips, the weekly memory-driven reflection email, deduplication, and failure recovery.
 - `app/(app)/files/page.tsx` and `app/api/files/*` — signed TUS upload plus server-side extraction.
 - `supabase/migrations/20260710214928_reconcile_launch_contracts.sql` — production ownership, quota, RPC, email-default, grant, and index reconciliation.
 - `supabase/migrations/20260724000000_selrano_personalization.sql` — style profiles and content memories. The live tables currently exist even though this migration is not in tracked production migration history.

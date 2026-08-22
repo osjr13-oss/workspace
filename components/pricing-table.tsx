@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { ProCheckoutButton } from "@/components/pro-checkout-button";
-import { SpotlightCard } from "@/components/spotlight-card";
 import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const rows = [
-  { label: "Adaptive AI chat", free: "Included", pro: "Included" },
-  { label: "Durable memory across chats", free: "Yes", pro: "Yes" },
-  { label: "Live web search with sources", free: "Yes", pro: "Yes" },
-  { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
-  { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
-  { label: "Notes and file context in chat", free: "Yes", pro: "Yes" }
+  { label: "Adaptive AI chat engine", free: "Included", pro: "Included" },
+  { label: "Durable memory across sessions", free: "Yes", pro: "Yes" },
+  { label: "Live web grounding with source citations", free: "Yes", pro: "Yes" },
+  { label: "Active project boundaries", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
+  { label: "Maximum file upload size", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
+  { label: "Markdown notes and live text extraction", free: "Yes", pro: "Yes" }
 ] as const;
 
 export function PricingTable({ showCta = true }: { showCta?: boolean }) {
@@ -20,35 +19,65 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
         const plan = PLANS[key];
         const isPro = key === "pro";
         return (
-          <SpotlightCard key={key} className={`panel p-7 ${isPro ? "border-[var(--border-strong)]" : ""}`}>
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{plan.name}</p>
-            <p className="mt-3 text-4xl font-extrabold tracking-[-0.04em]">
-              {plan.priceMonthly === 0 ? "Free" : formatPlanPrice(plan.priceMonthly)}
-              {plan.priceMonthly > 0 ? <span className="text-base font-bold text-[var(--muted)]">/mo</span> : null}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{plan.tagline}</p>
-            <ul className="mt-6 space-y-3">
-              {rows.map((row) => (
-                <li key={row.label} className="flex items-start gap-3 text-sm">
-                  <Check size={16} className="mt-0.5 shrink-0 text-[var(--low)]" />
-                  <span>
-                    <strong>{isPro ? row.pro : row.free}</strong>: {row.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {showCta ? (
-              <div className="mt-8">
+          <div
+            key={key}
+            className={`panel flex flex-col justify-between p-8 bg-white shadow-sm transition ${
+              isPro ? "border-slate-900 ring-1 ring-slate-900" : ""
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className={isPro ? "badge badge-brand" : "badge badge-subtle"}>
+                  {plan.name}
+                </span>
+                {isPro && (
+                  <span className="badge badge-success text-[10px]">Founding Member Rate</span>
+                )}
+              </div>
+
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tight text-[var(--text)]">
+                  {plan.priceMonthly === 0 ? "Free" : formatPlanPrice(plan.priceMonthly)}
+                </span>
+                {plan.priceMonthly > 0 && (
+                  <span className="text-sm font-semibold text-[var(--muted)]">/month</span>
+                )}
+              </div>
+
+              <p className="mt-2 text-xs leading-relaxed text-[var(--muted-strong)]">
+                {plan.tagline}
+              </p>
+
+              <div className="mt-6 border-t border-[var(--border)] pt-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-4">
+                  Capabilities Included:
+                </p>
+                <ul className="space-y-3">
+                  {rows.map((row) => (
+                    <li key={row.label} className="flex items-start gap-2.5 text-xs text-[var(--text)]">
+                      <Check size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+                      <span>
+                        <strong className="font-semibold">{isPro ? row.pro : row.free}</strong>:{" "}
+                        <span className="text-[var(--muted-strong)]">{row.label}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {showCta && (
+              <div className="mt-8 pt-4 border-t border-[var(--border)]">
                 {isPro ? (
                   <ProCheckoutButton />
                 ) : (
                   <Link href="/signup" className="btn-secondary w-full justify-center">
-                    Get started free
+                    Get Started Free
                   </Link>
                 )}
               </div>
-            ) : null}
-          </SpotlightCard>
+            )}
+          </div>
         );
       })}
     </div>

@@ -1,124 +1,85 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, BookOpenText, Files, Globe2, LibraryBig } from "lucide-react";
+import {
+  ArrowRight,
+  Brain,
+  CheckCircle2,
+  FileText,
+  Globe,
+  MessageSquare,
+  Sparkles
+} from "lucide-react";
 import { motion } from "framer-motion";
-import { useSpotlight } from "@/components/use-spotlight";
-
-const NAV_ITEMS = ["Think", "Workspace", "Notes", "Projects", "Files"];
-
-const DETAIL_CARDS = [
-  { title: "Style", body: "Direct, concise, and shaped around how you communicate." },
-  { title: "Memory", body: "Useful preferences and ongoing work stay available." },
-  { title: "Sources", body: "Project files and web results remain clearly cited." },
-  { title: "Control", body: "Edit, resend, regenerate, and keep moving." },
-];
 
 export function LandingPreview() {
-  const { spotlightProps } = useSpotlight<HTMLDivElement>();
-  const [hovered, setHovered] = useState<number | null>(null);
-
   return (
-    <div
-      id="workspace"
-      className="panel spotlight overflow-hidden p-4"
-      style={{
-        ...spotlightProps.style,
-        ["--spot-size" as string]: "360px",
-      }}
-      ref={spotlightProps.ref}
-      onMouseMove={spotlightProps.onMouseMove}
-      onMouseEnter={spotlightProps.onMouseEnter}
-      onMouseLeave={spotlightProps.onMouseLeave}
-      data-active={spotlightProps["data-active"]}
-    >
-      <div className="grid min-h-[520px] grid-cols-[190px_1fr] overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--background-elevated)] max-sm:grid-cols-1">
-        <aside
-          className="border-r border-[var(--border)] p-4 max-sm:hidden"
-          onMouseLeave={() => setHovered(null)}
-        >
-          {NAV_ITEMS.map((item, index) => {
-            const isActive = index === 0;
-            const isHovered = hovered === index;
-            return (
-              <div
-                key={item}
-                onMouseEnter={() => setHovered(index)}
-                className={`relative mb-2 cursor-pointer rounded-2xl px-3 py-3 text-sm font-bold transition-colors duration-200 ${
-                  isActive || isHovered ? "text-[var(--text)]" : "text-[var(--muted)]"
-                }`}
-              >
-                {isHovered && (
-                  <motion.div
-                    layoutId="hoverPill"
-                    className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]"
-                    transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
-                  />
-                )}
-                {isActive && !isHovered && (
-                  <span className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]" />
-                )}
-                <span className="relative z-10">{item}</span>
-              </div>
-            );
-          })}
-        </aside>
-        <div className="p-6">
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
-          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
-          <motion.div
-            className="group panel mt-10 overflow-hidden shadow-none"
-            initial={false}
-            whileHover={{ y: -2 }}
-            transition={{ type: "spring", stiffness: 300, damping: 24 }}
-          >
-            <div className="flex items-start justify-between gap-6 p-6">
-              <div>
-                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  <LibraryBig size={14} strokeWidth={2.25} />
-                  Grounded workspace
-                </p>
-                <p className="mt-4 text-xl font-extrabold tracking-[-0.025em]">Every source stays in its place.</p>
-                <p className="mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">
-                  Bring notes, files, and live research into one answer without losing where anything came from.
-                </p>
-              </div>
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--text)] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
-                <ArrowUpRight size={18} strokeWidth={2.25} />
-              </span>
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/5">
+      {/* Mock App Window Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-slate-50/70 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+          </div>
+          <span className="ml-2 font-mono text-[11px] font-semibold text-slate-400">
+            selrano.com/chats
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Memory Synchronized
+          </span>
+        </div>
+      </div>
+
+      {/* Mock Studio Body */}
+      <div className="p-5 sm:p-7 space-y-6">
+        {/* User Message */}
+        <div className="flex justify-end">
+          <div className="max-w-[85%] rounded-2xl border border-slate-200 bg-slate-100/90 px-4 py-3 text-xs sm:text-sm font-medium text-slate-900 shadow-xs">
+            How should we structure our caching layer for high-burst SSE streaming without breaking state?
+          </div>
+        </div>
+
+        {/* Assistant Response with Grounded Tools */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-white">
+              <Brain size={13} />
             </div>
-            <div className="grid grid-cols-3 border-t border-[var(--border)] bg-white/38">
-              {[
-                { label: "Notes", Icon: BookOpenText },
-                { label: "Files", Icon: Files },
-                { label: "Live web", Icon: Globe2 }
-              ].map(({ label, Icon }, index) => (
-                <div
-                  key={label}
-                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-[var(--muted-strong)] ${
-                    index > 0 ? "border-l border-[var(--border)]" : ""
-                  }`}
-                >
-                  <Icon size={15} strokeWidth={2.1} className="text-[var(--muted)]" />
-                  {label}
-                </div>
-              ))}
-            </div>
-          </motion.div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
-            {DETAIL_CARDS.map((item) => (
-              <motion.div
-                key={item.title}
-                className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5"
-                initial={false}
-                whileHover={{ y: -3 }}
-                transition={{ type: "spring", stiffness: 320, damping: 22 }}
-              >
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
-                <p className="mt-6 text-sm font-bold leading-6 text-[var(--muted-strong)]">{item.body}</p>
-              </motion.div>
-            ))}
+            <span className="text-xs font-bold text-slate-900">Selrano</span>
+            <span className="text-[10px] text-slate-400">Recalled 2 workspace facts</span>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 text-xs sm:text-sm leading-relaxed text-slate-700 space-y-2">
+            <p>
+              Based on your Postgres constraints from last week and your 500ms latency target:
+            </p>
+            <ul className="list-disc pl-4 space-y-1 text-slate-600">
+              <li>
+                Decouple token emission from DB writes using an in-memory queue.
+              </li>
+              <li>
+                Maintain buffer state in Redis with automatic eviction upon stream completion{" "}
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-100 px-1.5 py-0.2 text-[9px] font-bold text-blue-700">
+                  <Globe size={9} /> [1]
+                </span>
+                .
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Floating Composer Mock */}
+        <div className="rounded-xl border border-slate-200 bg-white p-2.5 flex items-center justify-between shadow-xs">
+          <span className="text-xs text-slate-400 px-2">
+            Ask a follow-up, or distill this into a project note...
+          </span>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <ArrowRight size={14} />
           </div>
         </div>
       </div>

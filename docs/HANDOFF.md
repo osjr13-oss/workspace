@@ -13,12 +13,12 @@ Last updated: **August 21, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `2b1a908`, merging the `landing-page-aesthetics` branch (cursor-spotlight and scroll-reveal treatment for the landing page and pricing cards) on top of the July 25 web-search/icon fixes and the July 24 adaptive AI transformation merge (`6c5d771`).
-- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were all pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
+- Current main commit: `a118871` ("reposition Selrano as a private thinking space with durable memory"), pushed August 21, 2026 with the GitHub Actions run green. Main also carries the August 13 founding-pricing commit (`36354bf`: Pro at $6.99/mo founding price, 1500 AI requests per UTC month, Free decks raised to 8) and earlier August feed/scheduler/goals commits (`b255666` and below). The older July positioning notes further down in this file describe pre-pivot state where they have not yet been rewritten.
+- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were pushed to `main` and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Direction change: thinking companion (August 2026)
 
-Owner decision, August 21, 2026: Selrano's primary positioning is now a **private thinking space with durable memory**, not a materials workspace. Consumer micro-SaaS framing; no student or B2B targeting; nothing that requires importing sensitive personal documents. Phase 1 shipped in this working tree (not yet deployed):
+Owner decision, August 21, 2026: Selrano's primary positioning is now a **private thinking space with durable memory**, not a materials workspace. Consumer micro-SaaS framing; no student or B2B targeting; nothing that requires importing sensitive personal documents. Phase 1 was pushed to `main` as `a118871` (deck library companion work in `a848aae`) on August 21, 2026 with CI green; production deploys from `main`, so confirm the new landing copy renders after the deployment turns over:
 
 - Landing page rewritten around capture, grounded context, and memory continuity.
 - App nav reduced to Workspace, Think (chats), Notes, Projects, Files. Flashcards, Study, and Library links were retired from navigation only; all routes remain live and usable because there are no feature flags.
@@ -32,9 +32,9 @@ Phase 2 candidates: surface stored memories in-product ("what Selrano remembers"
 
 ## Product positioning and UI direction
 
-- Position Selrano as a calm AI workspace for a user's own materials: projects, notes, private uploads, grounded chat, quick transformations, flashcards, and review.
-- Do not let the homepage or onboarding revolve entirely around flashcards. Flashcards are useful, but Selrano should not read like a Quizlet competitor.
-- The preferred public framing is materials first: gather source material, work with context, then review what matters.
+- Position Selrano as a private thinking space with durable memory: capture what is on your mind, work it through with grounded chat and notes, and let what matters carry forward across conversations. Workspace surfaces (projects, files, review) support the thinking rather than lead the story.
+- Study tools (flashcards, study mode) and the public deck library are retired from navigation but their routes remain live and usable. Do not promote them in product or marketing UI, and never make the homepage revolve around them.
+- The preferred public framing is memory first: say it once, add grounded context when facts matter, then pick up the thread later without starting over.
 - Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
 - Keep the Selrano name across the product, domain, and email. Do not revive the imported product's previous brand.
 - Public pricing and acquisition pages should sell capability and outcomes without advertising exact AI message allowances. Authenticated billing may still show current usage and limits.
@@ -174,6 +174,10 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
+- `a118871` — reposition Selrano as a private thinking space with durable memory
+- `a848aae` — add public deck library with subjects and duplicate counts
+- `36354bf` — update founding Pro pricing and plan limits
+- `b255666` — polish workspace context and file statuses
 - `2b1a908` — merge `landing-page-aesthetics`: spotlight/reveal treatment for the landing page and pricing cards
 - `e9fd5f5` — remove usage stat cards from Settings and use more specific icons
 - `de0b2c2` — recover malformed Groq function calls instead of dropping them

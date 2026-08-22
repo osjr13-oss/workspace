@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CreditCard, Crown } from "lucide-react";
+import { Check, CreditCard, Crown, Sparkles, Zap } from "lucide-react";
 import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 type BillingStatus = {
@@ -51,7 +51,8 @@ export function BillingSection() {
 
   useEffect(() => {
     let cancelled = false;
-    const checkoutCompleted = new URLSearchParams(window.location.search).get("billing") === "success";
+    const checkoutCompleted =
+      new URLSearchParams(window.location.search).get("billing") === "success";
 
     async function refresh() {
       const attempts = checkoutCompleted ? 5 : 1;
@@ -61,15 +62,20 @@ export function BillingSection() {
           if (checkoutCompleted) setMessage("Welcome to Pro! Your limits are updated.");
           return;
         }
-        if (attempt < attempts - 1) await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        if (attempt < attempts - 1)
+          await new Promise((resolve) => window.setTimeout(resolve, 1500));
       }
       if (checkoutCompleted && !cancelled) {
-        setMessage("Payment completed. Pro access is still being finalized; refresh this page in a moment.");
+        setMessage(
+          "Payment completed. Pro access is finalizing; refresh this page in a moment."
+        );
       }
     }
 
     void refresh();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function checkout() {
@@ -82,9 +88,9 @@ export function BillingSection() {
         window.location.href = payload.url;
         return;
       }
-      setMessage(payload.error || "Could not start checkout.");
+      setMessage(payload.error || "Could not initiate checkout.");
     } catch {
-      setMessage("Could not start checkout.");
+      setMessage("Could not initiate checkout.");
     } finally {
       setActionLoading(false);
     }
@@ -110,16 +116,18 @@ export function BillingSection() {
 
   if (loading) {
     return (
-      <section className="panel p-6">
-        <span className="status-pill">Loading plan…</span>
+      <section className="panel p-6 bg-white shadow-sm">
+        <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
       </section>
     );
   }
 
   if (!status) {
     return (
-      <section className="panel p-6">
-        <p className="text-sm font-bold text-[var(--muted-strong)]">Could not load billing status.</p>
+      <section className="panel p-6 bg-white shadow-sm">
+        <p className="text-xs font-semibold text-[var(--critical)]">
+          Could not load billing status.
+        </p>
       </section>
     );
   }
@@ -128,54 +136,75 @@ export function BillingSection() {
   const proPriceLabel = formatPlanPrice(PLANS.pro.priceMonthly);
 
   return (
-    <section className="panel p-6">
+    <section className="panel p-6 bg-white shadow-sm space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-extrabold tracking-[-0.01em]">Plan & billing</h2>
-          <p className="mt-2 text-sm text-[var(--muted-strong)]">
-            You are on <strong>{status.planName}</strong>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-[var(--text)]">Plan & Subscription</h2>
+            <span className={isPro ? "badge badge-brand" : "badge badge-subtle"}>
+              {status.planName}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-[var(--muted-strong)]">
             {isPro && status.currentPeriodEnd
-              ? ` · renews ${new Date(status.currentPeriodEnd).toLocaleDateString()}`
-              : ""}
+              ? `Renews on ${new Date(status.currentPeriodEnd).toLocaleDateString()}`
+              : "Free workspace tier with standard thinking and memory"}
           </p>
         </div>
-        <span className={`status-pill ${isPro ? "border-[var(--border-strong)] bg-[var(--surface-strong)]" : ""}`}>
-          {isPro ? <Crown size={14} /> : null}
-          {status.planName}
-        </span>
       </div>
 
-      <p className="mt-4 text-xs text-[var(--muted)]">File uploads up to {status.limits.maxFileMb} MB on your plan.</p>
+      <div className="rounded-xl border border-[var(--border)] bg-slate-50/70 p-4 space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-[var(--muted)]">File upload limit</span>
+          <span className="font-bold text-[var(--text)]">{status.limits.maxFileMb} MB / file</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-[var(--muted)]">Durable Memory Bank</span>
+          <span className="font-bold text-emerald-600">Active</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-[var(--muted)]">Live Web Grounding</span>
+          <span className="font-bold text-blue-600">Enabled</span>
+        </div>
+      </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {isPro ? (
-          <button type="button" className="btn-secondary" onClick={portal} disabled={actionLoading || !status.stripeConfigured}>
-            <CreditCard size={18} />
-            {actionLoading ? "Opening…" : "Manage subscription"}
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={portal}
+            disabled={actionLoading || !status.stripeConfigured}
+          >
+            <CreditCard size={15} />
+            <span>{actionLoading ? "Opening..." : "Manage Billing & Invoices"}</span>
           </button>
         ) : status.stripeConfigured ? (
-          <button type="button" className="btn-primary" onClick={checkout} disabled={actionLoading}>
-            <Crown size={18} />
-            {actionLoading ? "Redirecting…" : `Upgrade to Pro, ${proPriceLabel}/mo`}
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={checkout}
+            disabled={actionLoading}
+          >
+            <Crown size={15} />
+            <span>{actionLoading ? "Redirecting..." : `Upgrade to Pro (${proPriceLabel}/mo)`}</span>
           </button>
         ) : (
           <Link href="/pricing" className="btn-primary">
-            <Crown size={18} />
-            View Pro
+            <Crown size={15} />
+            <span>View Pro Plan</span>
           </Link>
         )}
         <Link href="/pricing" className="btn-secondary">
-          Compare plans
+          Compare Plans
         </Link>
       </div>
 
-      {!status.stripeConfigured && !isPro ? (
-        <p className="mt-4 text-sm text-[var(--muted-strong)]">
-          Pro checkout is live but not configured in this environment yet.
+      {message && (
+        <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+          {message}
         </p>
-      ) : null}
-
-      {message ? <p className="mt-4 text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
+      )}
     </section>
   );
 }

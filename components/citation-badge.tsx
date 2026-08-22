@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Globe, FileText } from "lucide-react";
 import type { Citation } from "@/lib/types";
 
 export function CitationBadge({ citation }: { citation: Citation }) {
@@ -10,10 +11,11 @@ export function CitationBadge({ citation }: { citation: Citation }) {
         href={citation.url}
         target="_blank"
         rel="noreferrer"
-        title={`Open source: ${citation.title}`}
-        className="citation-badge mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-1 align-super text-[10px] font-extrabold leading-none text-[var(--muted-strong)] no-underline transition-all duration-[170ms] ease-out hover:-translate-y-1 hover:border-[var(--border-strong)] hover:bg-[var(--text)] hover:text-white"
+        title={`Web Source: ${citation.title}`}
+        className="mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center gap-0.5 rounded-full border border-blue-200 bg-blue-50 px-1.5 align-super text-[10px] font-bold leading-none text-blue-700 no-underline transition hover:bg-blue-600 hover:text-white"
       >
-        {citation.marker}
+        <Globe size={9} />
+        <span>{citation.marker}</span>
       </a>
     );
   }
@@ -27,10 +29,11 @@ export function CitationBadge({ citation }: { citation: Citation }) {
   return (
     <Link
       href={href}
-      title={`Jump to source: ${title}`}
-      className="citation-badge mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-1 align-super text-[10px] font-extrabold leading-none text-[var(--muted-strong)] no-underline transition-all duration-[170ms] ease-out hover:-translate-y-1 hover:border-[var(--border-strong)] hover:bg-[var(--text)] hover:text-white"
+      title={`File Source: ${title}`}
+      className="mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center gap-0.5 rounded-full border border-slate-300 bg-slate-100 px-1.5 align-super text-[10px] font-bold leading-none text-slate-700 no-underline transition hover:bg-slate-900 hover:text-white"
     >
-      {citation.marker}
+      <FileText size={9} />
+      <span>{citation.marker}</span>
     </Link>
   );
 }
