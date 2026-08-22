@@ -148,23 +148,33 @@ export function BillingSection() {
           <p className="mt-1 text-xs text-[var(--muted-strong)]">
             {isPro && status.currentPeriodEnd
               ? `Renews on ${new Date(status.currentPeriodEnd).toLocaleDateString()}`
-              : "Free workspace tier with standard thinking and memory"}
+              : "Free tier with 5 saved memories and standard thinking tools"}
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-slate-50/70 p-4 space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-[var(--muted)]">File upload limit</span>
-          <span className="font-bold text-[var(--text)]">{status.limits.maxFileMb} MB / file</span>
-        </div>
+      <div className="rounded-xl border border-[var(--border)] bg-slate-50/70 p-4 space-y-2.5">
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-[var(--muted)]">Durable Memory Bank</span>
-          <span className="font-bold text-emerald-600">Active</span>
+          <span className="font-bold text-[var(--text)]">
+            {isPro ? "Unlimited memories" : "5 memories (Free limit)"}
+          </span>
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-[var(--muted)]">Live Web Grounding</span>
-          <span className="font-bold text-blue-600">Enabled</span>
+          <span className="font-semibold text-[var(--muted)]">Memory Recall Depth</span>
+          <span className="font-bold text-[var(--text)]">
+            {isPro ? "Deep contextual synthesis" : "Basic recent recall"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-[var(--muted)]">Active Projects</span>
+          <span className="font-bold text-[var(--text)]">
+            {isPro ? "Unlimited" : `${status.limits.maxProjects || 3} max`}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-[var(--muted)]">File Upload Limit</span>
+          <span className="font-bold text-[var(--text)]">{status.limits.maxFileMb} MB / file</span>
         </div>
       </div>
 

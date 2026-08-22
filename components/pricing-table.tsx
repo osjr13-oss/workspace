@@ -4,12 +4,13 @@ import { ProCheckoutButton } from "@/components/pro-checkout-button";
 import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const rows = [
-  { label: "Adaptive AI chat engine", free: "Included", pro: "Included" },
-  { label: "Durable memory across sessions", free: "Yes", pro: "Yes" },
-  { label: "Live web grounding with source citations", free: "Yes", pro: "Yes" },
-  { label: "Active project boundaries", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
-  { label: "Maximum file upload size", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
-  { label: "Markdown notes and live text extraction", free: "Yes", pro: "Yes" }
+  { label: "Durable memory bank", free: "5 memories", pro: "Unlimited memories" },
+  { label: "Cross-session context recall", free: "Basic recall", pro: "Deep contextual synthesis" },
+  { label: "Weekly memory reflection email", free: "Not included", pro: "Included weekly" },
+  { label: "Active project spaces", free: `${PLANS.free.maxProjects} projects`, pro: "Unlimited projects" },
+  { label: "Maximum upload size", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
+  { label: "Live web grounding with source citations", free: "Included", pro: "Included" },
+  { label: "Markdown notes and live AI tools", free: "Included", pro: "Included" }
 ] as const;
 
 export function PricingTable({ showCta = true }: { showCta?: boolean }) {
@@ -50,12 +51,12 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
 
               <div className="mt-6 border-t border-[var(--border)] pt-6">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-4">
-                  Capabilities Included:
+                  What is included:
                 </p>
                 <ul className="space-y-3">
                   {rows.map((row) => (
                     <li key={row.label} className="flex items-start gap-2.5 text-xs text-[var(--text)]">
-                      <Check size={15} className="mt-0.5 shrink-0 text-emerald-600" />
+                      <Check size={15} className={`mt-0.5 shrink-0 ${isPro ? "text-emerald-600" : "text-slate-400"}`} />
                       <span>
                         <strong className="font-semibold">{isPro ? row.pro : row.free}</strong>:{" "}
                         <span className="text-[var(--muted-strong)]">{row.label}</span>

@@ -52,6 +52,28 @@ export function aiRequestLimit(limits: UserLimitsRow) {
   return getPlan(effectiveTier(limits)).aiRequests;
 }
 
+export async function assertMemoryLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const limits = await getUserLimits(supabase, userId);
+  const plan = getPlan(effectiveTier(limits));
+  if (plan.maxMemories === null) return null;
+
+  const { count, error } = await supabase
+    .from("content_memories")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[tier] memory count failed", error);
+    return null;
+  }
+
+  if ((count || 0) >= plan.maxMemories) {
+    return `Free plan includes up to ${plan.maxMemories} saved memories. Upgrade to Pro for an unlimited memory bank.`;
+  }
+
+  return null;
+}
+
 export async function assertProjectLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {
   const limits = await getUserLimits(supabase, userId);
   const plan = getPlan(effectiveTier(limits));

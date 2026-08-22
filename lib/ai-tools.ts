@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createDeckWithCards, normalizeCards } from "@/lib/flashcards";
 import { searchChunksFullText } from "@/lib/retrieve-context";
+import { assertMemoryLimit } from "@/lib/tier";
 import { webSearch } from "@/lib/web-search";
 import type { Citation } from "@/lib/types";
 
@@ -134,6 +135,11 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
 async function saveMemoryTool(ctx: ToolContext, rawFact: string): Promise<string> {
   const fact = (rawFact || "").trim().slice(0, 400);
   if (!fact || fact.length < 3) return "No valid fact to remember was provided.";
+
+  const limitError = await assertMemoryLimit(ctx.supabase, ctx.userId);
+  if (limitError) {
+    return limitError;
+  }
 
   const { error } = await ctx.supabase.from("content_memories").insert({
     user_id: ctx.userId,

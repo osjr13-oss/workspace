@@ -13,11 +13,12 @@ Last updated: **August 21, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `6e6319e` ("clean up hero pill and sidebar logo badge, update context files"), followed by the memory bank fix and consumer framing:
-  - Added explicit `save_memory` model tool to `lib/ai-tools.ts` and `app/api/ai/chat/route.ts` so when a user asks the AI to remember something, it explicitly saves directly to `content_memories`.
-  - Reconciled `components/memory-inspector-modal.tsx` with live database columns (`content`, `importance`, `created_at`), added manual memory entry, and fixed sorting.
-  - Consumer / everyday person framing across starter prompts, bento cards, and marketing copy.
-  - Enterprise-grade craft and reliability inspired by OpenAI, Apple, and Linear without cold corporate jargon.
+- Current main commit: `277e311` ("fix memory bank schema alignment and add save_memory tool"), followed by plan memory differentiation:
+  - Free plan: 5 durable memories, basic recall, 3 projects, 20 MB files.
+  - Pro plan: Unlimited durable memories, deep contextual recall, weekly reflection email, unlimited projects, 100 MB files.
+  - Added explicit `save_memory` model tool to `lib/ai-tools.ts` and `app/api/ai/chat/route.ts`.
+  - Reconciled `components/memory-inspector-modal.tsx` with live database columns, added manual memory entry, and plan quota indicator with Pro upsell.
+  - Made `components/landing-preview.tsx` genuinely interactive with selectable consumer thinking prompts, real-time custom question submission, and removed the green status pill.
 - The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were pushed to `main` and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Direction change: thinking companion (August 2026)
