@@ -11,7 +11,7 @@ export const PLANS = {
   free: {
     id: "free" as const,
     name: "Free",
-    tagline: "Everything you need to try Selrano",
+    tagline: "Everything you need to start thinking out loud",
     priceMonthly: 0,
     priceKind: "standard" as const,
     aiRequests: 20,
@@ -24,7 +24,7 @@ export const PLANS = {
   pro: {
     id: "pro" as const,
     name: "Pro",
-    tagline: "For heavy coursework and daily deep work",
+    tagline: "For daily thinking and long-running ideas",
     /** Founding / introductory monthly price in USD. */
     priceMonthly: 6.99,
     priceKind: "founding" as const,

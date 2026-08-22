@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpen,
-  Brain,
-  BrainCircuit,
   Files,
   FolderOpen,
   Home,
@@ -21,12 +19,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
   { href: "/dashboard", label: "Workspace", icon: Home },
-  { href: "/chats", label: "Chats", icon: MessageSquare },
-  { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/files", label: "Files", icon: Files },
+  { href: "/chats", label: "Think", icon: MessageSquare },
   { href: "/notes", label: "Notes", icon: BookOpen },
-  { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/study", label: "Study", icon: BrainCircuit }
+  { href: "/projects", label: "Projects", icon: FolderOpen },
+  { href: "/files", label: "Files", icon: Files }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -58,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SelranoLogo href="/dashboard" />
         <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
-          New chat
+          New thought
         </Link>
         <nav className="mt-7 space-y-1">
           {nav.map((item) => {
@@ -119,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
                 <Plus size={17} />
-                Chat
+                New
               </Link>
               <button
                 type="button"

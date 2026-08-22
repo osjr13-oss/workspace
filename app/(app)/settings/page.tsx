@@ -121,7 +121,7 @@ export default function SettingsPage() {
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          A useful weekly workspace check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
+          A short weekly reflection drawn from what you have been thinking about, plus occasional feature tips. Welcome and support emails are always sent when relevant.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
@@ -131,7 +131,7 @@ export default function SettingsPage() {
             disabled={savingEmailPrefs}
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
-          <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
+          <span className="text-sm font-semibold">Send my weekly reflection and occasional tips</span>
         </label>
       </section>
 

@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **August 3, 2026**
+Last updated: **August 21, 2026**
 
 ## Current state
 
@@ -15,6 +15,20 @@ Last updated: **August 3, 2026**
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
 - Current main commit: `2b1a908`, merging the `landing-page-aesthetics` branch (cursor-spotlight and scroll-reveal treatment for the landing page and pricing cards) on top of the July 25 web-search/icon fixes and the July 24 adaptive AI transformation merge (`6c5d771`).
 - The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were all pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
+
+## Direction change: thinking companion (August 2026)
+
+Owner decision, August 21, 2026: Selrano's primary positioning is now a **private thinking space with durable memory**, not a materials workspace. Consumer micro-SaaS framing; no student or B2B targeting; nothing that requires importing sensitive personal documents. Phase 1 shipped in this working tree (not yet deployed):
+
+- Landing page rewritten around capture, grounded context, and memory continuity.
+- App nav reduced to Workspace, Think (chats), Notes, Projects, Files. Flashcards, Study, and Library links were retired from navigation only; all routes remain live and usable because there are no feature flags.
+- Dashboard leads with a quick-capture box that hands off to `/chats?compose=...`; stats row counts thoughts/notes/projects/files instead of flashcards.
+- Chat page copy reframed ("What is on your mind?", "Selrano remembers across conversations") and it accepts `?compose=` prefill.
+- Lifecycle campaigns `tip_flashcards` and `tip_study` were removed; the weekly digest became a memory-driven reflection email quoting recent `content_memories` rows (escaped) with a stats-only fallback. Welcome email copy updated.
+- Pricing table rows and plan taglines no longer mention flashcards or coursework.
+- The deck library feature (August 21 morning session: `/library`, categories, duplicate counter, migration `20260821000000_deck_library.sql`) still works but is no longer promoted anywhere. Its migration has NOT been applied to production; decide whether to apply or drop it with the owner.
+
+Phase 2 candidates: surface stored memories in-product ("what Selrano remembers" panel), weekly reflection email QA against real memories, programmatic SEO pages, and repositioning guides/changelog content.
 
 ## Product positioning and UI direction
 

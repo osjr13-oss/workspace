@@ -187,7 +187,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {tab === "chats" && (
         <section className="space-y-4">
           <div className="flex justify-end">
-            <Link href={`/chats?project=${id}`} className="btn-primary"><Plus size={16} /> New chat</Link>
+            <Link href={`/chats?project=${id}`} className="btn-primary"><Plus size={16} /> New thought</Link>
           </div>
           {threads.length ? (
             <div className="grid gap-3 md:grid-cols-2">

@@ -6,7 +6,8 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 
 - Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, support, and Stripe billing.
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
-- Position Selrano as a calm materials workspace: source files, notes, grounded chat, review, and transformations together. Do not make the product revolve entirely around flashcards or frame it as a Quizlet competitor; flashcards are one useful output inside the broader workspace.
+- Position Selrano as a private thinking space with durable memory: capture a thought, work it through with grounded chat and notes, and let what matters carry forward across conversations. It is also a calm personal workspace for files, projects, and review.
+- Study tools (flashcards, study mode) and the public deck library are retired from navigation but their routes remain live and usable; do not promote them in product or marketing UI, and never make the homepage revolve around them.
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
 - Do not market exact AI message allowances on public pricing or acquisition pages. Authenticated billing may show a user's current usage and plan limit for transparency.
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.

@@ -27,16 +27,15 @@ CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <
 
 ### Lifecycle tips (cron)
 
-Once per day (14:00 UTC), the app first recovers any unsent welcome emails, then checks opted-in users and sends **at most one** contextual tip email per person per 7 days — only if they have not used a feature yet:
+Once per day (14:00 UTC), the app first recovers any unsent welcome emails, then checks opted-in users and sends **at most one** contextual email per person per 7 days — a tip if they have not used a feature yet, otherwise the weekly reflection:
 
 | Email key | When (days after signup) | Condition |
 |-----------|--------------------------|-----------|
 | `tip_projects` | 2–4 | No projects |
 | `tip_chat` | 3–6 | No chat threads |
 | `tip_upload` | 4–8 | No files |
-| `tip_flashcards` | 7–14 | No flashcard decks |
-| `tip_study` | 10–21 | Has decks, no study reviews |
 | `nudge_inactive` | 14–90 | No AI usage in last 7 days |
+| `weekly_digest` | 7+ (weekly log key) | Always eligible; reflects recent durable memories when they exist |
 
 Users must opt in from **Settings → Email preferences**. Each campaign is logged in `lifecycle_email_log` so nobody gets the same tip twice, and the sender skips users who do not have `lifecycle_emails = true`.
 

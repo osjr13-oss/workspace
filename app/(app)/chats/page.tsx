@@ -24,12 +24,13 @@ function ChatsContent() {
   const searchParams = useSearchParams();
   const initialThread = searchParams.get("thread");
   const initialProject = searchParams.get("project");
+  const initialCompose = searchParams.get("compose");
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [threadId, setThreadId] = useState<string | null>(initialThread);
   const [projectId, setProjectId] = useState(initialProject || "");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialCompose ? removeEmDashes(initialCompose).slice(0, 2000) : "");
   const [loading, setLoading] = useState(false);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -200,12 +201,12 @@ function ChatsContent() {
   return (
     <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
       <aside className="panel flex min-h-0 flex-col p-4">
-        <WorkspaceHeader title="Chats" eyebrow="AI" />
+        <WorkspaceHeader title="Think" eyebrow="Private by default" />
         <button type="button" onClick={() => { setThreadId(null); setMessages([]); }} className="btn-primary mt-5">
           New conversation
         </button>
         <select aria-label="Chat context" className="input-premium mt-3 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={Boolean(threadId)}>
-          <option value="">Global chat</option>
+          <option value="">No project</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
           ))}
@@ -243,7 +244,7 @@ function ChatsContent() {
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div>
             <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Selrano remembers across conversations"}</p>
           </div>
           {threadId ? (
             <button
@@ -271,8 +272,8 @@ function ChatsContent() {
           ) : (
             <div className="grid h-full place-items-center text-center">
               <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Talk to Selrano.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere, or add a project when your own material should guide the answer.</p>
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">What is on your mind?</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
               </div>
             </div>
           )}

@@ -5,7 +5,7 @@ import { ArrowUpRight, BookOpenText, Files, Globe2, LibraryBig } from "lucide-re
 import { motion } from "framer-motion";
 import { useSpotlight } from "@/components/use-spotlight";
 
-const NAV_ITEMS = ["Chats", "Workspace", "Projects", "Files", "Notes", "Flashcards"];
+const NAV_ITEMS = ["Think", "Workspace", "Notes", "Projects", "Files"];
 
 const DETAIL_CARDS = [
   { title: "Style", body: "Direct, concise, and shaped around how you communicate." },

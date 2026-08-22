@@ -6,11 +6,11 @@ import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const rows = [
   { label: "Adaptive AI chat", free: "Included", pro: "Included" },
+  { label: "Durable memory across chats", free: "Yes", pro: "Yes" },
+  { label: "Live web search with sources", free: "Yes", pro: "Yes" },
   { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
   { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
-  { label: "Flashcard decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
-  { label: "Project file context in chat", free: "Yes", pro: "Yes" },
-  { label: "Notes, study mode, flashcards", free: "Yes", pro: "Yes" }
+  { label: "Notes and file context in chat", free: "Yes", pro: "Yes" }
 ] as const;
 
 export function PricingTable({ showCta = true }: { showCta?: boolean }) {
