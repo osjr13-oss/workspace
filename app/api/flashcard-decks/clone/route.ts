@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const { data: sourceDeck, error: deckError } = await supabase
       .from("flashcard_decks")
-      .select("id, name, user_id, is_public, share_slug")
+      .select("id, name, category, user_id, is_public, share_slug")
       .eq("share_slug", slug)
       .eq("is_public", true)
       .maybeSingle();
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         name: sourceDeck.name,
         project_id: null,
+        category: sourceDeck.category ?? null,
         is_public: false,
         share_slug: null
       })
@@ -77,6 +78,15 @@ export async function POST(request: Request) {
         await supabase.from("flashcard_decks").delete().eq("id", deck.id).eq("user_id", user.id);
         throw insertCardsError;
       }
+    }
+
+    // Popularity counter on the source deck. Best effort only: a failed
+    // bump must never fail an otherwise completed clone.
+    const { error: dupeCountError } = await supabase.rpc("record_public_deck_duplicate", {
+      p_share_slug: slug
+    });
+    if (dupeCountError) {
+      console.warn("[flashcard-decks/clone] duplicate count update failed:", serializeError(dupeCountError));
     }
 
     return NextResponse.json({ deck, cards: cards.length });

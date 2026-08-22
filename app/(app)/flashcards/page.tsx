@@ -1,11 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Trash2, Wand2 } from "lucide-react";
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { DECK_CATEGORIES } from "@/lib/deck-categories";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Flashcard, FlashcardDeck, Note, Project, WorkspaceFile } from "@/lib/types";
 
@@ -186,6 +188,26 @@ function FlashcardsContent() {
       setPageError("Network error. Please try again.");
     } finally {
       setSharingDeckId("");
+    }
+  }
+
+  async function setDeckCategory(category: string) {
+    if (!selectedDeck) return;
+    setPageError("");
+    try {
+      const res = await fetch(`/api/flashcard-decks/${selectedDeck.id}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: selectedDeck.is_public, category: category || null })
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setPageError(payload.error || "Could not update the subject.");
+        return;
+      }
+      await load();
+    } catch {
+      setPageError("Network error. Please try again.");
     }
   }
 
@@ -395,6 +417,18 @@ function FlashcardsContent() {
                   {selectedDeck.name}: {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
                 </p>
                 <div className="flex flex-wrap gap-3">
+                  <select
+                    aria-label="Deck subject"
+                    title="Subject shown when the deck is shared or listed in the library"
+                    className="input-premium min-h-10 px-4 py-2 text-sm"
+                    value={selectedDeck.category ?? ""}
+                    onChange={(e) => void setDeckCategory(e.target.value)}
+                  >
+                    <option value="">Set subject</option>
+                    {DECK_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={() => setPracticing(true)}
@@ -420,14 +454,33 @@ function FlashcardsContent() {
                 </div>
               </div>
               {selectedDeck.is_public && selectedDeck.share_slug && (
-                <div className="glass-card flex flex-wrap items-center justify-between gap-3 p-4">
-                  <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--muted-strong)]">
-                    selrano.com/d/{selectedDeck.share_slug}
+                <div className="glass-card flex flex-col gap-2 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--muted-strong)]">
+                      selrano.com/d/{selectedDeck.share_slug}
+                    </p>
+                    <button type="button" onClick={() => copyShareLink(selectedDeck)} className="btn-secondary shrink-0">
+                      {copiedDeckId === selectedDeck.id ? <CheckCircle size={16} /> : <Copy size={16} />}
+                      {copiedDeckId === selectedDeck.id ? "Copied" : "Copy link"}
+                    </button>
+                  </div>
+                  <p className="text-xs font-bold text-[var(--muted)]">
+                    {selectedDeck.category ? (
+                      <>
+                        Listed in the{" "}
+                        <Link href={`/library?subject=${encodeURIComponent(selectedDeck.category)}`} className="underline">
+                          {selectedDeck.category} library
+                        </Link>
+                        . Every save counts toward how high it ranks.
+                      </>
+                    ) : (
+                      <>
+                        Shared publicly and eligible for the{" "}
+                        <Link href="/library" className="underline">Library</Link>. Pick a subject above so
+                        classmates browsing by topic can find it.
+                      </>
+                    )}
                   </p>
-                  <button type="button" onClick={() => copyShareLink(selectedDeck)} className="btn-secondary shrink-0">
-                    {copiedDeckId === selectedDeck.id ? <CheckCircle size={16} /> : <Copy size={16} />}
-                    {copiedDeckId === selectedDeck.id ? "Copied" : "Copy link"}
-                  </button>
                 </div>
               )}
             </div>
