@@ -16,7 +16,6 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-6 text-xs font-bold text-[var(--muted)] sm:flex">
             <a href="#features" className="hover:text-[var(--text)]">Features</a>
             <Link href="/pricing" className="hover:text-[var(--text)]">Pricing</Link>
-            <Link href="/guides" className="hover:text-[var(--text)]">Guides</Link>
             <Link href="/signin" className="hover:text-[var(--text)]">Sign In</Link>
             <Link href="/signup" className="btn-primary min-h-[36px] px-4 text-xs">
               Get Started

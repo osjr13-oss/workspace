@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { SiteFooter } from "@/components/site-footer";
-import { brand } from "@/lib/brand";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +10,6 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <SelranoLogo href="/" />
           <nav className="hidden sm:flex flex-wrap items-center gap-6 text-xs font-bold text-[var(--muted)]">
             <Link href="/pricing" className="hover:text-[var(--text)] transition-colors">Pricing</Link>
-            <Link href="/guides" className="hover:text-[var(--text)] transition-colors">Guides</Link>
             <Link href="/changelog" className="hover:text-[var(--text)] transition-colors">Changelog</Link>
             <Link href="/support" className="hover:text-[var(--text)] transition-colors">Support</Link>
             <Link href="/security" className="hover:text-[var(--text)] transition-colors">Security</Link>

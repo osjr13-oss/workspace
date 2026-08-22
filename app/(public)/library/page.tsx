@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Plus } from "lucide-react";
 import { DECK_CATEGORIES, normalizeDeckCategory } from "@/lib/deck-categories";
 import { getAuthenticatedUser, createSupabaseServerClient } from "@/lib/supabase/server";
 import { absoluteUrl, brand } from "@/lib/brand";
@@ -27,8 +27,8 @@ const SORTS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: "Free flashcard library",
-  description: `Browse flashcard decks shared by ${brand.name} students. Study any deck instantly without an account, then turn your own notes into decks in seconds.`,
+  title: "Community knowledge decks",
+  description: `Browse shared knowledge decks on ${brand.name}.`,
   alternates: { canonical: absoluteUrl("/library") }
 };
 
@@ -43,10 +43,10 @@ function libraryUrl(parts: { q?: string; subject?: string; sort?: string; page?:
 }
 
 function pillClass(active: boolean) {
-  return `shrink-0 rounded-full border px-4 py-1.5 text-sm font-bold transition ${
+  return `shrink-0 rounded-full border px-3.5 py-1 text-xs font-semibold transition ${
     active
-      ? "border-transparent bg-[var(--text)] text-white"
-      : "border-[var(--border)] text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+      ? "border-transparent bg-slate-900 text-white shadow-xs"
+      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
   }`;
 }
 
@@ -83,141 +83,143 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   const hasFilters = Boolean(q || subject);
 
   return (
-    <div>
-      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
-        Free flashcard library
-      </p>
-      <h1 className="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-[var(--text)]">
-        Study decks shared by students
-      </h1>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-strong)]">
-        Flip through any deck right here, no account needed. Found a keeper? Save it to your
-        workspace to practice, review, and make it your own.
-      </p>
+    <div className="space-y-8">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+          Public Knowledge Decks
+        </p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+          Browse community shared decks
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted-strong)]">
+          Explore shared knowledge decks created with Selrano. Save any deck into your private workspace with one click.
+        </p>
+      </div>
 
-      <form action="/library" method="get" className="mt-8 flex flex-wrap items-center gap-3">
+      <form action="/library" method="get" className="flex flex-wrap items-center gap-3">
         <input
           type="search"
           name="q"
           aria-label="Search decks"
-          placeholder="Search decks"
+          placeholder="Search by topic or title..."
           defaultValue={q}
-          className="input-premium min-w-0 flex-1 px-5"
+          className="input-enterprise min-w-0 flex-1"
         />
         {subject ? <input type="hidden" name="subject" value={subject} /> : null}
         {sort !== "popular" ? <input type="hidden" name="sort" value={sort} /> : null}
-        <button type="submit" className="btn-primary shrink-0">Search</button>
+        <button type="submit" className="btn-primary shrink-0">
+          Search
+        </button>
       </form>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        {SORTS.map((option) => (
-          <Link
-            key={option.id}
-            href={libraryUrl({ q, subject: subject ?? undefined, sort: option.id })}
-            className={pillClass(sort === option.id)}
-          >
-            {option.label}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {SORTS.map((option) => (
+            <Link
+              key={option.id}
+              href={libraryUrl({ q, subject: subject ?? undefined, sort: option.id })}
+              className={pillClass(sort === option.id)}
+            >
+              {option.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href={libraryUrl({ q, sort })} className={pillClass(!subject)}>
+            All topics
           </Link>
-        ))}
+          {DECK_CATEGORIES.map((category) => (
+            <Link
+              key={category}
+              href={libraryUrl({ q, subject: category, sort })}
+              className={pillClass(subject === category)}
+            >
+              {category}
+            </Link>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Link href={libraryUrl({ q, sort })} className={pillClass(!subject)}>
-          All subjects
-        </Link>
-        {DECK_CATEGORIES.map((category) => (
-          <Link
-            key={category}
-            href={libraryUrl({ q, subject: category, sort })}
-            className={pillClass(subject === category)}
-          >
-            {category}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-10 flex items-baseline justify-between gap-4">
-        <p className="text-sm font-bold text-[var(--muted)]">
+      <div className="flex items-baseline justify-between gap-4 border-t border-[var(--border)] pt-6">
+        <p className="text-xs font-bold text-[var(--muted)]">
           {total} deck{total === 1 ? "" : "s"}
           {hasFilters ? " found" : ""}
         </p>
-        {totalPages > 1 ? (
-          <p className="text-sm font-bold text-[var(--muted)]">
+        {totalPages > 1 && (
+          <p className="text-xs font-semibold text-[var(--muted)]">
             Page {Math.min(page, totalPages)} of {totalPages}
           </p>
-        ) : null}
+        )}
       </div>
 
       {decks.length ? (
-        <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
             <Link
               key={deck.id}
               href={`/d/${deck.share_slug}`}
-              className="glass-card group flex flex-col p-5 transition hover:border-[var(--border-strong)]"
+              className="panel group flex flex-col p-5 bg-white shadow-xs transition hover:border-[var(--border-strong)]"
             >
-              {deck.category ? (
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+              {deck.category && (
+                <span className="badge badge-subtle text-[10px] w-fit">
                   {deck.category}
-                </p>
-              ) : null}
-              <h2 className="mt-2 font-extrabold leading-6 text-[var(--text)]">{deck.name}</h2>
-              <p className="mt-auto pt-4 text-sm font-bold text-[var(--muted-strong)]">
+                </span>
+              )}
+              <h2 className="mt-2 text-sm font-bold leading-snug text-[var(--text)]">{deck.name}</h2>
+              <p className="mt-auto pt-4 text-xs font-medium text-[var(--muted)]">
                 {deck.card_count} card{deck.card_count === 1 ? "" : "s"}
-                {deck.duplicate_count > 0
-                  ? ` · saved ${deck.duplicate_count} time${deck.duplicate_count === 1 ? "" : "s"}`
-                  : ""}
+                {deck.duplicate_count > 0 ? ` · saved ${deck.duplicate_count} times` : ""}
               </p>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="panel mt-4 p-8 text-center">
+        <div className="panel p-8 text-center bg-white shadow-xs">
           <p className="text-sm font-bold text-[var(--text)]">No decks match your filters yet.</p>
-          <p className="mt-2 text-sm text-[var(--muted-strong)]">
-            Try another subject or search term, or be the first to publish one.
+          <p className="mt-1 text-xs text-[var(--muted-strong)]">
+            Try another subject or search query.
           </p>
-          {hasFilters ? (
-            <Link href="/library" className="btn-secondary mt-5 inline-flex">
+          {hasFilters && (
+            <Link href="/library" className="btn-secondary mt-4 inline-flex">
               Clear filters
             </Link>
-          ) : null}
+          )}
         </div>
       )}
 
-      {totalPages > 1 ? (
-        <div className="mt-8 flex items-center justify-between gap-4">
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4 pt-4">
           {page > 1 ? (
             <Link href={libraryUrl({ q, subject: subject ?? undefined, sort, page: page - 1 })} className="btn-secondary">
-              <ArrowLeft size={16} />
-              Previous
+              <ArrowLeft size={15} />
+              <span>Previous</span>
             </Link>
           ) : (
             <span />
           )}
           {page < totalPages ? (
             <Link href={libraryUrl({ q, subject: subject ?? undefined, sort, page: page + 1 })} className="btn-secondary">
-              Next
-              <ArrowRight size={16} />
+              <span>Next</span>
+              <ArrowRight size={15} />
             </Link>
           ) : (
             <span />
           )}
         </div>
-      ) : null}
+      )}
 
-      <div className="glass-card mt-14 flex flex-col gap-4 p-7 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-extrabold text-[var(--text)]">Turn your notes into decks like these</p>
-          <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">
-            Upload lecture slides or notes, pick what matters, and {brand.name} builds the deck.
-            Share it with one link when you are done.
+      <div className="panel flex flex-col gap-4 p-7 sm:flex-row sm:items-center sm:justify-between bg-slate-900 text-white">
+        <div className="space-y-1">
+          <p className="text-sm font-bold text-white">Build decks from your private thoughts</p>
+          <p className="max-w-md text-xs leading-relaxed text-slate-300">
+            Upload notes or think out loud in chat, and Selrano will structure your knowledge into concise review decks.
           </p>
         </div>
         {user ? (
-          <Link href="/flashcards" className="btn-primary shrink-0">Open my flashcards</Link>
+          <Link href="/flashcards" className="btn-invert shrink-0">Open Flashcards</Link>
         ) : (
-          <Link href="/signup?next=%2Fflashcards" className="btn-primary shrink-0">Create free account</Link>
+          <Link href="/signup?next=%2Fflashcards" className="btn-invert shrink-0">Create Free Workspace</Link>
         )}
       </div>
     </div>

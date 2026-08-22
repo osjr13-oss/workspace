@@ -3,21 +3,13 @@
 import Link from "next/link";
 import { Suspense, use, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
 import type { WorkspaceFile } from "@/lib/types";
 
-/**
- * PDF extraction (see extractText in app/api/files/upload/route.ts) inserts a
- * "\n" after nearly every text item, mirroring pdf-parse's own default line
- * detection. Real prose ends up with a line break after almost every word.
- * Display-only reflow: collapse those into spaces while keeping genuine
- * paragraph gaps (2+ blank lines) as line breaks. Must never touch the
- * underlying text used to compute charStart/charEnd, only what's rendered.
- */
 function reflowForDisplay(text: string) {
   return text
     .replace(/\r\n?/g, "\n")
@@ -68,19 +60,21 @@ function FileDetailContent({ params }: { params: Promise<{ id: string }> }) {
 
   if (!loaded) {
     return (
-      <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-        <WorkspaceHeader title="Loading…" eyebrow="Files" />
+      <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-8">
+        <WorkspaceHeader title="Loading file..." eyebrow="Files" />
+        <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
       </div>
     );
   }
 
   if (!file) {
     return (
-      <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+      <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-8">
         <WorkspaceHeader title="File not found" eyebrow="Files" />
-        <EmptyState title="File not found" description="This file may have been deleted, or it isn't yours to view." />
+        <EmptyState title="File not found" description="This file may have been deleted, or it is not yours to view." />
         <Link href="/files" className="btn-secondary inline-flex w-fit">
-          <ArrowLeft size={16} /> Back to files
+          <ArrowLeft size={15} />
+          <span>Back to files</span>
         </Link>
       </div>
     );
@@ -94,36 +88,37 @@ function FileDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const after = hasHighlight ? text.slice(end) : "";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+    <div className="mx-auto max-w-4xl space-y-8 px-5 py-8 sm:px-8">
       <div>
-        <Link href="/files" className="mb-4 inline-flex items-center gap-2 text-xs font-bold text-[var(--muted)] hover:text-[var(--text)]">
-          <ArrowLeft size={14} /> Back to files
+        <Link href="/files" className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)]">
+          <ArrowLeft size={13} />
+          <span>Back to files</span>
         </Link>
-        <WorkspaceHeader title={file.name} eyebrow="Source file" />
+        <WorkspaceHeader title={file.name} eyebrow="Source Material" />
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="status-pill">{file.mime_type || "Unknown type"}</span>
-          <span className="status-pill">{fileSize(file.size_bytes)}</span>
-          <span className="status-pill">Uploaded {formatDate(file.created_at)}</span>
-          {page ? <span className="status-pill">Page {page}</span> : null}
+          <span className="badge badge-subtle">{file.mime_type || "Document"}</span>
+          <span className="badge badge-subtle">{fileSize(file.size_bytes)}</span>
+          <span className="badge badge-subtle">Uploaded {formatDate(file.created_at)}</span>
+          {page && <span className="badge badge-brand">Page {page}</span>}
         </div>
       </div>
 
       {file.extraction_status !== "ready" || !text ? (
         <EmptyState
-          title="No extracted text yet"
-          description="This file hasn't finished processing, or its text couldn't be extracted."
+          title="Text extraction in progress"
+          description="This file is being processed, or its text could not be extracted."
         />
       ) : (
-        <article className="panel whitespace-pre-wrap p-7 text-base leading-8 text-[var(--muted-strong)]">
+        <article className="panel whitespace-pre-wrap p-8 text-xs sm:text-sm leading-relaxed text-[var(--muted-strong)] bg-white shadow-xs font-mono">
           {reflowForDisplay(before)}
-          {hasHighlight ? (
+          {hasHighlight && (
             <mark
               ref={highlightRef}
-              className="rounded-md bg-[rgba(154,107,19,0.22)] px-0.5 text-[var(--text)] transition-colors duration-150"
+              className="rounded bg-amber-200/60 px-1 py-0.5 font-semibold text-[var(--text)]"
             >
               {reflowForDisplay(highlighted)}
             </mark>
-          ) : null}
+          )}
           {reflowForDisplay(after)}
         </article>
       )}

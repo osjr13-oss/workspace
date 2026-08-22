@@ -35,8 +35,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!result) return { title: "Deck not found" };
 
   const { deck, cards } = result;
-  const title = `${deck.name} flashcards, free to study`;
-  const description = `${cards.length} free flashcard${cards.length === 1 ? "" : "s"} on "${deck.name}". Study instantly, no signup required, then make your own with ${brand.name}.`;
+  const title = `${deck.name} | Knowledge Deck`;
+  const description = `${cards.length} card${cards.length === 1 ? "" : "s"} on "${deck.name}". Review freely, then make your own with ${brand.name}.`;
   const url = absoluteUrl(`/d/${slug}`);
 
   return {
@@ -75,26 +75,28 @@ export default async function PublicDeckPage({
 
   return (
     <article>
-      <p className="text-sm font-bold text-[var(--muted)]">Free flashcard deck</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">{deck.name}</h1>
-      <p className="mt-4 text-base leading-7 text-[var(--muted-strong)]">
-        {cards.length} card{cards.length === 1 ? "" : "s"} · study free, no account required.
+      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Public Knowledge Deck</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">{deck.name}</h1>
+      <p className="mt-3 text-sm leading-relaxed text-[var(--muted-strong)]">
+        {cards.length} card{cards.length === 1 ? "" : "s"} · Review freely or save into your workspace.
       </p>
 
-      <div className="mt-10">
+      <div className="mt-8">
         {cards.length ? (
           <PublicDeckCards cards={cards} />
         ) : (
-          <div className="panel p-7 text-center text-sm text-[var(--muted)]">This deck has no cards yet.</div>
+          <div className="panel p-8 text-center text-xs text-[var(--muted)] bg-white shadow-xs">This deck has no cards yet.</div>
         )}
       </div>
 
-      <AddPublicDeckButton
-        slug={slug}
-        deckName={deck.name}
-        isAuthenticated={Boolean(user)}
-        autoAdd={add === "1"}
-      />
+      <div className="mt-6">
+        <AddPublicDeckButton
+          slug={slug}
+          deckName={deck.name}
+          isAuthenticated={Boolean(user)}
+          autoAdd={add === "1"}
+        />
+      </div>
     </article>
   );
 }
