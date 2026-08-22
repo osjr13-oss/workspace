@@ -24,10 +24,10 @@ import { formatRelative } from "@/lib/format";
 import type { ChatThread, Project, WorkspaceFile } from "@/lib/types";
 
 const STARTER_PROMPTS = [
-  "Break down our Q3 product roadmap priorities",
-  "Debate the trade-offs of microservices vs modular monolith",
-  "Synthesize notes from our last strategy meeting",
-  "Draft an RFC for our durable memory architecture"
+  "Thinking through a tough decision",
+  "Planning my week and priorities",
+  "Unpacking an idea I have been circling",
+  "Reflecting on a recent conversation"
 ];
 
 export default function DashboardPage() {

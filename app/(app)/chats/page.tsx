@@ -21,16 +21,16 @@ import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 
 const SUGGESTIONS = [
   {
-    title: "Strategic Trade-offs",
-    prompt: "Help me analyze the trade-offs between speed-to-market and architectural purity for our next milestone."
+    title: "Weigh a Decision",
+    prompt: "I am weighing a big decision and want to talk through the pros, cons, and hidden assumptions."
   },
   {
-    title: "Technical RFC Review",
-    prompt: "Review this system proposal and identify edge cases, scaling bottlenecks, and failure modes."
+    title: "Work Through an Idea",
+    prompt: "I have a half-formed thought I want to explore and flesh out clearly."
   },
   {
-    title: "Decision Breakdown",
-    prompt: "I need to make a tough decision regarding resource allocation. Help me structure my thinking."
+    title: "Clarify My Focus",
+    prompt: "Help me untangle everything on my mind and organize what matters most right now."
   }
 ];
 

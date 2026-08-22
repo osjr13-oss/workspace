@@ -4,14 +4,15 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 
 ## Product contract
 
-- Selrano is a production AI product at `https://selrano.com`: a private thinking space with durable memory for chat, notes, projects, private file uploads, grounded web search, support, and Stripe billing.
+- Selrano is a production consumer AI product at `https://selrano.com`: a calm, private thinking space with durable memory for chat, notes, projects, private file uploads, grounded web search, support, and Stripe billing.
+- Selrano is built for the everyday person: decisions, personal goals, daily reflections, ideas, and projects. Avoid cold B2B corporate sales speak, enterprise jargon, or bureaucratic buzzwords while maintaining world-class visual craft and software reliability (inspired by Apple, OpenAI, and Linear).
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
 - Position Selrano as a private thinking space with durable memory: capture a thought, work it through with grounded chat and notes, and let what matters carry forward across conversations. It is also a calm personal workspace for files, projects, and review.
 - Study tools (flashcards, study mode) and the public deck library are retired from navigation but their routes remain live and usable; do not promote them in product or marketing UI, and never make the homepage revolve around them.
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
 - Do not market exact AI message allowances on public pricing or acquisition pages. Authenticated billing may show a user's current usage and plan limit for transparency.
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.
-- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, create notes, or create flashcard decks, then stream the final response.
+- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, save durable memories (via `save_memory`), create notes, or create flashcard decks, then stream the final response.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Groq keys, Resend keys, customer content, or browser-session data.
 - Preserve user changes in the working tree and never delete production/test data without explicit approval.
@@ -33,18 +34,19 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 
 ## Important paths
 
-- `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, workspace tools, streaming, and message persistence.
-- `lib/ai.ts` — Anthropic-first completion and streaming with Groq fallback before any token has been emitted.
-- `lib/groq.ts` — Groq Chat Completions, SSE parsing, tool-call transport, and recovery from malformed tool-call output.
-- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions plus the `web_search` tool (backed by `lib/web-search.ts`).
-- `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
-- `lib/content-memory.ts` — durable fact extraction, historical backfill, explicit recall, and relevance ranking.
-- `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.
-- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — opted-in onboarding tips, the weekly memory-driven reflection email, deduplication, and failure recovery.
-- `app/(app)/files/page.tsx` and `app/api/files/*` — signed TUS upload plus server-side extraction.
-- `supabase/migrations/20260710214928_reconcile_launch_contracts.sql` — production ownership, quota, RPC, email-default, grant, and index reconciliation.
-- `supabase/migrations/20260724000000_selrano_personalization.sql` — style profiles and content memories. The live tables currently exist even though this migration is not in tracked production migration history.
-- `docs/SETUP.md`, `docs/OPERATIONS.md`, `docs/BILLING.md` — service setup and operating runbooks.
+- `app/api/ai/chat/route.ts`: authentication, quota reservation, context retrieval, workspace tools, streaming, and message persistence.
+- `lib/ai.ts`: Anthropic-first completion and streaming with Groq fallback before any token has been emitted.
+- `lib/groq.ts`: Groq Chat Completions, SSE parsing, tool-call transport, and recovery from malformed tool-call output.
+- `lib/ai-tools.ts`: authenticated workspace search/note/deck actions plus `save_memory` and `web_search` (backed by `lib/web-search.ts`).
+- `lib/style-profile.ts`: learned writing preferences and adaptive response directives.
+- `lib/content-memory.ts`: durable fact extraction, historical backfill, explicit recall, and relevance ranking.
+- `components/chat-message.tsx` and `components/thinking-trace.tsx`: premium chat presentation, response actions, and waiting state.
+- `components/memory-inspector-modal.tsx`: interactive Memory Bank for viewing, searching, adding, and deleting durable facts.
+- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts`: opted-in onboarding tips, the weekly memory-driven reflection email, deduplication, and failure recovery.
+- `app/(app)/files/page.tsx` and `app/api/files/*`: signed TUS upload plus server-side extraction.
+- `supabase/migrations/20260710214928_reconcile_launch_contracts.sql`: production ownership, quota, RPC, email-default, grant, and index reconciliation.
+- `supabase/migrations/20260724000000_selrano_personalization.sql`: style profiles and content memories. The live tables currently exist even though this migration is not in tracked production migration history.
+- `docs/SETUP.md`, `docs/OPERATIONS.md`, `docs/BILLING.md`: service setup and operating runbooks.
 
 ## Database caution
 

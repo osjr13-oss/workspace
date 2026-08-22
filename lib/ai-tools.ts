@@ -60,6 +60,24 @@ export const toolDefinitions = [
   {
     type: "function",
     function: {
+      name: "save_memory",
+      description:
+        "Save a durable fact, goal, or preference to the user's memory bank. Use whenever the user asks you to remember something, note a personal fact, or keep track of a preference/goal for future conversations.",
+      parameters: {
+        type: "object",
+        properties: {
+          fact: {
+            type: "string",
+            description: "The concise fact, goal, or preference to remember."
+          }
+        },
+        required: ["fact"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_flashcards",
       description: "Create a new flashcard deck with cards. Use only when the user clearly asks for flashcards or study cards.",
       parameters: {
@@ -104,11 +122,30 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
       return runWebSearch(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
+    case "save_memory":
+      return saveMemoryTool(ctx, String(args.fact ?? args.content ?? ""));
     case "create_flashcards":
       return createFlashcards(ctx, String(args.deck_name ?? "New deck"), Array.isArray(args.cards) ? args.cards : []);
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+async function saveMemoryTool(ctx: ToolContext, rawFact: string): Promise<string> {
+  const fact = (rawFact || "").trim().slice(0, 400);
+  if (!fact || fact.length < 3) return "No valid fact to remember was provided.";
+
+  const { error } = await ctx.supabase.from("content_memories").insert({
+    user_id: ctx.userId,
+    content: fact,
+    importance: 0.8
+  });
+
+  if (error) {
+    console.error("[memory] save_memory tool failed", error);
+    return `Could not save to memory bank: ${error.message}`;
+  }
+  return `Saved "${fact}" to the user's durable memory bank.`;
 }
 
 async function runWebSearch(ctx: ToolContext, query: string): Promise<string> {

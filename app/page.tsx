@@ -72,7 +72,7 @@ export default function LandingPage() {
       <section id="features" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 border-t border-[var(--border)]">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-            Architecture & Principles
+            How Selrano Works
           </h2>
           <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">
             Built for deep thinking, not ephemeral chat.

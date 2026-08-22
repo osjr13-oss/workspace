@@ -13,13 +13,11 @@ Last updated: **August 21, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `7f2c23e` ("overhaul UI/UX into enterprise thinking workspace"), pushed August 21, 2026 with the GitHub Actions run green. This completes the full Enterprise design transformation inspired by OpenAI, Apple, Linear, and Stripe:
-  - Enterprise neutral design tokens with hairline borders and multi-tier elevation.
-  - Interactive `OnboardingGuide` component on dashboard for new user onboarding.
-  - Global `Cmd+K` `CommandPalette` for fast navigation and actions.
-  - Two-pane Thinking Studio (`/chats`) with dock composer and citation badges.
-  - Knowledge Hub (`/notes`), Asset Manager (`/files`), Projects Grid (`/projects`), and Memory Inspector Modal (`/settings`).
-  - Hero bento grid landing page and focused authentication flows.
+- Current main commit: `6e6319e` ("clean up hero pill and sidebar logo badge, update context files"), followed by the memory bank fix and consumer framing:
+  - Added explicit `save_memory` model tool to `lib/ai-tools.ts` and `app/api/ai/chat/route.ts` so when a user asks the AI to remember something, it explicitly saves directly to `content_memories`.
+  - Reconciled `components/memory-inspector-modal.tsx` with live database columns (`content`, `importance`, `created_at`), added manual memory entry, and fixed sorting.
+  - Consumer / everyday person framing across starter prompts, bento cards, and marketing copy.
+  - Enterprise-grade craft and reliability inspired by OpenAI, Apple, and Linear without cold corporate jargon.
 - The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were pushed to `main` and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Direction change: thinking companion (August 2026)
