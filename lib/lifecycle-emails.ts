@@ -1,15 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { lifecycleEmail, type LifecycleEmailKey } from "@/lib/email/lifecycle-templates";
+import {
+  lifecycleEmail,
+  type LifecycleEmailKey,
+} from "@/lib/email/lifecycle-templates";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type UserStats = {
-  projects: number;
-  files: number;
-  chatThreads: number;
-  decks: number;
-  studyReviews: number;
-  aiEventsLast7d: number;
+  scans: number;
+  scansLast7d: number;
+  copilotMessages: number;
 };
 
 type Campaign = {
@@ -20,13 +20,14 @@ type Campaign = {
 };
 
 const CAMPAIGNS: Campaign[] = [
-  { key: "tip_projects", minDays: 2, maxDays: 4, eligible: (s) => s.projects === 0 },
-  { key: "tip_chat", minDays: 3, maxDays: 6, eligible: (s) => s.chatThreads === 0 },
-  { key: "tip_upload", minDays: 4, maxDays: 8, eligible: (s) => s.files === 0 },
-  { key: "tip_flashcards", minDays: 7, maxDays: 14, eligible: (s) => s.decks === 0 },
-  { key: "tip_study", minDays: 10, maxDays: 21, eligible: (s) => s.decks > 0 && s.studyReviews === 0 },
-  { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 },
-  { key: "weekly_digest", minDays: 7, maxDays: 36500, eligible: () => true }
+  { key: "tip_scan", minDays: 2, maxDays: 6, eligible: (s) => s.scans === 0 },
+  {
+    key: "tip_copilot",
+    minDays: 7,
+    maxDays: 21,
+    eligible: (s) => s.scans > 0 && s.copilotMessages === 0,
+  },
+  { key: "weekly_digest", minDays: 7, maxDays: 36500, eligible: () => true },
 ];
 
 const MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS = 7;
@@ -37,30 +38,43 @@ function daysSince(iso: string) {
 }
 
 function weeklyDigestLogKey(date = new Date()) {
-  const monday = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const monday = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   const daysFromMonday = (monday.getUTCDay() + 6) % 7;
   monday.setUTCDate(monday.getUTCDate() - daysFromMonday);
   return `weekly_digest_${monday.toISOString().slice(0, 10)}`;
 }
 
-async function loadStats(admin: SupabaseClient, userId: string): Promise<UserStats> {
+async function loadStats(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<UserStats> {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const [projects, files, chats, decks, reviews, ai] = await Promise.all([
-    admin.from("projects").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("files").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("chat_threads").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("flashcard_decks").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("study_reviews").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", weekAgo)
+  const [scans, recent, messages] = await Promise.all([
+    admin
+      .from("security_scans")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "completed"),
+    admin
+      .from("security_scans")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .gte("created_at", weekAgo),
+    admin
+      .from("security_copilot_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("role", "user"),
   ]);
-
+  if (scans.error || recent.error || messages.error)
+    throw new Error("Could not load security email statistics.");
   return {
-    projects: projects.count || 0,
-    files: files.count || 0,
-    chatThreads: chats.count || 0,
-    decks: decks.count || 0,
-    studyReviews: reviews.count || 0,
-    aiEventsLast7d: ai.count || 0
+    scans: scans.count || 0,
+    scansLast7d: recent.count || 0,
+    copilotMessages: messages.count || 0,
   };
 }
 
@@ -97,7 +111,10 @@ export async function runLifecycleEmailBatch() {
   let page = 1;
 
   while (true) {
-    const { data: list, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
+    const { data: list, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 100,
+    });
     if (error) throw error;
     if (!list.users.length) break;
 
@@ -119,7 +136,10 @@ export async function runLifecycleEmailBatch() {
       }
 
       const lastSentAt = await lastLifecycleEmailSentAt(admin, user.id);
-      if (lastSentAt && daysSince(lastSentAt) < MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS) {
+      if (
+        lastSentAt &&
+        daysSince(lastSentAt) < MIN_DAYS_BETWEEN_LIFECYCLE_EMAILS
+      ) {
         skipped += 1;
         continue;
       }
@@ -129,9 +149,13 @@ export async function runLifecycleEmailBatch() {
       const name = profile?.full_name || user.user_metadata?.full_name || "";
 
       for (const campaign of CAMPAIGNS) {
-        if (accountAge < campaign.minDays || accountAge > campaign.maxDays) continue;
+        if (accountAge < campaign.minDays || accountAge > campaign.maxDays)
+          continue;
         if (!campaign.eligible(stats)) continue;
-        const logKey = campaign.key === "weekly_digest" ? weeklyDigestLogKey() : campaign.key;
+        const logKey =
+          campaign.key === "weekly_digest"
+            ? weeklyDigestLogKey()
+            : campaign.key;
         if (await alreadySent(admin, user.id, logKey)) continue;
 
         const template = lifecycleEmail(campaign.key, name, stats);
@@ -143,7 +167,7 @@ export async function runLifecycleEmailBatch() {
           console.error("[lifecycle-email] could not claim send", {
             userId: user.id,
             campaign: campaign.key,
-            error: claimError.message
+            error: claimError.message,
           });
           break;
         }
@@ -153,7 +177,7 @@ export async function runLifecycleEmailBatch() {
             to: user.email,
             subject: template.subject,
             html: template.html,
-            replyTo: process.env.SUPPORT_INBOX || undefined
+            replyTo: process.env.SUPPORT_INBOX || undefined,
           });
 
           if (result.ok) {
@@ -175,7 +199,7 @@ export async function runLifecycleEmailBatch() {
           console.error("[lifecycle-email] send failed", {
             userId: user.id,
             campaign: campaign.key,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
           skipped += 1;
         }

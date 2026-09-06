@@ -1,5 +1,11 @@
 # Selrano production handoff
 
+## September 6 security transformation: production release in progress
+
+The user requested replacing the workspace product with LaunchGuard-backed website security scanning while preserving Selrano branding and its calm design. The local implementation now includes scans, private history, findings, fix prompts, report export, and streaming report-aware Copilot. Existing workspace data and routes remain available through Settings.
+
+Read [SECURITY_MIGRATION.md](SECURITY_MIGRATION.md) before releasing this change. The user authorized commit and push. The focused scan-storage migration was applied in production as `20260906114947_security_scanner`, with RLS and grants verified, before the application push. Deployment and smoke-test results will be recorded after release. The remainder of this handoff records the previous production product, not the new local implementation.
+
 Last updated: **August 3, 2026**
 
 ## Current state

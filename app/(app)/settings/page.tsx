@@ -121,7 +121,7 @@ export default function SettingsPage() {
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          A useful weekly workspace check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
+          A useful weekly security check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
@@ -145,6 +145,11 @@ export default function SettingsPage() {
         </Link>
       </section>
 
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em]">Previous workspace content</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Your existing materials remain available while Selrano moves to website security.</p>
+        <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold">{["projects", "notes", "files", "chats", "flashcards", "study"].map(path => <Link key={path} href={`/${path}`} className="capitalize">{path}</Link>)}</div>
+      </section>
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Security</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">

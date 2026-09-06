@@ -1,76 +1,39 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ExternalLink, LifeBuoy } from "lucide-react";
-import { WorkspaceHeader } from "@/components/workspace-header";
 import { SupportContactForm } from "@/components/support-contact-form";
-import { brand } from "@/lib/brand";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-
 export default function HelpPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email || "");
-      const meta = data.user?.user_metadata?.full_name || "";
-      if (meta) setName(meta);
-      else if (data.user) {
-        supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (profile?.full_name) setName(profile.full_name);
-          });
-      }
-    });
-  }, []);
-
   return (
-    <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title="Help & support" eyebrow="Workspace">
-        <Link href={brand.urls.support} className="btn-secondary" target="_blank" rel="noopener noreferrer">
-          <ExternalLink size={16} />
-          Public support page
-        </Link>
-      </WorkspaceHeader>
-
+    <div className="mx-auto max-w-4xl space-y-7 px-5 py-10">
+      <header>
+        <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
+          Help & support
+        </p>
+        <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+          A little help with your next step.
+        </h1>
+        <p className="mt-3 text-sm text-[var(--muted)]">
+          Understand a scan, work through a fix, or get help with your account.
+        </p>
+      </header>
       <section className="panel p-6">
-        <div className="flex items-start gap-4">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-            <LifeBuoy size={22} />
-          </span>
-          <div>
-            <h2 className="text-base font-extrabold">We are here to help</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-              Typical response time: <strong>{brand.support.responseSla}</strong> ({brand.support.hours}).
-              Email us at{" "}
-              <a href={`mailto:${brand.emails.support}`} className="font-bold text-[var(--text)]">
-                {brand.emails.support}
-              </a>
-            </p>
-          </div>
+        <h2 className="font-extrabold">Getting started</h2>
+        <p className="mt-3 text-sm leading-7 text-[var(--muted-strong)]">
+          Scan a public website, read the observed evidence, and copy a fix
+          prompt into your AI builder. For questions about a particular finding,
+          open Copilot in that scan&apos;s report.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/guides" className="btn-secondary">
+            Read the scan guide
+          </Link>
+          <Link href="/copilot" className="btn-secondary">
+            Open Copilot
+          </Link>
         </div>
       </section>
-
-      <SupportContactForm defaultName={name} defaultEmail={email} />
-
-      <div className="flex flex-wrap gap-3 text-sm font-bold">
-        <Link href={brand.urls.security} className="btn-secondary" target="_blank" rel="noopener noreferrer">
-          Security
-        </Link>
-        <Link href={brand.urls.privacy} className="btn-secondary" target="_blank" rel="noopener noreferrer">
-          Privacy
-        </Link>
-        <Link href={brand.urls.terms} className="btn-secondary" target="_blank" rel="noopener noreferrer">
-          Terms
-        </Link>
-      </div>
+      <section className="panel p-6">
+        <h2 className="mb-5 font-extrabold">Contact support</h2>
+        <SupportContactForm />
+      </section>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 # Selrano
 
-Selrano is a personal AI workspace that learns how you think and write. Chat is the primary experience, supported by projects, notes, private files, web search, review tools, and flashcards.
+Selrano is a calm website security workspace for people building with AI. Enter a public URL, review prioritized findings and evidence, copy fix prompts into your AI builder, and ask a report-aware copilot for help.
 
-The current chat uses Anthropic first with Groq fallback, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+The scanner is adapted from `osjr13-oss/launchguard`. Authentication, Stripe billing, branding, and the streaming Anthropic/Groq providers stay in Selrano. Previous workspace content remains available from Settings.
+
+The security transformation is ready for release, with its focused production database migration applied. See [the security migration handoff](docs/SECURITY_MIGRATION.md) for source provenance, storage, validation, and the production cutover steps. `docs/HANDOFF.md` retains the earlier production record.
 
 ## Local Setup
 

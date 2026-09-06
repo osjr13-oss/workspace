@@ -2,7 +2,11 @@
 
 Read `docs/HANDOFF.md` before changing the product. It is the current production handoff and records deployed behavior, infrastructure, validation, known risks, and next priorities.
 
-## Product contract
+## Current product direction
+
+The September 6 user request supersedes the earlier materials-workspace positioning below. Selrano is being transformed into a calm website security scanner for people building with AI, using the scanner from `osjr13-oss/launchguard`. Read `docs/SECURITY_MIGRATION.md` for the implementation and release requirements. Preserve the Selrano brand, existing authentication/billing, previous customer data, and the no-em-dash rule. New primary routes are `/dashboard`, `/scans`, `/scans/[scanId]`, and `/copilot`.
+
+## Previous product contract (retained content and infrastructure)
 
 - Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, support, and Stripe billing.
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.

@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 
 const protectedPrefixes = [
   "/dashboard",
+  "/scans",
+  "/copilot",
   "/chats",
   "/projects",
   "/notes",

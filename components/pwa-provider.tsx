@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Download, Share, X } from "lucide-react";
 
 const DISMISS_KEY = "selrano-pwa-install-dismissed";
@@ -24,6 +25,7 @@ function isIos() {
 }
 
 export function PwaProvider() {
+  const pathname = usePathname();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [iosHint, setIosHint] = useState(false);
@@ -66,7 +68,7 @@ export function PwaProvider() {
     dismiss();
   }
 
-  if (!showHint) return null;
+  if (!showHint || !/^\/(dashboard|scans|copilot|settings)(\/|$)/.test(pathname)) return null;
 
   return (
     <div className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-lg rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:inset-x-6">
@@ -76,7 +78,7 @@ export function PwaProvider() {
           <p className="mt-1 text-sm leading-6 text-[var(--muted-strong)]">
             {iosHint ? (
               <>
-                Tap <Share size={14} className="inline align-text-bottom" /> Share, then <strong>Add to Home Screen</strong> for quick access between classes.
+                Tap <Share size={14} className="inline align-text-bottom" /> Share, then <strong>Add to Home Screen</strong> for quick access to your scans.
               </>
             ) : (
               "Add Selrano to your home screen for a full-screen app experience."

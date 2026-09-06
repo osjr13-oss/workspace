@@ -3,30 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import {
-  BookOpen,
-  Brain,
-  BrainCircuit,
-  Files,
-  FolderOpen,
-  Home,
-  LifeBuoy,
-  LogOut,
-  MessageSquare,
-  Plus,
-  Settings
-} from "lucide-react";
+import { Home, History, LifeBuoy, LogOut, MessageSquare, Plus, Settings } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
-  { href: "/dashboard", label: "Workspace", icon: Home },
-  { href: "/chats", label: "Chats", icon: MessageSquare },
-  { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/files", label: "Files", icon: Files },
-  { href: "/notes", label: "Notes", icon: BookOpen },
-  { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/study", label: "Study", icon: BrainCircuit }
+  { href: "/dashboard", label: "Overview", icon: Home },
+  { href: "/scans", label: "Scan history", icon: History },
+  { href: "/copilot", label: "Copilot", icon: MessageSquare }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -56,9 +40,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="layout-grid">
       <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-[var(--border)] bg-[rgba(255,255,255,0.42)] px-5 py-6 backdrop-blur-xl lg:flex lg:flex-col">
         <SelranoLogo href="/dashboard" />
-        <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
+        <Link href="/dashboard" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
-          New chat
+          New scan
         </Link>
         <nav className="mt-7 space-y-1">
           {nav.map((item) => {
@@ -117,9 +101,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between px-5 py-4">
             <SelranoLogo href="/dashboard" />
             <div className="flex items-center gap-2">
-              <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
+              <Link href="/dashboard" className="btn-primary min-h-10 px-4 text-sm">
                 <Plus size={17} />
-                Chat
+                Scan
               </Link>
               <button
                 type="button"
@@ -140,6 +124,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            <Link href="/settings" className="status-pill shrink-0">Settings</Link>
+            <Link href="/help" className="status-pill shrink-0">Help</Link>
           </nav>
         </header>
         {children}

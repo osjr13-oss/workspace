@@ -107,7 +107,7 @@ function SignUpForm() {
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
         <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Create your workspace</h1>
+        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">A clearer path to launch.</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Start free. Upgrade to Pro anytime from Settings.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
           <input aria-label="Full name" className="input-premium w-full px-5" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} required />

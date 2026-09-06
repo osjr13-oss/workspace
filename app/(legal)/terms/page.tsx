@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
+      <p className="text-sm font-bold text-[var(--muted)]">Last updated: September 6, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Terms of Service</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Selrano (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
@@ -30,13 +30,8 @@ export default function TermsPage() {
       </Section>
 
       <Section title="3. Description of Service">
-        <p>Selrano is an AI-powered workspace that allows users to chat with an adaptive assistant, create projects, write and organize notes, upload files, generate flashcards, and review material. Features include but are not limited to:</p>
-        <ul>
-          <li>AI-assisted chat powered by third-party large language model providers.</li>
-          <li>Document upload, text extraction, and storage.</li>
-          <li>Flashcard generation and spaced-repetition study tools.</li>
-          <li>Markdown note editing with AI transformations.</li>
-        </ul>
+        <p>Selrano provides passive public website scanning, prioritized findings with evidence, fix prompts for AI builders, and a report-aware AI copilot. Existing workspace content remains accessible to its owners.</p>
+        <p>Only scan websites you own or have permission to assess. Scans inspect observable public signals and are not penetration tests, certifications, or guarantees of security. You are responsible for reviewing, testing, and deploying any suggested changes.</p>
         <p>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with or without notice.</p>
       </Section>
 
@@ -50,15 +45,15 @@ export default function TermsPage() {
           <li>Reverse-engineer, decompile, or disassemble any part of the Service.</li>
           <li>Use automated bots, scrapers, or scripts to access the Service without our express written permission.</li>
           <li>Circumvent or attempt to circumvent any authentication or security mechanism.</li>
-          <li>Use the AI features to generate academic work intended to deceive educational institutions in violation of their academic integrity policies. We are a study aid, not a cheating tool.</li>
+          <li>Scan a website without authorization or use findings to facilitate unauthorized access.</li>
         </ul>
         <p>Violation of this section may result in immediate termination of your account.</p>
       </Section>
 
       <Section title="5. User Content">
-        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, flashcards, and chat messages.</p>
+        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including scan reports, Copilot messages, and previously stored workspace content.</p>
         <p><strong>License to us.</strong> By using the Service, you grant Selrano a limited, non-exclusive, royalty-free license to access, store, process, and transmit your User Content solely as necessary to provide and improve the Service. We do not claim ownership of your content and do not sell it to third parties.</p>
-        <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
+        <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Anthropic and Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
         <p><strong>Your responsibility.</strong> You are solely responsible for the legality, accuracy, and appropriateness of your User Content. We have no obligation to monitor content but reserve the right to remove any content that violates these Terms.</p>
       </Section>
 
@@ -77,7 +72,7 @@ export default function TermsPage() {
         <ul>
           <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
           <li><strong>Anthropic</strong>: primary AI inference for chat and content generation.</li>
-          <li><strong>Groq, Inc.</strong>: fallback AI inference and workspace tool planning.</li>
+          <li><strong>Groq, Inc.</strong>: fallback AI inference.</li>
           <li><strong>Tavily</strong>: optional live web search.</li>
           <li><strong>Vercel</strong>: hosting and infrastructure.</li>
         </ul>

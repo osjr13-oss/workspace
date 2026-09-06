@@ -103,10 +103,11 @@ function recoverMalformedToolCall(errorBody: string): GroqAssistantMessage | nul
  */
 export async function streamGroq(
   messages: GroqChatMessage[],
-  options: { temperature?: number; onToken: (token: string) => void }
+  options: { temperature?: number; signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<string> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
+    signal: options.signal,
     headers: {
       Authorization: `Bearer ${requireEnv("GROQ_API_KEY")}`,
       "Content-Type": "application/json"
@@ -115,7 +116,8 @@ export async function streamGroq(
       model: requireEnv("GROQ_MODEL"),
       messages,
       temperature: options.temperature ?? 0.4,
-      stream: true
+      stream: true,
+      max_tokens: options.maxTokens
     })
   });
 

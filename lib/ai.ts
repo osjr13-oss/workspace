@@ -135,11 +135,12 @@ async function callAnthropic(messages: GroqChatMessage[] | SimpleMessage[], temp
 
 async function streamAnthropic(
   messages: GroqChatMessage[],
-  options: { temperature?: number; onToken: (token: string) => void }
+  options: { temperature?: number; signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void }
 ) {
   const input = toAnthropicInput(messages);
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
+    signal: options.signal,
     headers: {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
@@ -147,7 +148,7 @@ async function streamAnthropic(
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL,
-      max_tokens: 4096,
+      max_tokens: options.maxTokens ?? 4096,
       temperature: options.temperature ?? 0.4,
       stream: true,
       system: input.system || undefined,
@@ -373,7 +374,7 @@ export async function completeAi(
 
 export async function streamAi(
   messages: GroqChatMessage[],
-  options: { temperature?: number; onToken: (token: string) => void }
+  options: { temperature?: number; signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<CompletionResult> {
   if (anthropicReady()) {
     let emitted = false;

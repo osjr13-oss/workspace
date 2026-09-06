@@ -12,9 +12,9 @@ export default function PricingPage() {
   return (
     <article>
       <p className="text-sm font-bold text-[var(--muted)]">Pricing</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em]">Simple plans for real work</h1>
+      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em]">A clear next step, at any stage</h1>
       <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-strong)]">
-        Start free. Upgrade when Selrano becomes part of your daily workflow and you need more room for projects and files. Cancel anytime.
+        Start free with security scans, fix prompts, and Copilot. Upgrade for more scans and room to work through fixes. Cancel anytime.
       </p>
 
       <div className="mt-10">
