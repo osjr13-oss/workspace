@@ -4,7 +4,7 @@ Selrano is a calm website security workspace for people building with AI. Enter 
 
 The scanner is adapted from `osjr13-oss/launchguard`. Authentication, Stripe billing, branding, and the streaming Anthropic/Groq providers stay in Selrano. Previous workspace content remains available from Settings.
 
-The security transformation is ready for release, with its focused production database migration applied. See [the security migration handoff](docs/SECURITY_MIGRATION.md) for source provenance, storage, validation, and the production cutover steps. `docs/HANDOFF.md` retains the earlier production record.
+The security transformation was released to production on September 6, with its focused database migration applied. See [the security migration handoff](docs/SECURITY_MIGRATION.md) for source provenance, storage, validation, and the production cutover steps. `docs/HANDOFF.md` retains the earlier production record.
 
 ## Local Setup
 

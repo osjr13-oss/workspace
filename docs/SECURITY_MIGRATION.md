@@ -1,6 +1,6 @@
 # Selrano security transformation
 
-Status: release authorized September 6; focused production migration applied and verified, application deployment in progress.
+Status: released September 6. Production migration applied; application commit `bf16895` deployed successfully.
 
 ## Product and import scope
 
@@ -87,3 +87,12 @@ Read-only remote inspection on September 6 confirmed neither new table exists in
 The existing environment already has an AI provider configured. No new provider credentials are required. The focused migration was applied as `20260906114947_security_scanner` on September 6 before the production push. RLS, owner-read policies, client write denial, anonymous read denial, and service-role writes were verified. Existing customer data was not modified. No manual customer emails were sent.
 
 Supabase security advisors report no issues on the new tables. Existing notices remain for the vector extension schema, authenticated quota/study RPCs, and leaked-password protection; see the prior operating handoff.
+
+## Release result
+
+- Application commit: `bf168954f7380ae700f8b60ed290a5a808fe4d63`
+- GitHub Actions: https://github.com/osjr13-oss/workspace/actions/runs/34031423715 (passed)
+- Vercel: https://vercel.com/onosman35-8030s-projects/workspace/4XRR13efojnNucHwGY5DMSctyk7B (success)
+- Production homepage and interactive sample report verified through the browser.
+- Scan tables verified through both SQL metadata and the configured Data API.
+- Signed-out scan navigation redirects to login. Authenticated saved-scan and Copilot verification remains pending a signed-in browser session.
