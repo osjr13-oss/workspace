@@ -1,7 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { completeAi } from "@/lib/ai";
-import { getPlan } from "@/lib/plans";
-import { effectiveTier, getUserLimits } from "@/lib/tier";
 import { removeEmDashes } from "@/lib/text";
 
 type MemoryRow = {
@@ -88,22 +86,11 @@ async function storeMemories(
   candidates: string[],
   importance = 0.6
 ) {
-  const limits = await getUserLimits(supabase, userId);
-  const plan = getPlan(effectiveTier(limits));
-  const maxMemories = plan.maxMemories;
-
   const existing = await loadMemoryRows(supabase, userId);
-  if (maxMemories !== null && existing.length >= maxMemories) {
-    return 0;
-  }
-
   const known = existing.map((row) => row.content);
   let inserted = 0;
 
   for (const content of candidates) {
-    if (maxMemories !== null && (existing.length + inserted) >= maxMemories) {
-      break;
-    }
     const duplicate = known.some((item) => overlap(content, item) > 0.72);
     if (duplicate) continue;
 

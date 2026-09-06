@@ -1,22 +1,39 @@
 "use client";
 
-import { Brain, Sparkles, Waypoints } from "lucide-react";
+import { AudioLines, Feather, MoveRight, Waypoints } from "lucide-react";
+
+const phases = [
+  { label: "Reading your intent", icon: AudioLines },
+  { label: "Connecting what matters", icon: Waypoints },
+  { label: "Finding the cleanest words", icon: Feather }
+] as const;
 
 export function ThinkingTrace() {
   return (
-    <div
-      className="my-4 flex w-fit items-center gap-3 rounded-xl border border-[var(--border)] bg-slate-50/80 px-4 py-2.5 shadow-xs"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-white">
-        <Brain size={13} className="animate-pulse" />
+    <div className="thinking-trace" role="status" aria-live="polite">
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)]">
+        Selrano is thinking
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {phases.map((phase, index) => {
+          const Icon = phase.icon;
+          return (
+            <div key={phase.label} className="contents">
+              <span
+                className="thinking-phase inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-[var(--muted-strong)]"
+                data-phase={index}
+              >
+                <Icon size={15} strokeWidth={1.8} />
+                {phase.label}
+              </span>
+              {index < phases.length - 1 ? (
+                <MoveRight size={14} className="text-[var(--border-strong)]" aria-hidden="true" />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
-      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--muted-strong)]">
-        <span className="inline-block h-2 w-2 animate-ping rounded-full bg-slate-900" />
-        <span>Thinking & synthesizing grounded memory...</span>
-      </div>
-      <span className="sr-only">Selrano is preparing a response</span>
+      <span className="sr-only">Preparing a response.</span>
     </div>
   );
 }

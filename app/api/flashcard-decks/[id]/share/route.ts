@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { serializeError } from "@/lib/serialize-error";
 import { generateSlug } from "@/lib/slug";
-import { normalizeDeckCategory } from "@/lib/deck-categories";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -14,17 +13,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { supabase, user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = (await request.json()) as { isPublic?: boolean; category?: string | null };
+    const body = (await request.json()) as { isPublic?: boolean };
     const isPublic = Boolean(body.isPublic);
-
-    let categoryPatch: { category?: string | null } = {};
-    if (body.category !== undefined) {
-      const category = body.category === null ? null : normalizeDeckCategory(body.category);
-      if (body.category !== null && !category) {
-        return NextResponse.json({ error: "Unknown subject." }, { status: 400 });
-      }
-      categoryPatch = { category };
-    }
 
     const { data: deck, error: fetchError } = await supabase
       .from("flashcard_decks")
@@ -38,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!isPublic) {
       const { data, error } = await supabase
         .from("flashcard_decks")
-        .update({ is_public: false, ...categoryPatch })
+        .update({ is_public: false })
         .eq("id", id)
         .eq("user_id", user.id)
         .select("*")
@@ -50,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (deck.share_slug) {
       const { data, error } = await supabase
         .from("flashcard_decks")
-        .update({ is_public: true, ...categoryPatch })
+        .update({ is_public: true })
         .eq("id", id)
         .eq("user_id", user.id)
         .select("*")
@@ -63,7 +53,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const slug = generateSlug(8);
       const { data, error } = await supabase
         .from("flashcard_decks")
-        .update({ is_public: true, share_slug: slug, ...categoryPatch })
+        .update({ is_public: true, share_slug: slug })
         .eq("id", id)
         .eq("user_id", user.id)
         .select("*")

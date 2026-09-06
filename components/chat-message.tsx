@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Brain,
   Check,
   CheckCheck,
   Copy,
   Pencil,
   RefreshCw,
-  User,
   Volume2,
   VolumeX,
   X
@@ -93,135 +91,120 @@ export function ChatMessageBubble({
     setSpeaking(true);
   }
 
-  const isUser = message.role === "user";
-
   return (
     <article
-      className={`group flex w-full gap-4 ${isUser ? "justify-end" : "justify-start"}`}
-      aria-label={isUser ? "Your message" : "Selrano response"}
+      className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
+      aria-label={message.role === "user" ? "Your message" : "Selrano response"}
     >
-      <div className={isUser ? "max-w-[85%] sm:max-w-[75%]" : "w-full max-w-3xl"}>
+      <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
         {editing ? (
-          <div className="rounded-2xl border border-[var(--border-strong)] bg-slate-50 p-4">
+          <div className="rounded-[26px] bg-[var(--surface-subtle)] p-4 sm:min-w-[min(34rem,70vw)]">
             <textarea
               aria-label="Edit message"
-              className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--border)] bg-white p-3 text-sm leading-relaxed text-[var(--text)] outline-none focus:border-slate-900"
+              className="min-h-28 w-full resize-y rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
               value={draft}
               onChange={(event) => setDraft(removeEmDashes(event.target.value))}
               autoFocus
             />
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="mt-2 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setEditing(false);
                   setDraft(content);
                 }}
-                className="btn-secondary min-h-[32px] px-3 text-xs"
+                className="rounded-full p-2 text-[var(--muted)] hover:bg-white hover:text-[var(--text)]"
+                aria-label="Cancel editing"
               >
-                Cancel
+                <X size={15} />
               </button>
               <button
                 type="button"
                 onClick={saveEdit}
-                className="btn-primary min-h-[32px] px-3 text-xs"
+                className="rounded-full bg-[var(--text)] p-2 text-white"
+                aria-label="Save and resend"
               >
-                Save and retry
+                <Check size={15} />
               </button>
             </div>
           </div>
-        ) : isUser ? (
-          <div className="relative rounded-2xl border border-slate-200/80 bg-slate-100/90 px-4 py-3.5 text-sm leading-relaxed text-[var(--text)] shadow-xs">
+        ) : message.role === "user" ? (
+          <div className="rounded-[26px] bg-[rgba(21,24,31,0.055)] px-5 py-4 text-[15px] font-medium leading-7 text-[var(--text)] sm:px-6 sm:py-5 sm:text-base">
             <p className="whitespace-pre-wrap">{content}</p>
-            {!message.id.startsWith("pending") && message.id !== "error" && (
-              <div className="mt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  disabled={busy}
-                  className="inline-flex items-center gap-1 rounded-md p-1 text-xs font-semibold text-[var(--muted)] opacity-0 transition hover:bg-white hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
-                  aria-label="Edit message"
-                  title="Edit"
-                >
-                  <Pencil size={12} />
-                  <span>Edit</span>
-                </button>
-              </div>
-            )}
+            {!message.id.startsWith("pending") && message.id !== "error" ? (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={busy}
+                className="mt-2 rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-white/70 hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
+                aria-label="Edit and resend message"
+                title="Edit and resend"
+              >
+                <Pencil size={14} />
+              </button>
+            ) : null}
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-white">
-                <Brain size={13} />
-              </div>
-              <span className="text-xs font-bold text-[var(--text)]">Selrano</span>
-            </div>
-
-            <div className="prose-selrano">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                urlTransform={urlTransform}
-                components={
-                  message.citations?.length
-                    ? {
-                        a: ({ href, children }) => {
-                          const marker = href?.startsWith("citation:")
-                            ? href.slice("citation:".length)
-                            : null;
-                          const citation = marker
-                            ? message.citations?.find((item) => item.marker === marker)
-                            : null;
-                          if (citation) return <CitationBadge citation={citation} />;
-                          return (
-                            <a href={href} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                              {children}
-                            </a>
-                          );
-                        }
+          <div className="py-2">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              urlTransform={urlTransform}
+              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-8 prose-headings:font-extrabold prose-headings:tracking-tight prose-li:text-[16px] prose-li:leading-8 prose-strong:font-extrabold prose-code:text-xs prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
+              components={
+                message.citations?.length
+                  ? {
+                      a: ({ href, children }) => {
+                        const marker = href?.startsWith("citation:")
+                          ? href.slice("citation:".length)
+                          : null;
+                        const citation = marker
+                          ? message.citations?.find((item) => item.marker === marker)
+                          : null;
+                        if (citation) return <CitationBadge citation={citation} />;
+                        return (
+                          <a href={href} target="_blank" rel="noreferrer">
+                            {children}
+                          </a>
+                        );
                       }
-                    : undefined
-                }
-              >
-                {message.citations?.length ? withCitationLinks(content) : content}
-              </ReactMarkdown>
-            </div>
-
-            {!message.id.startsWith("streaming") && message.id !== "error" && (
-              <div className="flex items-center gap-1 pt-2 border-t border-[var(--border)] text-[var(--muted)]">
+                    }
+                  : undefined
+              }
+            >
+              {message.citations?.length ? withCitationLinks(content) : content}
+            </ReactMarkdown>
+            {!message.id.startsWith("streaming") && message.id !== "error" ? (
+              <div className="mt-2 flex items-center gap-1 text-[var(--muted)]">
                 <button
                   type="button"
                   onClick={copyResponse}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition hover:bg-slate-100 hover:text-[var(--text)]"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label={copied ? "Response copied" : "Copy response"}
                   title={copied ? "Copied" : "Copy"}
                 >
-                  {copied ? <CheckCheck size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copied ? "Copied" : "Copy"}</span>
+                  {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
                 </button>
                 <button
                   type="button"
                   onClick={toggleSpeech}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition hover:bg-slate-100 hover:text-[var(--text)]"
-                  aria-label={speaking ? "Stop reading" : "Read aloud"}
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                  aria-label={speaking ? "Stop reading response" : "Read response aloud"}
                   title={speaking ? "Stop reading" : "Read aloud"}
                 >
-                  {speaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                  <span>{speaking ? "Stop" : "Read"}</span>
+                  {speaking ? <VolumeX size={17} /> : <Volume2 size={17} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => onRegenerate(message.id)}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold transition hover:bg-slate-100 hover:text-[var(--text)]"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label="Regenerate response"
                   title="Regenerate"
                 >
-                  <RefreshCw size={14} />
-                  <span>Regenerate</span>
+                  <RefreshCw size={16} />
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

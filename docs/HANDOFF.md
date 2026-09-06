@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **August 21, 2026**
+Last updated: **August 3, 2026**
 
 ## Current state
 
@@ -13,33 +13,14 @@ Last updated: **August 21, 2026**
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `277e311` ("fix memory bank schema alignment and add save_memory tool"), followed by plan memory differentiation:
-  - Free plan: 5 durable memories, basic recall, 3 projects, 20 MB files.
-  - Pro plan: Unlimited durable memories, deep contextual recall, weekly reflection email, unlimited projects, 100 MB files.
-  - Added explicit `save_memory` model tool to `lib/ai-tools.ts` and `app/api/ai/chat/route.ts`.
-  - Reconciled `components/memory-inspector-modal.tsx` with live database columns, added manual memory entry, and plan quota indicator with Pro upsell.
-  - Made `components/landing-preview.tsx` genuinely interactive with selectable consumer thinking prompts, real-time custom question submission, and removed the green status pill.
-- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were pushed to `main` and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
-
-## Direction change: thinking companion (August 2026)
-
-Owner decision, August 21, 2026: Selrano's primary positioning is now a **private thinking space with durable memory**, not a materials workspace. Consumer micro-SaaS framing; no student or B2B targeting; nothing that requires importing sensitive personal documents. Phase 1 was pushed to `main` as `a118871` (deck library companion work in `a848aae`) on August 21, 2026 with CI green; production deploys from `main`, so confirm the new landing copy renders after the deployment turns over:
-
-- Landing page rewritten around capture, grounded context, and memory continuity.
-- App nav reduced to Workspace, Think (chats), Notes, Projects, Files. Flashcards, Study, and Library links were retired from navigation only; all routes remain live and usable because there are no feature flags.
-- Dashboard leads with a quick-capture box that hands off to `/chats?compose=...`; stats row counts thoughts/notes/projects/files instead of flashcards.
-- Chat page copy reframed ("What is on your mind?", "Selrano remembers across conversations") and it accepts `?compose=` prefill.
-- Lifecycle campaigns `tip_flashcards` and `tip_study` were removed; the weekly digest became a memory-driven reflection email quoting recent `content_memories` rows (escaped) with a stats-only fallback. Welcome email copy updated.
-- Pricing table rows and plan taglines no longer mention flashcards or coursework.
-- The deck library feature (August 21 morning session: `/library`, categories, duplicate counter, migration `20260821000000_deck_library.sql`) still works but is no longer promoted anywhere. Its migration has NOT been applied to production; decide whether to apply or drop it with the owner.
-
-Phase 2 candidates: surface stored memories in-product ("what Selrano remembers" panel), weekly reflection email QA against real memories, programmatic SEO pages, and repositioning guides/changelog content.
+- Current main commit: `2b1a908`, merging the `landing-page-aesthetics` branch (cursor-spotlight and scroll-reveal treatment for the landing page and pricing cards) on top of the July 25 web-search/icon fixes and the July 24 adaptive AI transformation merge (`6c5d771`).
+- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were all pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
 
 ## Product positioning and UI direction
 
-- Position Selrano as a private thinking space with durable memory: capture what is on your mind, work it through with grounded chat and notes, and let what matters carry forward across conversations. Workspace surfaces (projects, files, review) support the thinking rather than lead the story.
-- Study tools (flashcards, study mode) and the public deck library are retired from navigation but their routes remain live and usable. Do not promote them in product or marketing UI, and never make the homepage revolve around them.
-- The preferred public framing is memory first: say it once, add grounded context when facts matter, then pick up the thread later without starting over.
+- Position Selrano as a calm AI workspace for a user's own materials: projects, notes, private uploads, grounded chat, quick transformations, flashcards, and review.
+- Do not let the homepage or onboarding revolve entirely around flashcards. Flashcards are useful, but Selrano should not read like a Quizlet competitor.
+- The preferred public framing is materials first: gather source material, work with context, then review what matters.
 - Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
 - Keep the Selrano name across the product, domain, and email. Do not revive the imported product's previous brand.
 - Public pricing and acquisition pages should sell capability and outcomes without advertising exact AI message allowances. Authenticated billing may still show current usage and limits.
@@ -179,11 +160,6 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 
 ## Recent release commits
 
-- `7f2c23e` — overhaul UI/UX into enterprise thinking workspace
-- `a118871` — reposition Selrano as a private thinking space with durable memory
-- `a848aae` — add public deck library with subjects and duplicate counts
-- `36354bf` — update founding Pro pricing and plan limits
-- `b255666` — polish workspace context and file statuses
 - `2b1a908` — merge `landing-page-aesthetics`: spotlight/reveal treatment for the landing page and pricing cards
 - `e9fd5f5` — remove usage stat cards from Settings and use more specific icons
 - `de0b2c2` — recover malformed Groq function calls instead of dropping them

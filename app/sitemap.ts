@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/brand";
+import { guides } from "@/lib/guides";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // Queries the database, so it can't be statically prerendered at build time
@@ -11,9 +12,10 @@ export const dynamic = "force-dynamic";
 const staticRoutes: Array<{ path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }> = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/pricing", priority: 0.8, changeFrequency: "monthly" },
-  { path: "/changelog", priority: 0.6, changeFrequency: "weekly" },
-  { path: "/support", priority: 0.5, changeFrequency: "monthly" },
-  { path: "/security", priority: 0.4, changeFrequency: "monthly" },
+  { path: "/guides", priority: 0.6, changeFrequency: "weekly" },
+  { path: "/changelog", priority: 0.5, changeFrequency: "weekly" },
+  { path: "/support", priority: 0.4, changeFrequency: "monthly" },
+  { path: "/security", priority: 0.3, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" }
 ];
@@ -39,5 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route.priority
   }));
 
-  return [...staticEntries, ...deckEntries];
+  const guideEntries: MetadataRoute.Sitemap = guides.map((guide) => ({
+    url: absoluteUrl(`/guides/${guide.slug}`),
+    lastModified: new Date(`${guide.publishedAt}T00:00:00Z`),
+    changeFrequency: "monthly",
+    priority: 0.6
+  }));
+
+  return [...staticEntries, ...guideEntries, ...deckEntries];
 }

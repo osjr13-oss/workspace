@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -41,63 +40,42 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-12">
-      <section className="panel w-full max-w-md p-8 bg-white shadow-lg space-y-6">
+    <main className="grid min-h-screen place-items-center px-5 py-10">
+      <section className="panel w-full max-w-md p-7">
         <SelranoLogo />
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">Set new password</h1>
-          <p className="mt-1 text-xs text-[var(--muted-strong)]">
-            Choose a new secure password for your Selrano workspace.
-          </p>
-        </div>
-
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">New Password</label>
-            <input
-              aria-label="New password"
-              className="input-enterprise mt-1.5 w-full"
-              type="password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Confirm New Password</label>
-            <input
-              aria-label="Confirm password"
-              className="input-enterprise mt-1.5 w-full"
-              type="password"
-              placeholder="Confirm password"
-              value={confirm}
-              onChange={(event) => setConfirm(event.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-
-          <button className="btn-primary w-full mt-2" type="submit" disabled={loading}>
-            <span>{loading ? "Updating password..." : "Update Password"}</span>
-            <ArrowRight size={15} />
+        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Set new password</h1>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Choose a new password for your account.
+        </p>
+        <form onSubmit={submit} className="mt-7 space-y-4">
+          <input
+            aria-label="New password"
+            className="input-premium w-full px-5"
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            minLength={8}
+          />
+          <input
+            aria-label="Confirm password"
+            className="input-premium w-full px-5"
+            type="password"
+            placeholder="Confirm password"
+            value={confirm}
+            onChange={(event) => setConfirm(event.target.value)}
+            required
+            minLength={8}
+          />
+          <button className="btn-primary w-full" type="submit" disabled={loading}>
+            {loading ? "Saving" : "Update password"}
           </button>
-
-          {message && (
-            <p className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs font-semibold text-rose-700">
-              {message}
-            </p>
-          )}
+          {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
         </form>
-
-        <div className="border-t border-[var(--border)] pt-4 text-center">
-          <Link href="/signin" className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text)] hover:underline">
-            <ArrowLeft size={13} />
-            <span>Back to sign in</span>
-          </Link>
-        </div>
+        <Link href="/signin" className="mt-6 inline-block text-sm font-bold text-[var(--text)]">
+          Back to sign in
+        </Link>
       </section>
     </main>
   );

@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, ShieldCheck } from "lucide-react";
 import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { removeEmDashes } from "@/lib/text";
 
 const REFERRAL_COOKIE = "selrano_ref";
 
@@ -28,11 +26,15 @@ function SignUpForm() {
   const ref = searchParams.get("ref") || "";
   const nextPath = safeNextPath(searchParams.get("next"));
 
+  // Belt-and-suspenders: also stash the referral code in a first-party
+  // cookie. Supabase's email-confirmation redirect doesn't reliably
+  // preserve extra query params appended to emailRedirectTo (the same
+  // issue behind the password-reset link bug), so /auth/callback reads
+  // this cookie as a fallback that doesn't depend on that round trip.
   useEffect(() => {
     if (!ref) return;
     document.cookie = `${REFERRAL_COOKIE}=${encodeURIComponent(ref)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
   }, [ref]);
-
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,13 +52,11 @@ function SignUpForm() {
       const redirectParams = new URLSearchParams({ next: nextPath });
       if (ref) redirectParams.set("ref", ref);
 
-      const cleanName = removeEmDashes(fullName);
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { full_name: cleanName },
+          data: { full_name: fullName },
           emailRedirectTo: `${window.location.origin}/auth/callback?${redirectParams.toString()}`
         }
       });
@@ -72,7 +72,7 @@ function SignUpForm() {
         const welcomeResponse = await fetch("/api/email/welcome", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: cleanName })
+          body: JSON.stringify({ name: fullName })
         });
         if (!welcomeResponse.ok) {
           console.error("[signup] Welcome email delivery failed", welcomeResponse.statusText);
@@ -104,84 +104,24 @@ function SignUpForm() {
   const signInHref = nextPath !== "/dashboard" ? `/signin?next=${encodeURIComponent(nextPath)}` : "/signin";
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-12">
-      <section className="panel w-full max-w-md p-8 bg-white shadow-lg space-y-6">
-        <div className="flex items-center justify-between">
-          <SelranoLogo />
-          <span className="badge badge-brand text-[10px]">Free Workspace</span>
-        </div>
-
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">Create your workspace</h1>
-          <p className="mt-1 text-xs text-[var(--muted-strong)]">
-            Start thinking with durable memory and grounded citations
-          </p>
-        </div>
-
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Full Name</label>
-            <input
-              aria-label="Full name"
-              className="input-enterprise mt-1.5 w-full"
-              placeholder="e.g. Alex Morgan"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Email Address</label>
-            <input
-              aria-label="Email address"
-              className="input-enterprise mt-1.5 w-full"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Password</label>
-            <input
-              aria-label="Password"
-              className="input-enterprise mt-1.5 w-full"
-              type="password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-
-          <button className="btn-primary w-full mt-2" type="submit" disabled={loading}>
-            <span>{loading ? "Creating workspace..." : "Create Free Account"}</span>
-            <ArrowRight size={15} />
+    <main className="grid min-h-screen place-items-center px-5 py-10">
+      <section className="panel w-full max-w-md p-7">
+        <SelranoLogo />
+        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Create your workspace</h1>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Start free. Upgrade to Pro anytime from Settings.</p>
+        <form onSubmit={submit} className="mt-7 space-y-4">
+          <input aria-label="Full name" className="input-premium w-full px-5" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
+          <input aria-label="Email address" className="input-premium w-full px-5" type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <input aria-label="Password" className="input-premium w-full px-5" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} />
+          <button className="btn-primary w-full" type="submit" disabled={loading}>
+            {loading ? "Creating" : "Create account"}
           </button>
-
-          {message && (
-            <p
-              className={`rounded-lg border p-2.5 text-xs font-semibold ${
-                success
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  : "bg-rose-50 border-rose-200 text-rose-700"
-              }`}
-            >
-              {message}
-            </p>
-          )}
+          {message ? <p className={`text-sm font-bold ${success ? "text-[var(--low)]" : "text-[var(--critical)]"}`}>{message}</p> : null}
         </form>
-
-        <div className="border-t border-[var(--border)] pt-4 text-center text-xs text-[var(--muted)]">
+        <p className="mt-6 text-sm text-[var(--muted)]">
           Already have an account?{" "}
-          <Link href={signInHref} className="font-bold text-[var(--text)] hover:underline">
-            Sign in
-          </Link>
-        </div>
+          <Link href={signInHref} className="font-bold text-[var(--text)]">Sign in</Link>
+        </p>
       </section>
     </main>
   );

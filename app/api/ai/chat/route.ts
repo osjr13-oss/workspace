@@ -320,7 +320,7 @@ async function prepareToolMessages(
   const actionGuide = {
     role: "system" as const,
     content:
-      "You can take actions with the provided tools: search the user's notes and files, search the live web, save a durable fact or preference to the user's memory bank (save_memory), create a note, or create a flashcard deck. Call save_memory whenever the user asks you to remember something, save a personal preference, or note a detail for future conversations. Call web_search whenever you need recent or current live information. Call workspace tools when asked about materials. After using tools, answer normally in plain prose. Never use an em dash. Cite web search results using the bracketed reference id each result provides, like this: <claim> [1]."
+      "You can take actions with the provided tools: search the user's notes and files, search the live web, create a note, or create a flashcard deck. Call web_search whenever you are not confident your training data is current enough to answer well, such as news, prices, recent releases, or anything that may have changed since your training cutoff. Call the workspace tools only when the user clearly asks about their own materials or asks you to create something. After using tools, answer normally in plain prose. Cite web search results using the bracketed reference id each result provides, like this: <claim> [1]. Cite only ids that were given to you."
   };
 
   const toolMessages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];

@@ -2,25 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  Brain,
-  Check,
-  CreditCard,
-  KeyRound,
-  LifeBuoy,
-  Mail,
-  Save,
-  Shield,
-  Trash2,
-  User,
-  Users
-} from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { BillingSection } from "@/components/billing-section";
 import { ReferralSection } from "@/components/referral-section";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import { MemoryInspectorModal } from "@/components/memory-inspector-modal";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { removeEmDashes } from "@/lib/text";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
@@ -32,8 +18,6 @@ export default function SettingsPage() {
   const [lifecycleEmails, setLifecycleEmails] = useState(false);
   const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
-  const [memoryModalOpen, setMemoryModalOpen] = useState(false);
-  const [toneProfile, setToneProfile] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -48,15 +32,6 @@ export default function SettingsPage() {
         .single();
       setFullName(profile?.full_name || metadataName);
       setLifecycleEmails(profile?.lifecycle_emails === true);
-
-      const { data: style } = await supabase
-        .from("style_profiles")
-        .select("directive")
-        .eq("user_id", data.user.id)
-        .single();
-      if (style?.directive) {
-        setToneProfile(style.directive);
-      }
     });
   }, []);
 
@@ -84,8 +59,7 @@ export default function SettingsPage() {
         setMessage(payload?.error || "Could not update email preferences.");
       } else {
         setLifecycleEmails(enabled);
-        setMessage(enabled ? "Weekly reflections enabled." : "Weekly reflections disabled.");
-        setTimeout(() => setMessage(""), 2500);
+        setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
       }
     } catch {
       setMessage("Could not update email preferences. Please try again.");
@@ -107,10 +81,7 @@ export default function SettingsPage() {
       return;
     }
 
-    const cleanName = removeEmDashes(fullName);
-    const { error: authError } = await supabase.auth.updateUser({
-      data: { full_name: cleanName }
-    });
+    const { error: authError } = await supabase.auth.updateUser({ data: { full_name: fullName } });
     if (authError) {
       setMessage(authError.message);
       setSaving(false);
@@ -119,204 +90,98 @@ export default function SettingsPage() {
 
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({ full_name: cleanName, updated_at: new Date().toISOString() })
+      .update({ full_name: fullName, updated_at: new Date().toISOString() })
       .eq("id", user.id);
 
     setMessage(profileError ? profileError.message : "Profile updated.");
-    setTimeout(() => setMessage(""), 2500);
     setSaving(false);
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 px-5 py-8 sm:px-8">
-      <WorkspaceHeader title="Settings" eyebrow="Workspace & Account" />
-      <MemoryInspectorModal
-        open={memoryModalOpen}
-        onClose={() => setMemoryModalOpen(false)}
-      />
-
-      {message && (
-        <div className="rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs">
-          {message}
+    <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+      <WorkspaceHeader title="Settings" eyebrow="Account" />
+      <BillingSection />
+      <ReferralSection />
+      <form onSubmit={save} className="panel space-y-4 p-6">
+        <div>
+          <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Full name</label>
+          <input className="input-premium mt-2 w-full px-5" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Your name" />
         </div>
-      )}
-
-      {/* Profile Section */}
-      <form onSubmit={save} className="panel p-6 bg-white space-y-4 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <User size={16} />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-[var(--text)]">Profile Details</h2>
-            <p className="text-xs text-[var(--muted)]">Your account identification details</p>
-          </div>
+        <div>
+          <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Email</label>
+          <input className="input-premium mt-2 w-full px-5" value={email} disabled />
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Full Name</label>
-            <input
-              className="input-enterprise mt-1.5 w-full"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              placeholder="Your name"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--muted-strong)]">Email Address</label>
-            <input className="input-enterprise mt-1.5 w-full bg-slate-50 opacity-70" value={email} disabled />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button className="btn-primary" type="submit" disabled={saving}>
-            <Save size={15} />
-            <span>{saving ? "Saving..." : "Save Profile"}</span>
-          </button>
-        </div>
+        <button className="btn-primary" type="submit" disabled={saving}>
+          <Save size={18} />
+          {saving ? "Saving" : "Save profile"}
+        </button>
+        {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
       </form>
 
-      {/* Durable Memory & Intelligence Control */}
-      <section className="panel p-6 bg-white space-y-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-              <Brain size={16} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-[var(--text)]">Durable Memory Bank</h2>
-              <p className="text-xs text-[var(--muted)]">
-                Manage learned facts, preferences, and writing tone directives
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setMemoryModalOpen(true)}
-            className="btn-secondary min-h-[34px] px-3 text-xs"
-          >
-            Inspect Memory Bank
-          </button>
-        </div>
-
-        {toneProfile && (
-          <div className="rounded-xl border border-[var(--border)] bg-slate-50 p-3.5 text-xs">
-            <span className="font-bold text-[var(--text)]">Active Writing Tone Directive:</span>
-            <p className="mt-1 text-[var(--muted-strong)] leading-relaxed">{toneProfile}</p>
-          </div>
-        )}
-      </section>
-
-      {/* Billing & Subscription */}
-      <BillingSection />
-
-      {/* Referrals */}
-      <ReferralSection />
-
-      {/* Email Preferences */}
-      <section className="panel p-6 bg-white space-y-3 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Mail size={16} />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-[var(--text)]">Email Preferences</h2>
-            <p className="text-xs text-[var(--muted)]">
-              Weekly memory reflection summaries and essential account updates
-            </p>
-          </div>
-        </div>
-
-        <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-slate-50 p-4 transition hover:bg-slate-100">
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          A useful weekly workspace check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
+        </p>
+        <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+            className="h-4 w-4 rounded border-[var(--border)]"
             checked={lifecycleEmails}
             disabled={savingEmailPrefs}
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
-          <div className="text-xs">
-            <span className="font-bold text-[var(--text)]">
-              Weekly Memory Reflection Digest
-            </span>
-            <p className="mt-0.5 text-[var(--muted-strong)] leading-relaxed">
-              Receive a private synthesized digest of your thinking threads and key takeaways every week.
-            </p>
-          </div>
+          <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
         </label>
       </section>
 
-      {/* Security & Password */}
-      <section className="panel p-6 bg-white space-y-3 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Shield size={16} />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-[var(--text)]">Security & Password</h2>
-            <p className="text-xs text-[var(--muted)]">
-              Request a secure password reset link sent to your registered email
-            </p>
-          </div>
-        </div>
-
-        <div className="pt-2">
-          <Link href="/reset-password" className="btn-secondary">
-            <KeyRound size={15} />
-            <span>Send Password Reset Email</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Danger Zone */}
-      <section className="panel p-6 bg-white border-rose-200 shadow-sm space-y-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
-            <Trash2 size={16} />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-rose-700">Delete Account & Data</h2>
-            <p className="text-xs text-[var(--muted)]">
-              Permanently remove your account, thoughts, notes, and uploaded files
-            </p>
-          </div>
-        </div>
-
-        <p className="text-xs leading-relaxed text-[var(--muted-strong)]">
-          Once deleted, your active subscription is immediately cancelled, storage objects are removed, and your data cannot be recovered.
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em]">Help & support</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Questions, billing, or account issues. Our team typically responds within one business day.
         </p>
-
-        <div className="pt-2">
-          <button
-            type="button"
-            className="btn-secondary text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
-            disabled={deletingAccount}
-            onClick={async () => {
-              if (
-                !confirm(
-                  "Are you absolutely certain? This will permanently delete your account and all data. This action is irreversible."
-                )
-              )
-                return;
-              setDeletingAccount(true);
-              const res = await fetch("/api/account/delete", { method: "DELETE" });
-              if (res.ok) {
-                const supabase = createSupabaseBrowserClient();
-                await supabase.auth.signOut();
-                router.push("/");
-              } else {
-                const payload = await res.json();
-                setMessage(payload.error || "Failed to delete account.");
-                setDeletingAccount(false);
-              }
-            }}
-          >
-            <Trash2 size={15} />
-            <span>{deletingAccount ? "Deleting account..." : "Delete my account permanently"}</span>
-          </button>
-        </div>
+        <Link href="/help" className="btn-secondary mt-5">
+          Open help center
+        </Link>
       </section>
+
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em]">Security</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Request a reset link by email. After you click the link, you will set a new password on a secure page.
+        </p>
+        <Link href="/reset-password" className="btn-secondary mt-5">Send reset email</Link>
+      </section>
+
+      <section className="panel p-6">
+        <h2 className="text-base font-extrabold tracking-[-0.01em] text-[var(--critical)]">Danger zone</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
+          Permanently delete your account and all your data. This cannot be undone.
+        </p>
+        <button
+          type="button"
+          className="btn-secondary mt-5 text-[var(--critical)]"
+          disabled={deletingAccount}
+          onClick={async () => {
+            if (!confirm("Are you absolutely sure? This will permanently delete your account and ALL your data. This cannot be undone.")) return;
+            setDeletingAccount(true);
+            const res = await fetch("/api/account/delete", { method: "DELETE" });
+            if (res.ok) {
+              const supabase = createSupabaseBrowserClient();
+              await supabase.auth.signOut();
+              router.push("/");
+            } else {
+              const payload = await res.json();
+              setMessage(payload.error || "Failed to delete account.");
+              setDeletingAccount(false);
+            }
+          }}
+        >
+          <Trash2 size={16} />
+          {deletingAccount ? "Deleting…" : "Delete my account"}
+        </button>
+      </section>
+
     </div>
   );
 }

@@ -1,8 +1,8 @@
 # Selrano
 
-Selrano is a private thinking space with durable memory. You capture what is on your mind, work it through with grounded AI chat and notes, and let what matters carry forward across conversations. Projects, private file uploads, and web search support the thinking; flashcards and study mode remain available but are retired from navigation.
+Selrano is a personal AI workspace that learns how you think and write. Chat is the primary experience, supported by projects, notes, private files, web search, review tools, and flashcards.
 
-The current chat uses Anthropic first with Groq fallback, streams responses, learns writing preferences, stores durable memories that power a weekly reflection email, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+The current chat uses Anthropic first with Groq fallback, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
 
 ## Local Setup
 

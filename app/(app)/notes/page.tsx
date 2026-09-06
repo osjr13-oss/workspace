@@ -2,12 +2,12 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookOpen, FolderOpen, Plus, Save, Search, Trash2, Wand2 } from "lucide-react";
+import { Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
-import { removeEmDashes } from "@/lib/text";
 import type { Note, Project } from "@/lib/types";
 
 export default function NotesPage() {
@@ -29,17 +29,13 @@ function NotesContent() {
   const [projectId, setProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [search, setSearch] = useState("");
   const selected = useMemo(() => notes.find((note) => note.id === selectedId) || null, [notes, selectedId]);
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
     let query = supabase.from("notes").select("*").order("updated_at", { ascending: false });
     if (projectFilter) query = query.eq("project_id", projectFilter);
-    const [notesResult, projectsResult] = await Promise.all([
-      query,
-      supabase.from("projects").select("*").order("name")
-    ]);
+    const [notesResult, projectsResult] = await Promise.all([query, supabase.from("projects").select("*").order("name")]);
     const loadedNotes = (notesResult.data as Note[]) || [];
     setNotes(loadedNotes);
     setProjects((projectsResult.data as Project[]) || []);
@@ -54,8 +50,8 @@ function NotesContent() {
 
   function selectNote(note: Note) {
     setSelectedId(note.id);
-    setTitle(removeEmDashes(note.title));
-    setContent(removeEmDashes(note.content || ""));
+    setTitle(note.title);
+    setContent(note.content || "");
     setProjectId(note.project_id || "");
   }
 
@@ -77,13 +73,7 @@ function NotesContent() {
       } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("Your session has expired. Please sign in again.");
-      const payload = {
-        title: removeEmDashes(title),
-        content: removeEmDashes(content),
-        project_id: projectId || null,
-        user_id: user.id,
-        updated_at: new Date().toISOString()
-      };
+      const payload = { title, content, project_id: projectId || null, user_id: user.id, updated_at: new Date().toISOString() };
       if (selectedId) {
         const { error } = await supabase.from("notes").update(payload).eq("id", selectedId);
         if (error) throw error;
@@ -94,7 +84,6 @@ function NotesContent() {
       }
       await load();
       setMessage("Saved.");
-      setTimeout(() => setMessage(""), 2500);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save the note.");
     } finally {
@@ -115,7 +104,6 @@ function NotesContent() {
     newNote();
     await load();
     setMessage("Note deleted.");
-    setTimeout(() => setMessage(""), 2500);
   }
 
   async function transform(action: string) {
@@ -126,12 +114,12 @@ function NotesContent() {
       const response = await fetch("/api/ai/transform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, text: removeEmDashes(content) })
+        body: JSON.stringify({ action, text: content })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "AI transform action failed.");
-      setContent(removeEmDashes(payload.result));
-      setMessage("Transformed. Click Save to keep changes.");
+      if (!response.ok) throw new Error(payload.error || "AI action failed.");
+      setContent(payload.result);
+      setMessage("Transformation complete. Save to keep the changes.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "AI action failed.");
     } finally {
@@ -139,133 +127,67 @@ function NotesContent() {
     }
   }
 
-  const filteredNotes = notes.filter((n) =>
-    n.title.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="mx-auto max-w-6xl space-y-7 px-5 py-8 sm:px-8">
-      <WorkspaceHeader title="Notes" eyebrow="Knowledge Hub">
+    <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+      <WorkspaceHeader title="Notes" eyebrow="Workspace">
         <button type="button" onClick={newNote} className="btn-secondary">
-          <Plus size={16} />
-          New Note
+          <Plus size={18} />
+          New note
         </button>
         <button type="button" onClick={save} className="btn-primary" disabled={saving}>
-          <Save size={16} />
-          {saving ? "Saving..." : "Save Note"}
+          <Save size={18} />
+          {saving ? "Saving" : "Save"}
         </button>
       </WorkspaceHeader>
 
-      {message && (
-        <div className="rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs">
-          {message}
-        </div>
-      )}
+      {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Notes Navigation Rail */}
-        <aside className="panel flex flex-col p-4 bg-white">
-          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-              All Notes
-            </span>
-            <span className="badge badge-subtle text-[10px]">{notes.length}</span>
+      <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
+        <aside className="panel p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Library</p>
+            <span className="status-pill">{notes.length} notes</span>
           </div>
-
-          <div className="mt-3 flex items-center rounded-lg border border-[var(--border)] bg-slate-50 px-2.5 py-1.5 text-xs text-[var(--muted)]">
-            <Search size={13} className="mr-2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search notes..."
-              className="w-full bg-transparent text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
-            />
-          </div>
-
-          <div className="mt-3 flex-1 space-y-1 overflow-y-auto max-h-[600px]">
-            {filteredNotes.length === 0 ? (
-              <p className="py-8 text-center text-xs text-[var(--muted)]">
-                {search ? "No matching notes." : "No notes created yet."}
-              </p>
-            ) : (
-              filteredNotes.map((note) => {
-                const active = selectedId === note.id;
-                return (
-                  <button
-                    key={note.id}
-                    type="button"
-                    onClick={() => selectNote(note)}
-                    className={`flex w-full flex-col rounded-lg p-2.5 text-left transition ${
-                      active
-                        ? "bg-slate-100 font-semibold text-[var(--text)]"
-                        : "text-[var(--muted-strong)] hover:bg-slate-50 hover:text-[var(--text)]"
-                    }`}
-                  >
-                    <span className="truncate text-xs font-medium">
-                      {removeEmDashes(note.title)}
-                    </span>
-                    <span className="mt-0.5 text-[10px] text-[var(--muted)]">
-                      {formatRelative(note.updated_at)}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
+          {notes.length ? (
+            <div className="space-y-2">
+              {notes.map((note) => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => selectNote(note)}
+                  className={`w-full rounded-2xl p-4 text-left ${selectedId === note.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
+                >
+                  <p className="font-extrabold">{note.title}</p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(note.updated_at)}</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="No notes yet" description="Create your first markdown note." />
+          )}
         </aside>
-
-        {/* Note Editor Area */}
         <section className="space-y-4">
-          <div className="panel grid gap-3 p-4 sm:grid-cols-[1fr_200px_auto] bg-white">
-            <input
-              aria-label="Note title"
-              className="input-enterprise w-full"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Note title..."
-            />
-            <select
-              aria-label="Project association"
-              className="input-enterprise"
-              value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
-            >
-              <option value="">No Project</option>
+          <div className="panel grid gap-3 p-4 lg:grid-cols-[1fr_220px_auto]">
+            <input aria-label="Note title" className="input-premium px-5" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Note title" />
+            <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+              <option value="">No project</option>
               {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
+                <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={remove}
-              className="btn-secondary text-rose-600 hover:bg-rose-50 hover:border-rose-300"
-              disabled={!selected}
-            >
-              <Trash2 size={16} />
+            <button type="button" onClick={remove} className="btn-secondary" disabled={!selected}>
+              <Trash2 size={18} />
               Delete
             </button>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
-              AI Tools:
-            </span>
-            {["Executive summary", "Rewrite clearly", "Turn into outline", "Action items"].map((action) => (
-              <button
-                key={action}
-                type="button"
-                onClick={() => transform(action)}
-                className="btn-secondary min-h-[30px] px-2.5 text-xs"
-              >
-                <Wand2 size={12} />
+          <div className="flex flex-wrap gap-2">
+            {["Summarize", "Rewrite", "Turn into outline", "Turn into study notes"].map((action) => (
+              <button key={action} type="button" onClick={() => transform(action)} className="btn-secondary min-h-10 text-sm">
+                <Wand2 size={16} />
                 {action}
               </button>
             ))}
           </div>
-
           <MarkdownEditor value={content} onChange={setContent} />
         </section>
       </div>

@@ -1,28 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Sparkles, Wand2 } from "lucide-react";
-import { removeEmDashes } from "@/lib/text";
+import { Wand2 } from "lucide-react";
 
-const actions = [
-  "Rewrite clearly",
-  "Executive summary",
-  "Expand ideas",
-  "Action items",
-  "Structured outline",
-  "Draft email"
-];
+const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Turn into bullet points", "Turn into study notes", "Turn into email"];
 
 export function QuickActions({ initialText = "" }: { initialText?: string }) {
   const [text, setText] = useState(initialText);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
 
   async function run(action: string) {
     if (!text.trim()) {
-      setError("Please enter or paste text first.");
+      setError("Add text first.");
       return;
     }
     setLoading(action);
@@ -32,87 +23,45 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
       const response = await fetch("/api/ai/transform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, text: removeEmDashes(text) })
+        body: JSON.stringify({ action, text })
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "AI transform action failed.");
-      setResult(removeEmDashes(payload.result));
+      if (!response.ok) throw new Error(payload.error || "AI action failed.");
+      setResult(payload.result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "AI transform action failed.");
+      setError(err instanceof Error ? err.message : "AI action failed.");
     } finally {
       setLoading("");
     }
   }
 
-  async function copyResult() {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  }
-
   return (
-    <section className="panel p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Wand2 size={16} />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-[var(--text)]">Quick AI Transformations</h2>
-            <p className="text-xs text-[var(--muted)]">Refine, summarize, or structure text instantly</p>
-          </div>
+    <section className="panel p-5">
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--text)] text-white">
+          <Wand2 size={18} />
+        </span>
+        <div>
+          <h2 className="text-base font-extrabold tracking-[-0.01em]">Quick actions</h2>
+          <p className="text-sm text-[var(--muted)]">Transform pasted text without leaving the workspace.</p>
         </div>
       </div>
-
       <textarea
         aria-label="Text to transform"
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Paste a paragraph, note, meeting transcript, or raw thoughts..."
-        className="textarea-enterprise mt-4 min-h-[110px] w-full text-sm leading-relaxed placeholder:text-[var(--muted)]"
+        placeholder="Paste a paragraph, note, or draft..."
+        className="mt-5 min-h-32 w-full rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6 outline-none focus:border-[var(--border-strong)]"
       />
-
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {actions.map((action) => (
-          <button
-            key={action}
-            type="button"
-            onClick={() => run(action)}
-            disabled={Boolean(loading)}
-            className={`btn-secondary min-h-[34px] px-3 text-xs ${
-              loading === action ? "bg-slate-100 text-slate-400" : ""
-            }`}
-          >
-            {loading === action ? "Working..." : action}
+          <button key={action} type="button" onClick={() => run(action)} className="btn-secondary min-h-10 px-4 text-sm">
+            {loading === action ? "Working" : action}
           </button>
         ))}
       </div>
-
-      {error && (
-        <p className="mt-3 text-xs font-semibold text-[var(--critical)]">{error}</p>
-      )}
-
-      {result && (
-        <div className="mt-4 rounded-xl border border-[var(--border)] bg-slate-50 p-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-            <span className="text-xs font-bold text-[var(--muted-strong)] uppercase tracking-wider">
-              Result
-            </span>
-            <button
-              type="button"
-              onClick={copyResult}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-[var(--muted-strong)] hover:bg-slate-200/60"
-            >
-              {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-              <span>{copied ? "Copied" : "Copy"}</span>
-            </button>
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">
-            {result}
-          </p>
-        </div>
-      )}
+      {error ? <p className="mt-4 text-sm font-bold text-[var(--critical)]">{error}</p> : null}
+      {result ? <pre className="mt-5 whitespace-pre-wrap rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6">{result}</pre> : null}
     </section>
   );
 }

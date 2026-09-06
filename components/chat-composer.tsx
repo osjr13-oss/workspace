@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, CornerDownLeft } from "lucide-react";
+import { Send } from "lucide-react";
 import { autocorrectOnBoundary } from "@/lib/autocorrect";
 import { removeEmDashes } from "@/lib/text";
 
@@ -34,7 +34,7 @@ export function ChatComposer({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(200, Math.max(44, textarea.scrollHeight))}px`;
+    textarea.style.height = `${Math.min(180, Math.max(44, textarea.scrollHeight))}px`;
   }, [value]);
 
   function update(rawValue: string) {
@@ -63,42 +63,31 @@ export function ChatComposer({
   }
 
   return (
-    <div className="relative flex w-full items-end gap-3">
-      <div className="flex-1 relative">
-        <textarea
-          ref={textareaRef}
-          aria-label="Chat message"
-          className="min-h-[44px] max-h-48 w-full resize-none bg-transparent py-2.5 px-3 text-sm leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
-          value={value}
-          onChange={(event) => update(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          placeholder="Ask a question, analyze trade-offs, or explore an idea..."
-          rows={1}
-          spellCheck
-        />
-        {hint && (
-          <span className="pointer-events-none absolute -bottom-5 left-3 text-[11px] font-bold text-slate-500">
-            {hint}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 pb-1.5 pr-1.5">
-        <button
-          type="submit"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white transition hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-          disabled={disabled || !value.trim()}
-          aria-label="Send message"
-          title="Send (Enter)"
-        >
-          <ArrowUp size={16} />
-        </button>
-      </div>
+    <div className="relative flex w-full items-end gap-2">
+      <textarea
+        ref={textareaRef}
+        aria-label="Chat message"
+        className="min-h-11 max-h-44 flex-1 resize-none bg-transparent px-4 py-3 text-sm outline-none"
+        value={value}
+        onChange={(event) => update(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }
+        }}
+        placeholder="Ask anything, or paste text to transform..."
+        rows={1}
+        spellCheck
+      />
+      {hint ? (
+        <span className="pointer-events-none absolute bottom-1 left-4 translate-y-full text-[11px] font-bold text-[var(--muted)]">
+          {hint}
+        </span>
+      ) : null}
+      <button type="submit" className="btn-primary min-h-11 px-4" disabled={disabled || !value.trim()}>
+        <Send size={18} />
+      </button>
     </div>
   );
 }

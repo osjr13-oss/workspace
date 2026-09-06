@@ -10,7 +10,6 @@ type UserStats = {
   decks: number;
   studyReviews: number;
   aiEventsLast7d: number;
-  memories: string[];
 };
 
 type Campaign = {
@@ -24,6 +23,8 @@ const CAMPAIGNS: Campaign[] = [
   { key: "tip_projects", minDays: 2, maxDays: 4, eligible: (s) => s.projects === 0 },
   { key: "tip_chat", minDays: 3, maxDays: 6, eligible: (s) => s.chatThreads === 0 },
   { key: "tip_upload", minDays: 4, maxDays: 8, eligible: (s) => s.files === 0 },
+  { key: "tip_flashcards", minDays: 7, maxDays: 14, eligible: (s) => s.decks === 0 },
+  { key: "tip_study", minDays: 10, maxDays: 21, eligible: (s) => s.decks > 0 && s.studyReviews === 0 },
   { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 },
   { key: "weekly_digest", minDays: 7, maxDays: 36500, eligible: () => true }
 ];
@@ -44,21 +45,13 @@ function weeklyDigestLogKey(date = new Date()) {
 
 async function loadStats(admin: SupabaseClient, userId: string): Promise<UserStats> {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const [projects, files, chats, decks, reviews, ai, memories] = await Promise.all([
+  const [projects, files, chats, decks, reviews, ai] = await Promise.all([
     admin.from("projects").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("files").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("chat_threads").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("flashcard_decks").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("study_reviews").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    admin.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", weekAgo),
-    // Durable memories power the weekly reflection email. Kept best effort:
-    // if the personalization tables are unavailable the batch must still run.
-    admin
-      .from("content_memories")
-      .select("content")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(3)
+    admin.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", weekAgo)
   ]);
 
   return {
@@ -67,8 +60,7 @@ async function loadStats(admin: SupabaseClient, userId: string): Promise<UserSta
     chatThreads: chats.count || 0,
     decks: decks.count || 0,
     studyReviews: reviews.count || 0,
-    aiEventsLast7d: ai.count || 0,
-    memories: (memories.data as Array<{ content?: string }> | null)?.map((row) => row.content ?? "").filter(Boolean) ?? []
+    aiEventsLast7d: ai.count || 0
   };
 }
 

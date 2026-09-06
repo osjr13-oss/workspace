@@ -9,35 +9,31 @@ const statusConfig = {
   ready: {
     label: "Searchable",
     Icon: CheckCircle2,
-    badgeClass: "badge-success"
+    className: "text-[var(--low)]"
   },
   pending: {
     label: "Processing",
     Icon: LoaderCircle,
-    badgeClass: "badge-warning"
+    className: "text-[var(--medium)]"
   },
   unsupported: {
     label: "Unsupported",
     Icon: CircleSlash2,
-    badgeClass: "badge"
+    className: "text-[var(--muted)]"
   },
   failed: {
-    label: "Failed",
+    label: "Needs attention",
     Icon: TriangleAlert,
-    badgeClass: "badge-critical"
+    className: "text-[var(--critical)]"
   }
 } as const;
 
 export function FileProcessingStatus({ status }: FileProcessingStatusProps) {
-  const { label, Icon, badgeClass } = statusConfig[status] || statusConfig.unsupported;
+  const { label, Icon, className } = statusConfig[status];
 
   return (
-    <span className={`badge ${badgeClass} text-xs`}>
-      <Icon
-        size={13}
-        className={status === "pending" ? "animate-spin" : ""}
-        aria-hidden="true"
-      />
+    <span className={`inline-flex items-center gap-2 text-xs font-extrabold tracking-[-0.01em] ${className}`}>
+      <Icon size={15} strokeWidth={2.25} className={status === "pending" ? "animate-spin" : ""} aria-hidden="true" />
       <span>{label}</span>
     </span>
   );
