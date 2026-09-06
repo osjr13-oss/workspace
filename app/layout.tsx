@@ -4,6 +4,9 @@ import { PwaProvider } from "@/components/pwa-provider";
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
 
+// Request-specific CSP nonces require server rendering for every document.
+export const dynamic = "force-dynamic";
+
 export const viewport: Viewport = {
   themeColor: brand.colors.background,
   width: "device-width",

@@ -22,7 +22,32 @@ function isProtectedPath(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const nonce = btoa(crypto.randomUUID());
+  const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : "";
+  const policy = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: " + supabaseOrigin,
+    "font-src 'self' data:",
+    `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace("https:", "wss:")} https://*.supabase.co https://vitals.vercel-insights.com${process.env.NODE_ENV === "development" ? " ws: " : ""}`,
+    "worker-src 'self' blob:",
+    "media-src 'self' blob: " + supabaseOrigin,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "frame-src 'none'",
+    ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [])
+  ].join("; ");
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("Content-Security-Policy", policy);
+  const secure = (result: NextResponse) => {
+    result.headers.set("Content-Security-Policy", policy);
+    return result;
+  };
+  let response = secure(NextResponse.next({ request }));
   const pathname = request.nextUrl.pathname;
   const hasSupabaseConfig = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -40,7 +65,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = secure(NextResponse.next({ request }));
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         }
       }
@@ -55,7 +80,7 @@ export async function middleware(request: NextRequest) {
     const signIn = request.nextUrl.clone();
     signIn.pathname = "/signin";
     signIn.searchParams.set("next", pathname);
-    return NextResponse.redirect(signIn);
+    return secure(NextResponse.redirect(signIn));
   }
 
   if (user && authOnlyPaths.includes(pathname)) {
@@ -65,12 +90,12 @@ export async function middleware(request: NextRequest) {
       const dest = request.nextUrl.clone();
       dest.pathname = target.pathname;
       dest.search = target.search;
-      return NextResponse.redirect(dest);
+      return secure(NextResponse.redirect(dest));
     }
     const dashboard = request.nextUrl.clone();
     dashboard.pathname = "/dashboard";
     dashboard.search = "";
-    return NextResponse.redirect(dashboard);
+    return secure(NextResponse.redirect(dashboard));
   }
 
   return response;

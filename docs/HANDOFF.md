@@ -1,5 +1,13 @@
 # Selrano production handoff
 
+## September 6 security follow-up
+
+Added a per-request nonce CSP, frame blocking, nosniff, referrer and permissions policies, a standards-based security.txt, and visible privacy/terms/support links on sign-in and sign-up. Documents now render dynamically so Next.js can apply a matching nonce; this trades static HTML caching for the script policy. The policy follows https://nextjs.org/docs/15/app/guides/content-security-policy; disclosure fields follow https://securitytxt.org/.
+
+Production logs traced the Copilot failure to an invalid Anthropic key. At the user's request, removed ANTHROPIC_API_KEY from Vercel Production/Preview and local configuration. The configured Groq model was unavailable; verified streaming with openai/gpt-oss-120b and updated GROQ_MODEL locally and in Vercel Production/Preview. These environment changes take effect with the next deployment. No secrets were committed.
+
+Validation: typecheck, lint, production build, 68 tests, production dependency audit (zero vulnerabilities), nonce/header and auth-link HTTP checks, and interactive sample-report browser check passed. Production verification follows deployment.
+
 ## September 6 security transformation: released
 
 The user requested replacing the workspace product with LaunchGuard-backed website security scanning while preserving Selrano branding and its calm design. The local implementation now includes scans, private history, findings, fix prompts, report export, and streaming report-aware Copilot. Existing workspace data and routes remain available through Settings.

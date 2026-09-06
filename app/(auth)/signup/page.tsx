@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthTrustLinks } from "@/components/auth-trust-links";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -122,6 +123,7 @@ function SignUpForm() {
           Already have an account?{" "}
           <Link href={signInHref} className="font-bold text-[var(--text)]">Sign in</Link>
         </p>
+        <AuthTrustLinks />
       </section>
     </main>
   );
