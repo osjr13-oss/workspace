@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { validateMessages, localRequestAllowed } from "./validation";
+import { validateMessages, sameOriginRequestAllowed } from "./validation";
 import { loadConversations, saveConversations } from "./storage";
 import { RELEASE, STORAGE_KEY } from "./release";
 const { provider } = vi.hoisted(() => ({ provider: vi.fn() }));
@@ -21,10 +21,11 @@ beforeEach(() => {
   vi.stubEnv("VERCEL", "");
 });
 describe("prototype privacy and context", () => {
-  it("rejects other websites and deployed hosts", () => {
-    expect(localRequestAllowed(req({}, "https://evil.example"))).toBe(false);
-    expect(localRequestAllowed(req({}), true)).toBe(false);
-    expect(localRequestAllowed(req({}))).toBe(true);
+  it("allows same-origin hosted chat and rejects other websites", () => {
+    expect(sameOriginRequestAllowed(req({}, "https://evil.example"))).toBe(false);
+    expect(sameOriginRequestAllowed(new Request("https://selrano-preview.vercel.app/api/prototype/chat", { headers: { host: "selrano-preview.vercel.app", origin: "https://selrano-preview.vercel.app" } }))).toBe(true);
+    expect(sameOriginRequestAllowed(new Request("https://selrano-preview.vercel.app/api/prototype/chat", { headers: { origin: "https://evil.example" } }))).toBe(false);
+    expect(sameOriginRequestAllowed(req({}))).toBe(true);
   });
   it("rejects injected system roles", () =>
     expect(() =>

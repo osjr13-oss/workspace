@@ -233,7 +233,7 @@ export function PrototypeChat() {
         <aside className="prototype-sidebar" aria-label="Conversation history">
           <div className="prototype-brand">
             <span className="brand-symbol">s</span> Selrano{" "}
-            <span className="private-label">PRIVATE</span>
+            <span className="private-label">PREVIEW</span>
           </div>
           <button className="prototype-new" onClick={newChat} disabled={busy}>
             <Plus size={16} /> New conversation

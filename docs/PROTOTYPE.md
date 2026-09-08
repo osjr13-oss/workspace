@@ -1,18 +1,18 @@
-# Selrano 1 private prototype
+# Selrano 1 public prototype
 
-This checkout is an unreleased experiment on `codex/selrano-1-prototype`. Do not deploy or merge it into the security product. Existing production data and billing are untouched.
+This checkout is an unreleased experiment on `codex/selrano-1-prototype`. Public branch deployments are authorized; do not merge into main. Existing production data and billing are untouched.
 
 ## Latest user feedback and direction
 
 The user has tried Selrano 1 and likes its speed, intelligence, and tone. They strongly disliked the design. Treat the current interface as a functional prototype, not an approved aesthetic; improve it in a separately scoped iteration while preserving conversational quality. No replacement design has been chosen.
 
-This is the active product direction. Security remains live on main but is not the current development focus. The prototype branch has been pushed to GitHub; that does not authorize a production migration. Hosted preview access is deliberately blocked. Initial praise is qualitative feedback, not a completed A/B score.
+This is the active product direction. Main remains unchanged. The prototype branch has been pushed to GitHub; that does not authorize a production migration. Public hosted preview access is explicitly authorized. Initial praise is qualitative feedback, not a completed A/B score.
 
 ## Run
 
 From this checkout, run `npm run prototype` and open http://127.0.0.1:3210. Use that same address consistently: localhost and 127.0.0.1 have separate browser storage. The ignored `.env.local` needs only `GROQ_API_KEY`. The model is pinned in the release definition. This checkout currently reuses the original checkout's node_modules through a symlink; run npm ci if moving it to another machine.
 
-The server binds to 127.0.0.1. Middleware rejects remote hosts, Vercel deployments, and non-prototype application routes. The chat endpoint additionally requires a matching Origin and JSON content type. The original database credentials were not copied here.
+The server binds to 127.0.0.1. Middleware allows public hosted access while rejecting non-prototype application routes. The chat endpoint additionally requires a matching Origin and JSON content type. The original database credentials were not copied here.
 
 ## Behavior and privacy
 
@@ -32,7 +32,7 @@ User messages are limited to 8,000 characters; conversation context is limited t
 
 Read `.prototype-evaluation/comparison.md` and mark A, B, or Tie before looking at the variant key in results.json. Judge helpfulness, initiative, constraint retention, honesty, and unnecessary questions. The user preference target is 15 of 20 pairs. It is pending the user's ratings, not an established benchmark or quality claim.
 
-Try several real conversations before considering a public transition. Fine-tuning, subscriptions, model selection, and a public release are deferred.
+Try several real conversations before considering a public transition. Fine-tuning, subscriptions, model selection, and replacing the production site are deferred. Public branch previews are authorized.
 
 ## Validation completed September 8
 

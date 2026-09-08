@@ -24,11 +24,6 @@ export async function middleware(request: NextRequest) {
     return result;
   };
   const response = secure(NextResponse.next({ request }));
-  if (
-    process.env.VERCEL ||
-    !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(request.headers.get("host") || "")
-  )
-    return new NextResponse("Private local prototype", { status: 403 });
   if (!["/", "/api/prototype/chat"].includes(request.nextUrl.pathname))
     return new NextResponse("Not available in this prototype", { status: 404 });
   return response;

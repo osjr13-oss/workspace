@@ -2,7 +2,7 @@ import { streamGroq } from "@/lib/groq";
 import { RELEASE } from "@/lib/prototype/release";
 import {
   validateMessages,
-  localRequestAllowed,
+  sameOriginRequestAllowed,
 } from "@/lib/prototype/validation";
 import { readSecurityRequest } from "@/lib/security/request";
 import { removeEmDashes } from "@/lib/text";
@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 let active = false;
 export async function POST(request: Request) {
-  if (!localRequestAllowed(request))
+  if (!sameOriginRequestAllowed(request))
     return Response.json(
-      { error: "This prototype accepts same-origin localhost requests only." },
+      { error: "Open Selrano and send your message from the same site." },
       { status: 403 },
     );
   if (!request.headers.get("content-type")?.startsWith("application/json"))
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "The local Groq key is missing. Add it to this checkout's .env.local and restart.",
+          "Selrano is temporarily unavailable. Please try again later.",
       },
       { status: 503 },
     );

@@ -35,17 +35,17 @@ export function validateMessages(
     throw new Error("A question is required.");
   return messages;
 }
-export function localRequestAllowed(
-  request: Request,
-  deployed = Boolean(process.env.VERCEL),
-) {
-  if (deployed) return false;
+export function sameOriginRequestAllowed(request: Request) {
   const url = new URL(request.url);
   const host = request.headers.get("host") || url.host;
-  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return false;
   const origin = request.headers.get("origin");
-  return (
-    origin === `${url.protocol}//${host}` &&
-    request.headers.get("sec-fetch-site") !== "cross-site"
-  );
+  if (!origin || request.headers.get("sec-fetch-site") === "cross-site") return false;
+  try {
+    const source = new URL(origin);
+    return source.host === host &&
+      (source.protocol === "https:" ||
+        (source.protocol === "http:" && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)));
+  } catch {
+    return false;
+  }
 }

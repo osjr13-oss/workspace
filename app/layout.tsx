@@ -17,14 +17,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
   title: {
-    default: "Selrano 1 | Private prototype",
+    default: "Selrano 1 | Preview",
     template: `%s | ${brand.name}`
   },
-  description: "A private thinking partner for exploring ideas and making decisions.",
+  description: "A thinking partner for exploring ideas and making decisions.",
   metadataBase: new URL(brand.urls.app),
   openGraph: {
     title: brand.name,
-    description: "A private thinking partner for exploring ideas and making decisions.",
+    description: "A thinking partner for exploring ideas and making decisions.",
     url: brand.urls.app,
     siteName: brand.name,
     type: "website"
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: brand.name,
-    description: "A private thinking partner for exploring ideas and making decisions."
+    description: "A thinking partner for exploring ideas and making decisions."
   },
   alternates: {
     canonical: absoluteUrl("/")

@@ -2,19 +2,19 @@ import { afterEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "./middleware";
 afterEach(() => vi.unstubAllEnvs());
-it("blocks hosted deployment even when the host is spoofed", async () => {
+it("allows public hosted previews", async () => {
   vi.stubEnv("VERCEL", "1");
   expect(
     (
       await middleware(
-        new NextRequest("http://localhost:3210", {
-          headers: { host: "localhost:3210" },
+        new NextRequest("https://selrano-preview.vercel.app", {
+          headers: { host: "selrano-preview.vercel.app" },
         }),
       )
     ).status,
-  ).toBe(403);
+  ).toBe(200);
 });
-it("blocks legacy data APIs in the private prototype", async () => {
+it("blocks legacy data APIs in the prototype", async () => {
   vi.stubEnv("VERCEL", "");
   expect(
     (
