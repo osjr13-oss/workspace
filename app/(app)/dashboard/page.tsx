@@ -63,18 +63,46 @@ export default function DashboardPage() {
         </Link>
       </WorkspaceHeader>
 
-      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)] transition">
-        <div className="flex items-center gap-4">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
-            <MessageSquare size={21} />
-          </span>
-          <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Work through a thought with Lumen 1</h2>
-            <p className="text-sm text-[var(--muted)]">Explore an early idea, weigh options, or organize project materials.</p>
+      <div className="rounded-2xl sm:rounded-3xl border border-amber-500/25 bg-gradient-to-r from-white/95 via-amber-500/[0.05] to-white/95 p-6 sm:p-7 shadow-xs transition-all duration-200 hover:border-amber-500/40 hover:shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-700">
+              <MessageSquare size={22} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold tracking-[-0.01em] text-[var(--text)]">Work through a thought with Lumen 1</h2>
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-[var(--muted)]">Explore an early idea, weigh options, or organize project materials.</p>
+            </div>
           </div>
+          <Link href="/chats" className="btn-primary shrink-0 self-start sm:self-auto">
+            <Plus size={18} />
+            Start thinking
+          </Link>
         </div>
-        <Plus size={20} />
-      </Link>
+
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-4">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mr-1">Thought starters:</span>
+          {[
+            "I have an idea, but I don't know where to start.",
+            "Help me choose between two different directions.",
+            "I am stuck on this problem. Can we break it down?"
+          ].map((prompt) => (
+            <Link
+              key={prompt}
+              href="/chats"
+              className="rounded-full border border-[var(--border)] bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-[var(--muted-strong)] transition hover:border-amber-500/40 hover:bg-white hover:text-[var(--text)]"
+            >
+              {prompt}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <section className="grid gap-4 md:grid-cols-4">
         <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />

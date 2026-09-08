@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { ChatComposer } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { ThinkingTrace } from "@/components/thinking-trace";
@@ -277,11 +278,20 @@ function ChatsContent() {
               />
             ))
           ) : (
-            <div className="grid h-full place-items-center text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="grid h-full place-items-center text-center"
+            >
               <div className="max-w-lg px-4 py-8">
-                <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/70 px-3.5 py-1 text-xs font-semibold text-[var(--muted-strong)] shadow-2xs">
+                <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-950 shadow-2xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                  </span>
                   <span>Lumen 1</span>
-                  <span className="text-[var(--muted)]">·</span>
+                  <span className="text-amber-600">·</span>
                   <span>Active partner</span>
                 </div>
                 <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-[var(--text)] sm:text-4xl">
@@ -308,31 +318,34 @@ function ChatsContent() {
                       label: "Stress test",
                       prompt: "I have a plan, but I need to poke holes in its assumptions."
                     }
-                  ].map((card) => (
-                    <button
+                  ].map((card, index) => (
+                    <motion.button
                       key={card.label}
                       type="button"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 * (index + 1), duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                       onClick={() => {
                         setText(card.prompt);
                       }}
-                      className="group rounded-2xl border border-[var(--border)] bg-white/80 p-4 text-left shadow-2xs transition hover:border-[var(--border-strong)] hover:bg-white hover:shadow-xs"
+                      className="group rounded-2xl border border-[var(--border)] bg-white/80 p-4 text-left shadow-2xs transition-all duration-200 hover:-translate-y-1 hover:border-amber-500/40 hover:bg-white hover:shadow-xs"
                     >
-                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] group-hover:text-[var(--text)] transition">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] group-hover:text-amber-800 transition">
                         {card.label}
                       </p>
                       <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted-strong)]">
                         {card.prompt}
                       </p>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
           {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4 sm:p-5">
-          <div className="mx-auto max-w-3xl rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/90 p-2 shadow-2xs transition focus-within:border-[var(--border-strong)] focus-within:shadow-xs">
+          <div className="mx-auto max-w-3xl rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/95 p-2 shadow-xs transition-all focus-within:border-amber-500/40 focus-within:ring-2 focus-within:ring-amber-500/15 focus-within:shadow-md">
             <ChatComposer
               value={text}
               disabled={loading}
