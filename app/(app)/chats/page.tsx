@@ -278,30 +278,49 @@ function ChatsContent() {
               />
             ))
           ) : (
-            <div className="grid h-full place-items-center text-center">
-              <div className="max-w-lg px-4 py-8">
-                <h2 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
-                  {"What's on your mind?"}
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-500 max-w-md mx-auto">
-                  Explore an idea, weigh a decision, or work through a difficult problem.
-                </p>
-                <div className="mt-6 flex flex-col gap-2 sm:grid sm:grid-cols-2 text-left">
+            <div className="grid h-full place-items-center">
+              <div className="w-full max-w-2xl px-4 py-8">
+                <div className="text-center mb-7">
+                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900">
+                    {"What's on your mind today?"}
+                  </h1>
+                </div>
+
+                <ChatComposer
+                  value={text}
+                  disabled={loading}
+                  onChange={setText}
+                  onSubmit={send}
+                  hasMessages={false}
+                  modelSelector={<ModelSelector />}
+                  projects={projects}
+                  projectId={projectId}
+                  onSelectProject={setProjectId}
+                  placeholder="Ask anything or start with an unformed thought..."
+                />
+
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                   {[
-                    "I have an idea, but I don't know where to start.",
-                    "Help me choose between two different directions.",
-                    "I am stuck on this problem. Can we break it down?",
-                    "I have a plan, but I need to poke holes in its assumptions."
-                  ].map((prompt) => (
+                    "Explore an idea",
+                    "Weigh trade-offs",
+                    "Unblock a problem",
+                    "Pressure-test a plan"
+                  ].map((label) => (
                     <button
-                      key={prompt}
+                      key={label}
                       type="button"
                       onClick={() => {
-                        setText(prompt);
+                        const promptMap: Record<string, string> = {
+                          "Explore an idea": "I have an idea, but I don't know where to start.",
+                          "Weigh trade-offs": "Help me choose between two different directions.",
+                          "Unblock a problem": "I am stuck on this problem. Can we break it down?",
+                          "Pressure-test a plan": "I have a plan, but I need to poke holes in its assumptions."
+                        };
+                        setText(promptMap[label] || label);
                       }}
-                      className="rounded-xl border border-neutral-200 bg-white p-3.5 text-left text-xs font-medium text-neutral-700 leading-relaxed transition hover:border-neutral-400 hover:bg-neutral-50"
+                      className="rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900 transition shadow-2xs"
                     >
-                      {prompt}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -310,22 +329,29 @@ function ChatsContent() {
           )}
           {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
-        <form onSubmit={send} className="border-t border-neutral-200 p-4 bg-white">
-          <div className="mx-auto max-w-3xl rounded-3xl border border-neutral-200 bg-neutral-100 p-1.5 focus-within:border-neutral-400 focus-within:bg-white transition">
-            <ChatComposer
-              value={text}
-              disabled={loading}
-              onChange={setText}
-              hasMessages={messages.length > 0}
-              onRecap={() =>
-                requestReply({
-                  message:
-                    "Where we are: summarize our current direction, what I have decided, what remains uncertain, and one possible next step."
-                })
-              }
-            />
+        {messages.length > 0 ? (
+          <div className="border-t border-neutral-200 p-4 bg-white">
+            <div className="mx-auto max-w-3xl">
+              <ChatComposer
+                value={text}
+                disabled={loading}
+                onChange={setText}
+                onSubmit={send}
+                hasMessages={true}
+                modelSelector={<ModelSelector />}
+                projects={projects}
+                projectId={projectId}
+                onSelectProject={setProjectId}
+                onRecap={() =>
+                  requestReply({
+                    message:
+                      "Where we are: summarize our current direction, what I have decided, what remains uncertain, and one possible next step."
+                  })
+                }
+              />
+            </div>
           </div>
-        </form>
+        ) : null}
       </section>
     </div>
   );

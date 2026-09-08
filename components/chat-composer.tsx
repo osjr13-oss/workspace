@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Compass } from "lucide-react";
+import { ArrowUp, Compass } from "lucide-react";
 import { autocorrectOnBoundary } from "@/lib/autocorrect";
 import { removeEmDashes } from "@/lib/text";
 
@@ -9,8 +9,14 @@ type ChatComposerProps = {
   value: string;
   disabled: boolean;
   onChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent) => void;
   onRecap?: () => void;
   hasMessages?: boolean;
+  modelSelector?: React.ReactNode;
+  projects?: Array<{ id: string; name: string }>;
+  projectId?: string;
+  onSelectProject?: (id: string) => void;
+  placeholder?: string;
 };
 
 const BOUNDARY = /[\s.,!?;:]/;
@@ -19,8 +25,14 @@ export function ChatComposer({
   value,
   disabled,
   onChange,
+  onSubmit,
   onRecap,
-  hasMessages
+  hasMessages,
+  modelSelector,
+  projects,
+  projectId,
+  onSelectProject,
+  placeholder
 }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hintTimerRef = useRef<number | null>(null);
@@ -38,7 +50,7 @@ export function ChatComposer({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(180, Math.max(44, textarea.scrollHeight))}px`;
+    textarea.style.height = `${Math.min(180, Math.max(56, textarea.scrollHeight))}px`;
   }, [value]);
 
   function update(rawValue: string) {
@@ -67,11 +79,14 @@ export function ChatComposer({
   }
 
   return (
-    <div className="relative flex w-full items-end gap-2 px-1">
+    <form
+      onSubmit={onSubmit}
+      className="w-full rounded-2xl border border-neutral-200 bg-white p-3 shadow-xs transition focus-within:border-neutral-400 focus-within:shadow-sm"
+    >
       <textarea
         ref={textareaRef}
         aria-label="Chat message"
-        className="min-h-11 max-h-44 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none text-neutral-900 placeholder:text-neutral-400"
+        className="min-h-14 max-h-48 w-full resize-none bg-transparent px-2 py-1 text-[15.5px] outline-none text-neutral-900 placeholder:text-neutral-400 leading-relaxed"
         value={value}
         onChange={(event) => update(event.target.value)}
         onKeyDown={(event) => {
@@ -80,35 +95,63 @@ export function ChatComposer({
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Ask anything or start an idea..."
-        rows={1}
+        placeholder={placeholder || "How can I help you today?"}
+        rows={2}
         spellCheck
       />
       {hint ? (
-        <span className="pointer-events-none absolute bottom-1 left-4 translate-y-full text-[11px] font-medium text-neutral-500">
+        <span className="pointer-events-none block px-2 pb-1 text-[11px] font-medium text-neutral-500">
           {hint}
         </span>
       ) : null}
-      {onRecap && hasMessages ? (
-        <button
-          type="button"
-          onClick={onRecap}
-          disabled={disabled}
-          className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition disabled:opacity-40"
-          title="Summarize where we are in this conversation"
-        >
-          <Compass size={13} />
-          <span>Recap</span>
-        </button>
-      ) : null}
-      <button
-        type="submit"
-        className="mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:opacity-85 disabled:opacity-20 transition shrink-0"
-        disabled={disabled || !value.trim()}
-        aria-label="Send message"
-      >
-        <Send size={14} />
-      </button>
-    </div>
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2.5">
+        <div className="flex items-center gap-2">
+          {projects && projects.length > 0 ? (
+            <div className="relative inline-block">
+              <select
+                aria-label="Project context"
+                value={projectId || ""}
+                onChange={(e) => onSelectProject?.(e.target.value)}
+                disabled={disabled}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 px-2.5 py-1 text-xs font-medium text-neutral-700 outline-none transition cursor-pointer border-0"
+              >
+                <option value="">No project context</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onRecap && hasMessages ? (
+            <button
+              type="button"
+              onClick={onRecap}
+              disabled={disabled}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition disabled:opacity-40"
+              title="Summarize where we are in this conversation"
+            >
+              <Compass size={13} />
+              <span>Recap</span>
+            </button>
+          ) : null}
+
+          {modelSelector}
+
+          <button
+            type="submit"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:opacity-85 disabled:opacity-20 transition shrink-0"
+            disabled={disabled || !value.trim()}
+            aria-label="Send message"
+          >
+            <ArrowUp size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+    </form>
   );
 }
