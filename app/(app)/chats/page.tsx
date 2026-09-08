@@ -245,12 +245,14 @@ function ChatsContent() {
       </aside>
 
       <section className="panel flex min-h-0 flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-6 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3.5 bg-white">
           <div className="flex items-center gap-3">
             <ModelSelector />
-            <span className="hidden sm:inline text-xs text-[var(--muted)]">
-              {projectId ? "Project context connected" : "Thinking space"}
-            </span>
+            {projectId ? (
+              <span className="hidden sm:inline text-xs text-neutral-400">
+                Project context connected
+              </span>
+            ) : null}
           </div>
           {threadId ? (
             <button
@@ -258,14 +260,13 @@ function ChatsContent() {
               onClick={() => deleteThread(threadId)}
               disabled={deletingThreadId === threadId}
               title="Delete conversation"
-              className="btn-secondary shrink-0 text-[var(--critical)] py-1.5 px-3 text-xs flex items-center gap-1.5"
+              className="text-neutral-400 hover:text-red-600 transition p-1.5 rounded-lg"
             >
-              <Trash2 size={13} />
-              <span className="hidden sm:inline">Delete</span>
+              <Trash2 size={15} />
             </button>
           ) : null}
         </div>
-        <div ref={listRef} className="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-7 sm:px-8 lg:px-10">
+        <div ref={listRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-8 lg:px-10 bg-white">
           {messages.length ? (
             messages.map((message) => (
               <ChatMessageBubble
@@ -279,50 +280,28 @@ function ChatsContent() {
           ) : (
             <div className="grid h-full place-items-center text-center">
               <div className="max-w-lg px-4 py-8">
-                <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/70 px-3.5 py-1 text-xs font-semibold text-[var(--muted-strong)] shadow-2xs">
-                  <span>Lumen 1</span>
-                  <span className="text-[var(--muted)]">·</span>
-                  <span>Active partner</span>
-                </div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-[var(--text)] sm:text-4xl">
-                  {"What are you working through?"}
+                <h2 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+                  {"What's on your mind?"}
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--muted)] max-w-md mx-auto">
-                  Bring an early idea, an unresolved trade-off, or an open question. We can explore and structure it together.
+                <p className="mt-2 text-sm leading-relaxed text-neutral-500 max-w-md mx-auto">
+                  Explore an idea, weigh a decision, or work through a difficult problem.
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:grid sm:grid-cols-2 text-left">
+                <div className="mt-6 flex flex-col gap-2 sm:grid sm:grid-cols-2 text-left">
                   {[
-                    {
-                      label: "Early exploration",
-                      prompt: "I have an idea, but I don't know where to start."
-                    },
-                    {
-                      label: "Weigh options",
-                      prompt: "Help me choose between two different directions."
-                    },
-                    {
-                      label: "Unblock",
-                      prompt: "I am stuck on this problem. Can we break it down?"
-                    },
-                    {
-                      label: "Stress test",
-                      prompt: "I have a plan, but I need to poke holes in its assumptions."
-                    }
-                  ].map((card) => (
+                    "I have an idea, but I don't know where to start.",
+                    "Help me choose between two different directions.",
+                    "I am stuck on this problem. Can we break it down?",
+                    "I have a plan, but I need to poke holes in its assumptions."
+                  ].map((prompt) => (
                     <button
-                      key={card.label}
+                      key={prompt}
                       type="button"
                       onClick={() => {
-                        setText(card.prompt);
+                        setText(prompt);
                       }}
-                      className="group rounded-2xl border border-[var(--border)] bg-white/80 p-4 text-left shadow-2xs transition hover:border-[var(--border-strong)] hover:bg-white hover:shadow-xs"
+                      className="rounded-xl border border-neutral-200 bg-white p-3.5 text-left text-xs font-medium text-neutral-700 leading-relaxed transition hover:border-neutral-400 hover:bg-neutral-50"
                     >
-                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] group-hover:text-[var(--text)] transition">
-                        {card.label}
-                      </p>
-                      <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted-strong)]">
-                        {card.prompt}
-                      </p>
+                      {prompt}
                     </button>
                   ))}
                 </div>
@@ -331,8 +310,8 @@ function ChatsContent() {
           )}
           {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
-        <form onSubmit={send} className="border-t border-[var(--border)] p-4 sm:p-5">
-          <div className="mx-auto max-w-3xl rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/90 p-2 shadow-2xs transition focus-within:border-[var(--border-strong)] focus-within:shadow-xs">
+        <form onSubmit={send} className="border-t border-neutral-200 p-4 bg-white">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-neutral-200 bg-neutral-100 p-1.5 focus-within:border-neutral-400 focus-within:bg-white transition">
             <ChatComposer
               value={text}
               disabled={loading}

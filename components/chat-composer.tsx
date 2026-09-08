@@ -67,11 +67,11 @@ export function ChatComposer({
   }
 
   return (
-    <div className="relative flex w-full items-end gap-2">
+    <div className="relative flex w-full items-end gap-2 px-1">
       <textarea
         ref={textareaRef}
         aria-label="Chat message"
-        className="min-h-11 max-h-44 flex-1 resize-none bg-transparent px-4 py-3 text-sm outline-none"
+        className="min-h-11 max-h-44 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none text-neutral-900 placeholder:text-neutral-400"
         value={value}
         onChange={(event) => update(event.target.value)}
         onKeyDown={(event) => {
@@ -80,12 +80,12 @@ export function ChatComposer({
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Start with a thought. It doesn't have to be formed yet..."
+        placeholder="Ask anything or start an idea..."
         rows={1}
         spellCheck
       />
       {hint ? (
-        <span className="pointer-events-none absolute bottom-1 left-4 translate-y-full text-[11px] font-bold text-[var(--muted)]">
+        <span className="pointer-events-none absolute bottom-1 left-4 translate-y-full text-[11px] font-medium text-neutral-500">
           {hint}
         </span>
       ) : null}
@@ -94,15 +94,20 @@ export function ChatComposer({
           type="button"
           onClick={onRecap}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2 text-xs font-bold text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:text-[var(--text)] transition disabled:opacity-50"
+          className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition disabled:opacity-40"
           title="Summarize where we are in this conversation"
         >
-          <Compass size={14} />
-          <span>Where we are</span>
+          <Compass size={13} />
+          <span>Recap</span>
         </button>
       ) : null}
-      <button type="submit" className="btn-primary min-h-11 px-4 rounded-xl shrink-0" disabled={disabled || !value.trim()}>
-        <Send size={16} />
+      <button
+        type="submit"
+        className="mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:opacity-85 disabled:opacity-20 transition shrink-0"
+        disabled={disabled || !value.trim()}
+        aria-label="Send message"
+      >
+        <Send size={14} />
       </button>
     </div>
   );

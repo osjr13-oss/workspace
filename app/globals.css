@@ -3,25 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7f5f0;
-  --background-elevated: #fffefa;
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.92);
-  --surface-hover: rgba(255, 255, 255, 0.86);
-  --surface-subtle: rgba(21, 24, 31, 0.035);
-  --border: rgba(31, 35, 44, 0.1);
-  --border-strong: rgba(31, 35, 44, 0.18);
-  --text: #15181f;
-  --muted: #69707d;
-  --muted-strong: #3a404b;
-  --critical: #c2413d;
-  --high: #b85f1f;
-  --medium: #9a6b13;
-  --low: #1f7a53;
-  --info: #246f9f;
-  --focus: #15181f;
-  --shadow-soft: 0 18px 60px rgba(38, 35, 28, 0.08);
-  --shadow-tight: 0 8px 24px rgba(38, 35, 28, 0.08);
+  --background: #ffffff;
+  --background-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-hover: #f5f5f5;
+  --surface-subtle: #f5f5f5;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --text: #0d0d0d;
+  --muted: #737373;
+  --muted-strong: #404040;
+  --critical: #dc2626;
+  --high: #ea580c;
+  --medium: #ca8a04;
+  --low: #16a34a;
+  --info: #0284c7;
+  --focus: #0d0d0d;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-tight: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -64,118 +64,67 @@ select {
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(22px) saturate(1.15);
-  -webkit-backdrop-filter: blur(22px) saturate(1.15);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .glass-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(22px) saturate(1.15);
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  border-radius: 16px;
+  transition: border-color 150ms ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
   border-color: var(--border-strong);
-  background: var(--surface-hover);
-}
-
-.spotlight {
-  position: relative;
-  isolation: isolate;
-}
-
-.spotlight::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: radial-gradient(
-    var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
-    var(--spot-color, rgba(255, 255, 255, 0.9)),
-    transparent 62%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  /* Auto-inverts the ring against whatever is behind it, so the border
-     stays visible on dark, light, or mid-tone surfaces alike. */
-  mix-blend-mode: var(--spot-blend, difference);
-  opacity: 0;
-  transition: opacity 260ms ease;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.spotlight::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    var(--spot-size, 220px) circle at var(--mx, 50%) var(--my, 50%),
-    var(--spot-glow, rgba(255, 255, 255, 0.12)),
-    transparent 60%
-  );
-  mix-blend-mode: var(--spot-glow-blend, overlay);
-  opacity: 0;
-  transition: opacity 260ms ease;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.spotlight[data-active="true"]::before,
-.spotlight[data-active="true"]::after {
-  opacity: 1;
 }
 
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
   padding: 18px 20px;
-  border-radius: 16px;
-  box-shadow: var(--shadow-tight);
+  border-radius: 14px;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-invert {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border-radius: 999px;
-  padding: 0 18px;
-  font-weight: 700;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
 }
 
 .btn-primary {
-  background: #15181f;
-  color: #fffefa;
-  border: 1px solid #15181f;
-  box-shadow: 0 10px 28px rgba(21, 24, 31, 0.16);
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid #0d0d0d;
+}
+
+.btn-primary:hover {
+  background: #262626;
+  border-color: #262626;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.72);
+  background: #ffffff;
   color: var(--text);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
 }
 
 .btn-invert {
-  background: #fffefa;
-  color: #15181f;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+  background: #ffffff;
+  color: #0d0d0d;
+  border: 1px solid #e5e5e5;
 }
 
 .btn-primary:hover,

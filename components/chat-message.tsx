@@ -129,29 +129,29 @@ export function ChatMessageBubble({
             </div>
           </div>
         ) : message.role === "user" ? (
-          <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/80 px-5 py-4 text-[15px] font-medium leading-relaxed text-[var(--text)] shadow-sm backdrop-blur-sm sm:px-6 sm:py-5 sm:text-[16px]">
+          <div className="rounded-3xl bg-neutral-100 px-5 py-3 text-[15px] leading-relaxed text-neutral-900">
             <p className="whitespace-pre-wrap">{content}</p>
             {!message.id.startsWith("pending") && message.id !== "error" ? (
-              <div className="mt-2 flex items-center justify-end">
+              <div className="mt-1 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
                   disabled={busy}
-                  className="rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
-                  aria-label="Edit and resend thought"
-                  title="Edit and resend"
+                  className="rounded p-1 text-neutral-400 opacity-0 transition hover:text-neutral-800 group-hover:opacity-100 focus:opacity-100"
+                  aria-label="Edit thought"
+                  title="Edit"
                 >
-                  <Pencil size={13} />
+                  <Pencil size={12} />
                 </button>
               </div>
             ) : null}
           </div>
         ) : (
-          <div className="py-2">
+          <div className="py-1">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               urlTransform={urlTransform}
-              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-[1.75] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[var(--text)] prose-h2:mt-6 prose-h2:mb-3 prose-h3:mt-5 prose-h3:mb-2 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-li:text-[16px] prose-li:leading-[1.7] prose-strong:font-bold prose-strong:text-[var(--text)] prose-blockquote:border-l-2 prose-blockquote:border-[var(--border-strong)] prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-[var(--muted-strong)] prose-code:rounded-md prose-code:bg-[var(--surface-subtle)] prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-2xl prose-pre:bg-[#15181f] prose-pre:p-4 prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
+              className="prose max-w-none text-neutral-900 prose-p:my-0 prose-p:mb-4 prose-p:text-[15.5px] prose-p:leading-[1.7] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-neutral-900 prose-h2:mt-6 prose-h2:mb-3 prose-h3:mt-4 prose-h3:mb-2 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-li:text-[15.5px] prose-li:leading-[1.7] prose-strong:font-semibold prose-strong:text-neutral-900 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-4 prose-blockquote:text-neutral-600 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-xl prose-pre:bg-neutral-900 prose-pre:p-4 prose-pre:text-xs"
               components={
                 message.citations?.length
                   ? {
@@ -176,34 +176,34 @@ export function ChatMessageBubble({
               {message.citations?.length ? withCitationLinks(content) : content}
             </ReactMarkdown>
             {!message.id.startsWith("streaming") && message.id !== "error" ? (
-              <div className="mt-3 flex items-center gap-1 text-[var(--muted)]">
+              <div className="mt-2 flex items-center gap-1 text-neutral-400">
                 <button
                   type="button"
                   onClick={copyResponse}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
                   aria-label={copied ? "Response copied" : "Copy response"}
                   title={copied ? "Copied" : "Copy"}
                 >
-                  {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
+                  {copied ? <CheckCheck size={14} className="text-neutral-900" /> : <Copy size={14} />}
                 </button>
                 <button
                   type="button"
                   onClick={toggleSpeech}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
                   aria-label={speaking ? "Stop reading response" : "Read response aloud"}
                   title={speaking ? "Stop reading" : "Read aloud"}
                 >
-                  {speaking ? <VolumeX size={17} /> : <Volume2 size={17} />}
+                  {speaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => onRegenerate(message.id)}
                   disabled={busy}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
                   aria-label="Regenerate response"
                   title="Regenerate"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={14} />
                 </button>
               </div>
             ) : null}
