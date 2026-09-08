@@ -8,6 +8,7 @@ import { ChatMessageBubble } from "@/components/chat-message";
 import { ThinkingTrace } from "@/components/thinking-trace";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { ModelSelector } from "@/components/model-selector";
 import { formatRelative } from "@/lib/format";
 import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
@@ -240,10 +241,12 @@ function ChatsContent() {
       </aside>
 
       <section className="panel flex min-h-0 flex-col overflow-hidden">
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
-          <div>
-            <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-6 py-4">
+          <div className="flex items-center gap-3">
+            <ModelSelector />
+            <span className="hidden sm:inline text-xs text-[var(--muted)]">
+              {projectId ? "Project context connected" : "Thinking space"}
+            </span>
           </div>
           {threadId ? (
             <button
@@ -251,9 +254,10 @@ function ChatsContent() {
               onClick={() => deleteThread(threadId)}
               disabled={deletingThreadId === threadId}
               title="Delete conversation"
-              className="btn-secondary shrink-0 text-[var(--critical)]"
+              className="btn-secondary shrink-0 text-[var(--critical)] py-1.5 px-3 text-xs flex items-center gap-1.5"
             >
-              <Trash2 size={16} />
+              <Trash2 size={13} />
+              <span className="hidden sm:inline">Delete</span>
             </button>
           ) : null}
         </div>
