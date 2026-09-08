@@ -64,9 +64,9 @@ export function LandingPreview() {
           })}
         </aside>
         <div className="p-6">
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
-          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Lumen 1 Thinking Space</p>
+          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Lumen 1.</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Explore ideas and decisions with an adaptive thinking partner.</p>
           <motion.div
             className="group panel mt-10 overflow-hidden shadow-none"
             initial={false}

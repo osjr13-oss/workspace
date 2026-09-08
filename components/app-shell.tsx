@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SelranoLogo href="/dashboard" />
         <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
-          New chat
+          New thought
         </Link>
         <nav className="mt-7 space-y-1">
           {nav.map((item) => {
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
                 <Plus size={17} />
-                Chat
+                Thought
               </Link>
               <button
                 type="button"

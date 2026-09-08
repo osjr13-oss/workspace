@@ -56,21 +56,21 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Home">
+      <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Workspace">
         <Link href="/chats" className="btn-primary">
           <Plus size={18} />
-          New chat
+          New thought
         </Link>
       </WorkspaceHeader>
 
-      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
+      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)] transition">
         <div className="flex items-center gap-4">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
             <MessageSquare size={21} />
           </span>
           <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Ask your workspace a question</h2>
-            <p className="text-sm text-[var(--muted)]">Use a project to include notes, files, and flashcards as context.</p>
+            <h2 className="text-base font-extrabold tracking-[-0.01em]">Work through a thought with Lumen 1</h2>
+            <p className="text-sm text-[var(--muted)]">Explore an early idea, weigh options, or organize project materials.</p>
           </div>
         </div>
         <Plus size={20} />
@@ -84,7 +84,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <PanelList title="Recent chats" href="/chats" empty="No chats yet">
+        <PanelList title="Recent thoughts" href="/chats" empty="No thoughts yet">
           {chats.map((chat) => (
             <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
               <span className="font-bold">{chat.title}</span>
