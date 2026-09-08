@@ -94,54 +94,56 @@ export function ChatMessageBubble({
   return (
     <article
       className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
-      aria-label={message.role === "user" ? "Your message" : "Selrano response"}
+      aria-label={message.role === "user" ? "Your thought" : "Lumen response"}
     >
       <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
         {editing ? (
-          <div className="rounded-[26px] bg-[var(--surface-subtle)] p-4 sm:min-w-[min(34rem,70vw)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-white/90 p-4 shadow-sm sm:min-w-[min(34rem,70vw)]">
             <textarea
-              aria-label="Edit message"
-              className="min-h-28 w-full resize-y rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
+              aria-label="Edit thought"
+              className="min-h-28 w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
               value={draft}
               onChange={(event) => setDraft(removeEmDashes(event.target.value))}
               autoFocus
             />
-            <div className="mt-2 flex justify-end gap-2">
+            <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setEditing(false);
                   setDraft(content);
                 }}
-                className="rounded-full p-2 text-[var(--muted)] hover:bg-white hover:text-[var(--text)]"
+                className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)] transition"
                 aria-label="Cancel editing"
               >
-                <X size={15} />
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={saveEdit}
-                className="rounded-full bg-[var(--text)] p-2 text-white"
+                className="rounded-full bg-[var(--text)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition"
                 aria-label="Save and resend"
               >
-                <Check size={15} />
+                Save
               </button>
             </div>
           </div>
         ) : message.role === "user" ? (
-          <div className="rounded-[26px] bg-[rgba(21,24,31,0.055)] px-5 py-4 text-[15px] font-medium leading-7 text-[var(--text)] sm:px-6 sm:py-5 sm:text-base">
+          <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/80 px-5 py-4 text-[15px] font-medium leading-relaxed text-[var(--text)] shadow-sm backdrop-blur-sm sm:px-6 sm:py-5 sm:text-[16px]">
             <p className="whitespace-pre-wrap">{content}</p>
             {!message.id.startsWith("pending") && message.id !== "error" ? (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                disabled={busy}
-                className="mt-2 rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-white/70 hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
-                aria-label="Edit and resend message"
-                title="Edit and resend"
-              >
-                <Pencil size={14} />
-              </button>
+              <div className="mt-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  disabled={busy}
+                  className="rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
+                  aria-label="Edit and resend thought"
+                  title="Edit and resend"
+                >
+                  <Pencil size={13} />
+                </button>
+              </div>
             ) : null}
           </div>
         ) : (
@@ -149,7 +151,7 @@ export function ChatMessageBubble({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               urlTransform={urlTransform}
-              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-8 prose-headings:font-extrabold prose-headings:tracking-tight prose-li:text-[16px] prose-li:leading-8 prose-strong:font-extrabold prose-code:text-xs prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
+              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-[1.75] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[var(--text)] prose-h2:mt-6 prose-h2:mb-3 prose-h3:mt-5 prose-h3:mb-2 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-li:text-[16px] prose-li:leading-[1.7] prose-strong:font-bold prose-strong:text-[var(--text)] prose-blockquote:border-l-2 prose-blockquote:border-[var(--border-strong)] prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-[var(--muted-strong)] prose-code:rounded-md prose-code:bg-[var(--surface-subtle)] prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-2xl prose-pre:bg-[#15181f] prose-pre:p-4 prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
               components={
                 message.citations?.length
                   ? {
@@ -174,7 +176,7 @@ export function ChatMessageBubble({
               {message.citations?.length ? withCitationLinks(content) : content}
             </ReactMarkdown>
             {!message.id.startsWith("streaming") && message.id !== "error" ? (
-              <div className="mt-2 flex items-center gap-1 text-[var(--muted)]">
+              <div className="mt-3 flex items-center gap-1 text-[var(--muted)]">
                 <button
                   type="button"
                   onClick={copyResponse}

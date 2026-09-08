@@ -12,7 +12,7 @@ export function ThinkingTrace() {
   return (
     <div className="thinking-trace" role="status" aria-live="polite">
       <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)]">
-        Selrano is thinking
+        Lumen is thinking
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {phases.map((phase, index) => {

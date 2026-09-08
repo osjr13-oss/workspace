@@ -201,9 +201,9 @@ function ChatsContent() {
   return (
     <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
       <aside className="panel flex min-h-0 flex-col p-4">
-        <WorkspaceHeader title="Chats" eyebrow="AI" />
+        <WorkspaceHeader title="Chats" eyebrow="Thinking space" />
         <button type="button" onClick={() => { setThreadId(null); setMessages([]); }} className="btn-primary mt-5">
-          New conversation
+          New thought
         </button>
         <select aria-label="Chat context" className="input-premium mt-3 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={Boolean(threadId)}>
           <option value="">Global chat</option>
@@ -218,9 +218,13 @@ function ChatsContent() {
               <button
                 type="button"
                 onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
-                className={`w-full rounded-2xl p-4 pr-12 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
+                className={`w-full rounded-2xl p-4 pr-12 text-left transition ${
+                  threadId === thread.id
+                    ? "bg-white border border-[var(--border)] shadow-xs"
+                    : "hover:bg-[var(--surface-subtle)]"
+                }`}
               >
-                <p className="truncate font-extrabold">{removeEmDashes(thread.title)}</p>
+                <p className="truncate font-bold text-sm text-[var(--text)]">{removeEmDashes(thread.title)}</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
               </button>
               <button
@@ -274,24 +278,51 @@ function ChatsContent() {
             ))
           ) : (
             <div className="grid h-full place-items-center text-center">
-              <div className="max-w-md px-4">
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">{"What's on your mind?"}</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Start with an idea, a decision, or a feeling of being stuck. We can start wherever you are.</p>
-                <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+              <div className="max-w-lg px-4 py-8">
+                <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/70 px-3.5 py-1 text-xs font-semibold text-[var(--muted-strong)] shadow-2xs">
+                  <span>Lumen 1</span>
+                  <span className="text-[var(--muted)]">·</span>
+                  <span>Active partner</span>
+                </div>
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-[var(--text)] sm:text-4xl">
+                  {"What are you working through?"}
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--muted)] max-w-md mx-auto">
+                  Bring an early idea, an unresolved trade-off, or an open question. We can explore and structure it together.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:grid sm:grid-cols-2 text-left">
                   {[
-                    "I have an idea, but I don't know where to start.",
-                    "Help me choose between a few directions.",
-                    "I'm stuck. Can we think it through?"
-                  ].map((example) => (
+                    {
+                      label: "Early exploration",
+                      prompt: "I have an idea, but I don't know where to start."
+                    },
+                    {
+                      label: "Weigh options",
+                      prompt: "Help me choose between two different directions."
+                    },
+                    {
+                      label: "Unblock",
+                      prompt: "I am stuck on this problem. Can we break it down?"
+                    },
+                    {
+                      label: "Stress test",
+                      prompt: "I have a plan, but I need to poke holes in its assumptions."
+                    }
+                  ].map((card) => (
                     <button
-                      key={example}
+                      key={card.label}
                       type="button"
                       onClick={() => {
-                        setText(example);
+                        setText(card.prompt);
                       }}
-                      className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold text-[var(--text)] hover:border-[var(--border-strong)] transition"
+                      className="group rounded-2xl border border-[var(--border)] bg-white/80 p-4 text-left shadow-2xs transition hover:border-[var(--border-strong)] hover:bg-white hover:shadow-xs"
                     >
-                      {example}
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] group-hover:text-[var(--text)] transition">
+                        {card.label}
+                      </p>
+                      <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted-strong)]">
+                        {card.prompt}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -300,8 +331,8 @@ function ChatsContent() {
           )}
           {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
         </div>
-        <form onSubmit={send} className="border-t border-[var(--border)] p-4">
-          <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
+        <form onSubmit={send} className="border-t border-[var(--border)] p-4 sm:p-5">
+          <div className="mx-auto max-w-3xl rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-white/90 p-2 shadow-2xs transition focus-within:border-[var(--border-strong)] focus-within:shadow-xs">
             <ChatComposer
               value={text}
               disabled={loading}
