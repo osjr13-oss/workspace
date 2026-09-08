@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { BookOpen, Brain, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Files, Layers, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -90,7 +90,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     { key: "notes", label: "Notes", icon: <BookOpen size={16} />, count: notes.length },
     { key: "files", label: "Files", icon: <Files size={16} />, count: files.length },
     { key: "chats", label: "Chats", icon: <MessageSquare size={16} />, count: threads.length },
-    { key: "flashcards", label: "Flashcards", icon: <Brain size={16} />, count: decks.length },
+    { key: "flashcards", label: "Flashcards", icon: <Layers size={16} />, count: decks.length },
   ];
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Check, Sparkles } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 type ModelOption = {
   id: string;

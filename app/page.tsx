@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, BookOpen, Compass, FileText, Layers, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, FileText, Layers, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { SelranoLogo } from "@/components/selrano-logo";
 import { SiteFooter } from "@/components/site-footer";
 import { LandingPreview } from "@/components/landing-preview";
 import { Reveal } from "@/components/reveal";
@@ -11,15 +11,7 @@ export default function LandingPage() {
       {/* Floating Restrained Top Navigation */}
       <div className="sticky top-4 z-50 mx-auto max-w-5xl px-4">
         <header className="flex items-center justify-between rounded-full border border-black/[0.08] bg-white/85 px-4 py-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <Image src="/logo.svg" alt="Selrano" width={28} height={28} priority />
-              <span className="text-lg font-bold tracking-[-0.03em] text-[#0d0d0d]">Selrano</span>
-            </Link>
-            <span className="hidden sm:inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
-              Lumen 1
-            </span>
-          </div>
+          <SelranoLogo />
 
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-600">
             <a href="#capabilities" className="transition-colors hover:text-black">Capabilities</a>
@@ -111,7 +103,7 @@ export default function LandingPage() {
           <Reveal delay={0.05}>
             <div className="h-full rounded-2xl border border-black/[0.08] bg-white p-7 shadow-sm transition-all hover:shadow-md">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-800">
-                <Sparkles size={20} strokeWidth={2.2} />
+                <SlidersHorizontal size={20} strokeWidth={2.2} />
               </div>
               <p className="mt-6 text-xs font-bold uppercase tracking-[0.1em] text-neutral-500">Adaptive Voice</p>
               <h3 className="mt-2 text-xl font-bold tracking-[-0.02em] text-[#0d0d0d]">

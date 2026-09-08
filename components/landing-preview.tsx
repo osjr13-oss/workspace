@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp, BookOpen, Check, Copy, FileText, Sparkles } from "lucide-react";
+import { ArrowUp, BookOpen, Check, Copy, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PromptScenario {
@@ -77,8 +77,7 @@ export function LandingPreview() {
             <span className="ml-2 text-xs font-medium text-white/40 tracking-tight">selrano.com/chats</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-              <Sparkles size={11} className="text-white/80" />
+            <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-white/70">
               Lumen 1
             </span>
           </div>

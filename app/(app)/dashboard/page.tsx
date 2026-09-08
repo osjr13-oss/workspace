@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
+import { BookOpen, Files, FolderOpen, Layers, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { QuickActions } from "@/components/quick-actions";
@@ -80,7 +80,7 @@ export default function DashboardPage() {
         <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />
         <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
         <Stat icon={<Files size={20} />} label="Files" value={counts.files.toString()} />
-        <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
+        <Stat icon={<Layers size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
