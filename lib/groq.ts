@@ -103,7 +103,7 @@ function recoverMalformedToolCall(errorBody: string): GroqAssistantMessage | nul
  */
 export async function streamGroq(
   messages: GroqChatMessage[],
-  options: { temperature?: number; signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void }
+  options: { model?: string; reasoningEffort?: "low" | "medium" | "high"; temperature?: number; signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<string> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -113,11 +113,12 @@ export async function streamGroq(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: requireEnv("GROQ_MODEL"),
+      model: options.model ?? requireEnv("GROQ_MODEL"),
       messages,
       temperature: options.temperature ?? 0.4,
       stream: true,
-      max_tokens: options.maxTokens
+      max_tokens: options.maxTokens,
+      reasoning_effort: options.reasoningEffort
     })
   });
 
@@ -130,6 +131,7 @@ export async function streamGroq(
   const decoder = new TextDecoder();
   let full = "";
   let buffer = "";
+  let finished = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -143,22 +145,23 @@ export async function streamGroq(
       const trimmed = line.trim();
       if (!trimmed.startsWith("data:")) continue;
       const data = trimmed.slice(5).trim();
-      if (data === "[DONE]") continue;
+      if (data === "[DONE]") { finished = true; continue; }
 
-      try {
-        const json = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
-        const token = json.choices?.[0]?.delta?.content;
-        if (token) {
-          const normalized = removeEmDashes(token);
-          full += normalized;
-          options.onToken(normalized);
-        }
-      } catch {
-        // ignore keep-alive lines and any non-JSON noise
+      let json: { error?: unknown; choices?: Array<{ finish_reason?: string; delta?: { content?: string } }> };
+      try { json = JSON.parse(data); } catch { continue; }
+      if (json.error) throw new Error("Provider stream failed.");
+      const choice = json.choices?.[0];
+      if (choice?.finish_reason === "length") throw new Error("Response reached its output limit.");
+      const token = choice?.delta?.content;
+      if (token) {
+        const normalized = removeEmDashes(token);
+        full += normalized;
+        options.onToken(normalized);
       }
     }
   }
 
+  if (!finished) throw new Error("Provider stream ended unexpectedly.");
   return full.trim();
 }
 

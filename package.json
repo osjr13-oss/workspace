@@ -9,7 +9,8 @@
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --no-cache",
     "typecheck": "tsc --noEmit",
     "setup:check": "node scripts/check-setup.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prototype": "next dev --hostname 127.0.0.1 --port 3210"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

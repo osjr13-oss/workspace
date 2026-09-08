@@ -1,5 +1,10 @@
 # Selrano production handoff
 
+## September 8: private thinking-partner branch
+
+This isolated `codex/selrano-1-prototype` checkout replaces the local home page with an unreleased chat prototype and blocks legacy routes. It must not be deployed or merged into the public security product. Production and main are unchanged. See [PROTOTYPE.md](PROTOTYPE.md) for behavior, privacy boundaries, launch instructions, and the 20-scenario evaluation. The remainder of this file describes production history.
+
+
 ## September 6 security follow-up
 
 Added a per-request nonce CSP, frame blocking, nosniff, referrer and permissions policies, a standards-based security.txt, and visible privacy/terms/support links on sign-in and sign-up. Documents now render dynamically so Next.js can apply a matching nonce; this trades static HTML caching for the script policy. The policy follows https://nextjs.org/docs/15/app/guides/content-security-policy; disclosure fields follow https://securitytxt.org/.

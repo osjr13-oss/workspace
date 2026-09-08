@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import { PwaProvider } from "@/components/pwa-provider";
+
+
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
 
@@ -15,15 +15,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: {
-    default: brand.name,
+    default: "Selrano 1 | Private prototype",
     template: `%s | ${brand.name}`
   },
-  description: brand.tagline,
+  description: "A private thinking partner for exploring ideas and making decisions.",
   metadataBase: new URL(brand.urls.app),
   openGraph: {
     title: brand.name,
-    description: brand.tagline,
+    description: "A private thinking partner for exploring ideas and making decisions.",
     url: brand.urls.app,
     siteName: brand.name,
     type: "website"
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: brand.name,
-    description: brand.tagline
+    description: "A private thinking partner for exploring ideas and making decisions."
   },
   alternates: {
     canonical: absoluteUrl("/")
@@ -56,8 +57,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
-        <PwaProvider />
-        <Analytics />
+
+
       </body>
     </html>
   );
