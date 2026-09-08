@@ -2,6 +2,12 @@
 
 This checkout is an unreleased experiment on `codex/selrano-1-prototype`. Do not deploy or merge it into the security product. Existing production data and billing are untouched.
 
+## Latest user feedback and direction
+
+The user has tried Selrano 1 and likes its speed, intelligence, and tone. They strongly disliked the design. Treat the current interface as a functional prototype, not an approved aesthetic; improve it in a separately scoped iteration while preserving conversational quality. No replacement design has been chosen.
+
+This is the active product direction. Security remains live on main but is not the current development focus. The prototype branch has been pushed to GitHub; that does not authorize a production migration. Hosted preview access is deliberately blocked. Initial praise is qualitative feedback, not a completed A/B score.
+
 ## Run
 
 From this checkout, run `npm run prototype` and open http://127.0.0.1:3210. Use that same address consistently: localhost and 127.0.0.1 have separate browser storage. The ignored `.env.local` needs only `GROQ_API_KEY`. The model is pinned in the release definition. This checkout currently reuses the original checkout's node_modules through a symlink; run npm ci if moving it to another machine.

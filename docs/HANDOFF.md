@@ -1,17 +1,36 @@
 # Selrano production handoff
 
-## September 8: private thinking-partner branch
+## Current direction and handoff: September 8
 
-This isolated `codex/selrano-1-prototype` checkout replaces the local home page with an unreleased chat prototype and blocks legacy routes. It must not be deployed or merged into the public security product. Production and main are unchanged. See [PROTOTYPE.md](PROTOTYPE.md) for behavior, privacy boundaries, launch instructions, and the 20-scenario evaluation. The remainder of this file describes production history.
+**Build Selrano as a versioned AI thinking partner for exploring ideas and making decisions.** Security is the current deployed product, not the future development focus. The user stepped away from security because they do not feel able to deliver the required accuracy as a solo, nontechnical founder. They rejected chat-import tools and browser extensions due to friction and privacy risks.
 
+The active branch is `codex/selrano-1-prototype`, pushed to GitHub with implementation commit `16df5e0`. The local checkout is `/Users/osmanosman/workspace-prototype`; the original checkout `/Users/osmanosman/workspace` remains on `main`. Do not merge, deploy, promote a preview, change billing, or migrate customer data without a new explicit request. Main's production application remains at `f575e51`.
+
+### User feedback and next priorities
+
+The user tried Selrano 1 and praised its speed, intelligence, and tone. They strongly rejected the visual design. Preserve conversational strengths; do not treat the prototype UI as accepted. A substantial visual redesign is the next likely iteration, but no new design direction has been approved. This context-update task does not authorize that redesign.
+
+The user wants an AI with its own identity, meaningful versioned releases, and eventually model training. Start with measurable improvements to the AI system using an existing provider, then consider fine-tuning later. Do not market the current system as a model trained from scratch.
+
+### Prototype boundaries and verification
+
+See [PROTOTYPE.md](PROTOTYPE.md). Current release `selrano-1.0.1` uses Groq `openai/gpt-oss-120b`. It has streaming, local chat history, release attribution, retry/stop, deletion, and a Where we are recap. No database, cross-chat memory, account connections, browsing, analytics, or training collection. Only the active conversation is sent to Groq, under that provider's policies. Local storage is not encrypted.
+
+The running local preview is http://127.0.0.1:3210. Use `npm run prototype` to restart development, or `npm run build` then `npm run start -- --hostname 127.0.0.1 --port 3210` for the built preview. The ignored environment file contains only the Groq configuration. Hosted previews intentionally reject access; a Vercel Ready status does not mean the prototype is a hosted public product.
+
+87 tests, typecheck, lint, production build, dependency audit, and browser checks passed. Twenty complete fictional baseline/Selrano pairs are in the local ignored `.prototype-evaluation/` directory; scenarios and the reproduction script are committed. User preference ratings and extended real-conversation trials remain pending. Positive initial feedback must not be reported as a completed 15/20 benchmark.
+
+### Historical records
+
+Everything below records earlier production work. It does not override the current direction or authorize reintroducing old product features.
 
 ## September 6 security follow-up
 
 Added a per-request nonce CSP, frame blocking, nosniff, referrer and permissions policies, a standards-based security.txt, and visible privacy/terms/support links on sign-in and sign-up. Documents now render dynamically so Next.js can apply a matching nonce; this trades static HTML caching for the script policy. The policy follows https://nextjs.org/docs/15/app/guides/content-security-policy; disclosure fields follow https://securitytxt.org/.
 
-Production logs traced the Copilot failure to an invalid Anthropic key. At the user's request, removed ANTHROPIC_API_KEY from Vercel Production/Preview and local configuration. The configured Groq model was unavailable; verified streaming with openai/gpt-oss-120b and updated GROQ_MODEL locally and in Vercel Production/Preview. These environment changes take effect with the next deployment. No secrets were committed.
+Production logs traced the Copilot failure to an invalid Anthropic key. At the user's request, removed ANTHROPIC_API_KEY from Vercel Production/Preview and local configuration. The configured Groq model was unavailable; verified streaming with openai/gpt-oss-120b and updated GROQ_MODEL locally and in Vercel Production/Preview. These changes took effect with production commit `f575e51`. No secrets were committed.
 
-Validation: typecheck, lint, production build, 68 tests, production dependency audit (zero vulnerabilities), nonce/header and auth-link HTTP checks, and interactive sample-report browser check passed. Production verification follows deployment.
+Validation: typecheck, lint, production build, 68 tests, production dependency audit (zero vulnerabilities), nonce/header and auth-link HTTP checks, and interactive sample-report browser check passed. Production verification passed: Copilot streamed and persisted, and the rescan found zero findings across ten public pages (100/100 within passive scan coverage).
 
 ## September 6 security transformation: released
 
@@ -21,7 +40,7 @@ Read [SECURITY_MIGRATION.md](SECURITY_MIGRATION.md) before releasing this change
 
 Last updated: **August 3, 2026**
 
-## Current state
+## Historical August 3 state
 
 - Production: `https://selrano.com` (redirects to `https://www.selrano.com`)
 - Repository: `osjr13-oss/workspace`

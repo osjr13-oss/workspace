@@ -2,11 +2,25 @@
 
 Read `docs/HANDOFF.md` before changing the product. It is the current production handoff and records deployed behavior, infrastructure, validation, known risks, and next priorities.
 
-## Current product direction
+## Current product direction (September 8, 2026)
 
-The September 6 user request supersedes the earlier materials-workspace positioning below. Selrano is being transformed into a calm website security scanner for people building with AI, using the scanner from `osjr13-oss/launchguard`. Read `docs/SECURITY_MIGRATION.md` for the implementation and release requirements. Preserve the Selrano brand, existing authentication/billing, previous customer data, and the no-em-dash rule. New primary routes are `/dashboard`, `/scans`, `/scans/[scanId]`, and `/copilot`.
+Selrano's development direction is now a versioned AI thinking partner for exploring ideas and making decisions. The user moved away from security because they do not want to promise security accuracy as a solo, nontechnical founder. Do not continue expanding scanner features, monitoring, or the conversation-import/extension concepts without a new request.
 
-## Previous product contract (retained content and infrastructure)
+- Active development branch: `codex/selrano-1-prototype`, checkout `/Users/osmanosman/workspace-prototype`. Read `docs/PROTOTYPE.md` for implementation and validation.
+- `main` and https://www.selrano.com still serve the security scanner. Leave production, billing, and customer data alone. The user authorized pushing the prototype branch, not merging or promoting it.
+- Selrano 1 is an AI system using Groq's `openai/gpt-oss-120b`; it is not a foundation model trained by Selrano. Current system release: `selrano-1.0.1`. Version behavior, settings, and release notes together; retain attribution on saved responses.
+- The user likes its speed, intelligence, and conversational tone. Preserve those strengths. They strongly disliked the prototype's visual design. The design is NOT approved and needs substantial improvement in a future iteration; no replacement visual direction has been selected yet. Preserve the Selrano brand and aim for a calm, polished experience without treating the current layout as the design target.
+- Product behavior: take initiative when the user is unsure; offer concrete options; ask at most one focused question when useful; remember accepted/rejected options within the current chat; disagree respectfully; distinguish suggestions from user decisions.
+- Privacy is a primary constraint. No extension, chat imports, connected accounts, automatic capture, cross-chat memory, analytics, or training collection. Browser-local history only; only the active conversation is sent to Groq. Do not reactivate legacy personalization or workspace tools.
+- The prototype is local-only at http://127.0.0.1:3210. Hosted previews deliberately return 403. Do not remove localhost/origin guards to make a Vercel preview work without explicit authorization for a hosted product and appropriate access controls.
+- Twenty fictional A/B comparisons exist; the user's positive initial feedback is not a scored 15/20 evaluation result. Real-use trials and formal preference ratings remain pending.
+- Future ambitions include progressively stronger releases and eventually fine-tuning an appropriately licensed existing model. Training, public launch, subscriptions, and model selection are deferred.
+
+## Production security scanner (maintenance context)
+
+The September 6 scanner remains deployed while Selrano 1 is evaluated privately. Read `docs/SECURITY_MIGRATION.md` only when maintaining that production journey. Preserve existing authentication, billing, data, and the no-em-dash rule. Scanner routes are `/dashboard`, `/scans`, `/scans/[scanId]`, and `/copilot`.
+
+## Historical workspace contract (retained infrastructure, not prototype requirements)
 
 - Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, support, and Stripe billing.
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
@@ -20,6 +34,8 @@ The September 6 user request supersedes the earlier materials-workspace position
 - Preserve user changes in the working tree and never delete production/test data without explicit approval.
 
 ## Before a release
+
+For prototype work, also run `npm test` and verify the local chat journey. Push only the prototype branch when requested. Historical production requirements below do not authorize a production release.
 
 Run:
 
