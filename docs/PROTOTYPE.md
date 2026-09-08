@@ -1,12 +1,12 @@
 # Selrano 1 public prototype
 
-This checkout is an unreleased experiment on `codex/selrano-1-prototype`. Public branch deployments are authorized; do not merge into main. Existing production data and billing are untouched.
+This checkout is an unreleased experiment on `codex/selrano-1-prototype`. Production deployment on main is authorized. Existing production data and billing are untouched.
 
 ## Latest user feedback and direction
 
 The user has tried Selrano 1 and likes its speed, intelligence, and tone. They strongly disliked the design. Treat the current interface as a functional prototype, not an approved aesthetic; improve it in a separately scoped iteration while preserving conversational quality. No replacement design has been chosen.
 
-This is the active product direction. Main remains unchanged. The prototype branch has been pushed to GitHub; that does not authorize a production migration. Public hosted preview access is explicitly authorized. Initial praise is qualitative feedback, not a completed A/B score.
+This is the active product direction. The user authorized the move to main. The prototype branch has been pushed to GitHub; the user subsequently authorized production deployment on main. Public hosted preview access is explicitly authorized. Initial praise is qualitative feedback, not a completed A/B score.
 
 ## Run
 

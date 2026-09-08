@@ -6,7 +6,7 @@ Read docs/HANDOFF.md and docs/PROTOTYPE.md before changes.
 
 Selrano 1 is a public AI thinking partner for exploring ideas and making decisions, powered by Groq openai/gpt-oss-120b. It is a versioned AI system, not a foundation model trained from scratch. Current release: selrano-1.0.1.
 
-Work in /Users/osmanosman/workspace-prototype on codex/selrano-1-prototype. Public Vercel previews are explicitly authorized. Do not add private-access or localhost-only restrictions. Do not merge into main or change the existing production deployment, billing, or customer data without a new request.
+Production development is now on main in /Users/osmanosman/workspace. The prototype checkout remains available on codex/selrano-1-prototype. Public Vercel previews are explicitly authorized. Do not add private-access or localhost-only restrictions. The user authorized replacing production with Selrano 1 on main. Do not change billing or customer data without a separate request.
 
 The user likes speed, intelligence, and tone, but strongly dislikes the current visual design. No replacement design has been selected. Build around conversation, meaningful releases, initiative, respectful disagreement, and retaining decisions within a chat. Ask one focused question when needed.
 

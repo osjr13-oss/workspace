@@ -4,7 +4,7 @@ Selrano is a public AI thinking partner that helps users explore ideas and choos
 
 ## Branch and release
 
-Active checkout: /Users/osmanosman/workspace-prototype. Branch: codex/selrano-1-prototype. Public Vercel branch previews are explicitly authorized. Keep main and its deployment unchanged until requested. Provider keys remain server-side.
+Active production checkout: /Users/osmanosman/workspace. Branch: main. Public Vercel branch previews are explicitly authorized. The user explicitly authorized pushing all Selrano 1 changes to main and replacing the live site. Provider keys remain server-side.
 
 Release selrano-1.0.1 uses Groq openai/gpt-oss-120b. Version system instructions, model configuration, settings, and release notes together. Attribute responses to their release. Future fine-tuning is an ambition, not a shipped capability.
 

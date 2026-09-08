@@ -8,4 +8,4 @@ Install with npm ci, set GROQ_API_KEY in .env.local, and run npm run prototype. 
 
 Chat streams responses and saves conversations in this browser. Account sync is not implemented. Provider credentials stay on the server.
 
-See [handoff](docs/HANDOFF.md), [implementation](docs/PROTOTYPE.md), and [contributor instructions](AGENTS.md). Current development is on codex/selrano-1-prototype; main is unchanged.
+See [handoff](docs/HANDOFF.md), [implementation](docs/PROTOTYPE.md), and [contributor instructions](AGENTS.md). Selrano 1 is now released through main.
