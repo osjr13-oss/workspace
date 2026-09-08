@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: September 6, 2026</p>
+      <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
-          <li><strong>User content:</strong> website URLs, scan findings and evidence, report metadata, Copilot conversations, and previously stored workspace content. Scanning reads public website responses. Cookie values and detected secret values are not intentionally retained in scan reports.</li>
+          <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
         <h3 className="mt-4 font-extrabold text-[var(--text)]">b. Information collected automatically</h3>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Provide, operate, and maintain the Service.</li>
           <li>Authenticate your identity and secure your account.</li>
-          <li>Process and display your scans, reports, and other saved content.</li>
+          <li>Process and display your User Content within your workspace.</li>
           <li>Send transactional emails such as password reset requests.</li>
           <li>Improve and develop new features of the Service.</li>
           <li>Respond to your support requests and communications.</li>
@@ -53,12 +53,12 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features, including the security Copilot, relevant portions of your User Content may be transmitted to <strong>Anthropic</strong> for primary AI inference or <strong>Groq, Inc.</strong> for fallback processing. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
+        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content may be transmitted to <strong>Anthropic</strong> for primary AI inference or <strong>Groq, Inc.</strong> for fallback processing. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
         <ul>
           <li>Data sent to Anthropic is governed by <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="underline">Anthropic&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Tavily is governed by <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Tavily&apos;s Privacy Policy</a>.</li>
-          <li>We transmit only the content necessary for the specific AI request (for example, saved scan findings and recent Copilot messages).</li>
+          <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
           <li>We recommend you do not submit sensitive personal information, passwords, financial data, or confidential third-party data through AI features.</li>
         </ul>
       </Section>

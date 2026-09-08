@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthTrustLinks } from "@/components/auth-trust-links";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -47,7 +46,7 @@ function SignInForm() {
   const signUpHref = nextPath !== "/dashboard" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup";
 
   return (
-    <AuthFrame title="Welcome back" copy="Sign in to check your site and review your scans.">
+    <AuthFrame title="Welcome back" copy="Sign in to continue organizing your work.">
       <form onSubmit={submit} className="space-y-4">
         <input aria-label="Email address" className="input-premium w-full px-5" type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
         <input aria-label="Password" className="input-premium w-full px-5" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} required />
@@ -72,7 +71,6 @@ function AuthFrame({ title, copy, children }: { title: string; copy: string; chi
         <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{copy}</p>
         <div className="mt-7">{children}</div>
-        <AuthTrustLinks />
       </section>
     </main>
   );

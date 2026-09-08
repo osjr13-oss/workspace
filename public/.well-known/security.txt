@@ -1,5 +1,0 @@
-Contact: mailto:support@selrano.com
-Expires: 2027-08-31T23:59:59Z
-Preferred-Languages: en
-Canonical: https://www.selrano.com/.well-known/security.txt
-Policy: https://www.selrano.com/security

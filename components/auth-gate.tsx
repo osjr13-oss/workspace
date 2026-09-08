@@ -56,7 +56,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (user === undefined) {
     return (
       <main className="grid min-h-screen place-items-center">
-        <div className="status-pill">Loading Selrano</div>
+        <div className="status-pill">Loading workspace</div>
       </main>
     );
   }

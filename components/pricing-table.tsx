@@ -5,12 +5,12 @@ import { SpotlightCard } from "@/components/spotlight-card";
 import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const rows = [
-  { label: "Website scans", free: `${PLANS.free.scansPerDay} per day`, pro: `${PLANS.pro.scansPerDay} per day` },
-  { label: "Prioritized findings with evidence", free: "Included", pro: "Included" },
-  { label: "Prompts for your AI builder", free: "Included", pro: "Included" },
-  { label: "Security copilot", free: "Standard usage", pro: "Expanded usage" },
-  { label: "Private scan history", free: "Included", pro: "Included" },
-  { label: "Report export and manual rescans", free: "Included", pro: "Included" }
+  { label: "Adaptive AI chat", free: "Included", pro: "Included" },
+  { label: "Projects", free: String(PLANS.free.maxProjects), pro: "Unlimited" },
+  { label: "Max file upload", free: `${PLANS.free.maxFileMb} MB`, pro: `${PLANS.pro.maxFileMb} MB` },
+  { label: "Flashcard decks", free: String(PLANS.free.maxDecks), pro: "Unlimited" },
+  { label: "Project file context in chat", free: "Yes", pro: "Yes" },
+  { label: "Notes, study mode, flashcards", free: "Yes", pro: "Yes" }
 ] as const;
 
 export function PricingTable({ showCta = true }: { showCta?: boolean }) {

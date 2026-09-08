@@ -6,7 +6,7 @@ const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@selrano.c
 
 export const brand = {
   name: "Selrano",
-  tagline: "Website security clarity for people building with AI.",
+  tagline: "An AI workspace that learns how you think and write.",
   legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "Selrano",
 
   emails: {

@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
-
-
+import { Analytics } from "@vercel/analytics/next";
+import { PwaProvider } from "@/components/pwa-provider";
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
-
-// Request-specific CSP nonces require server rendering for every document.
-export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
   themeColor: brand.colors.background,
@@ -15,16 +12,15 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  robots: { index: false, follow: false },
   title: {
-    default: "Selrano 1 | Preview",
+    default: brand.name,
     template: `%s | ${brand.name}`
   },
-  description: "A thinking partner for exploring ideas and making decisions.",
+  description: brand.tagline,
   metadataBase: new URL(brand.urls.app),
   openGraph: {
     title: brand.name,
-    description: "A thinking partner for exploring ideas and making decisions.",
+    description: brand.tagline,
     url: brand.urls.app,
     siteName: brand.name,
     type: "website"
@@ -32,7 +28,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: brand.name,
-    description: "A thinking partner for exploring ideas and making decisions."
+    description: brand.tagline
   },
   alternates: {
     canonical: absoluteUrl("/")
@@ -57,8 +53,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
-
-
+        <PwaProvider />
+        <Analytics />
       </body>
     </html>
   );

@@ -16,7 +16,6 @@ export const PLANS = {
     priceKind: "standard" as const,
     aiRequests: 20,
     aiPeriod: "day" as const satisfies AiQuotaPeriod,
-    scansPerDay: 5,
     maxProjects: 3,
     maxFileMb: 20,
     maxDecks: 8,
@@ -25,7 +24,7 @@ export const PLANS = {
   pro: {
     id: "pro" as const,
     name: "Pro",
-    tagline: "For builders shipping and improving every day",
+    tagline: "For heavy coursework and daily deep work",
     /** Founding / introductory monthly price in USD. */
     priceMonthly: 6.99,
     priceKind: "founding" as const,
@@ -33,7 +32,6 @@ export const PLANS = {
     stripePriceAmountCents: 699,
     aiRequests: 1500,
     aiPeriod: "month" as const satisfies AiQuotaPeriod,
-    scansPerDay: 50,
     maxProjects: null as number | null,
     maxFileMb: 100,
     maxDecks: null as number | null,

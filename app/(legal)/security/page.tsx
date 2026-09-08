@@ -22,20 +22,21 @@ export default function SecurityPage() {
       <p className="text-sm font-bold text-[var(--muted)]">Trust &amp; security</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Security at {brand.name}</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
-        We design {brand.name} to keep your account, scan reports, and conversations private. This page summarizes
+        We design {brand.name} with security appropriate for sensitive academic and personal work. This page summarizes
         our practices; enterprise customers may request additional documentation.
       </p>
 
       <Section title="Infrastructure">
         <p>
           Application hosting runs on Vercel. Data, authentication, and file storage use Supabase (PostgreSQL with
-          row-level security). AI inference uses Anthropic with Groq as a fallback.
+          row-level security). AI inference uses Groq; prompts are not used to train third-party models per provider policy.
         </p>
       </Section>
 
       <Section title="Access control">
         <p>
-          Scan reports and Copilot history require authentication. Database policies restrict these records to their owners, and only server code can write scan results. API routes validate the session server-side before processing requests.
+          Every workspace route requires authentication. Database policies restrict all tables so users can only access
+          their own rows. API routes validate the session server-side before processing requests.
         </p>
       </Section>
 

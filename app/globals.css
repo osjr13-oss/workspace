@@ -315,7 +315,7 @@ select {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 920px) {
   .layout-grid {
     grid-template-columns: 1fr;
   }
