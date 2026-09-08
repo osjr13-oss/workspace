@@ -175,40 +175,31 @@ export function ChatMessageBubble({
             >
               {message.citations?.length ? withCitationLinks(content) : content}
             </ReactMarkdown>
-            {message.id.startsWith("streaming") ? (
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-900">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
-                </span>
-                <span>Lumen 1 is streaming</span>
-              </div>
-            ) : null}
             {!message.id.startsWith("streaming") && message.id !== "error" ? (
               <div className="mt-3 flex items-center gap-1 text-[var(--muted)]">
                 <button
                   type="button"
                   onClick={copyResponse}
-                  className="rounded-full p-2 transition-all duration-150 hover:bg-white hover:text-[var(--text)] hover:shadow-2xs active:scale-95"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label={copied ? "Response copied" : "Copy response"}
                   title={copied ? "Copied" : "Copy"}
                 >
-                  {copied ? <CheckCheck size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                  {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
                 </button>
                 <button
                   type="button"
                   onClick={toggleSpeech}
-                  className="rounded-full p-2 transition-all duration-150 hover:bg-white hover:text-[var(--text)] hover:shadow-2xs active:scale-95"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label={speaking ? "Stop reading response" : "Read response aloud"}
                   title={speaking ? "Stop reading" : "Read aloud"}
                 >
-                  {speaking ? <VolumeX size={17} className="text-amber-700" /> : <Volume2 size={17} />}
+                  {speaking ? <VolumeX size={17} /> : <Volume2 size={17} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => onRegenerate(message.id)}
                   disabled={busy}
-                  className="rounded-full p-2 transition-all duration-150 hover:bg-white hover:text-[var(--text)] hover:shadow-2xs active:scale-95 disabled:opacity-40"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label="Regenerate response"
                   title="Regenerate"
                 >

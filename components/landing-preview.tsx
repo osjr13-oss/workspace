@@ -1,86 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Sparkles, ArrowRight, CheckCircle2, Compass, Layers } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { useState } from "react";
+import { ArrowUpRight, BookOpenText, Files, Globe2, LibraryBig } from "lucide-react";
+import { motion } from "framer-motion";
 import { useSpotlight } from "@/components/use-spotlight";
 
-interface Scenario {
-  id: string;
-  tabLabel: string;
-  userPrompt: string;
-  thinkingNote: string;
-  responseHeadline: string;
-  responseBullets: string[];
-  takeaway: string;
-}
+const NAV_ITEMS = ["Chats", "Workspace", "Projects", "Files", "Notes", "Flashcards"];
 
-const SCENARIOS: Scenario[] = [
-  {
-    id: "explore",
-    tabLabel: "Explore an idea",
-    userPrompt: "I want to build a quiet workspace app for people who hate messy dashboards, but I don't know where to draw the boundary.",
-    thinkingNote: "Structuring core boundary",
-    responseHeadline: "Start with one unit of work: the open thought.",
-    responseBullets: [
-      "Keep files and notes as supporting context, not the front door.",
-      "Make the thinking canvas uncluttered so starting requires zero setup.",
-      "Let structure emerge gradually rather than forcing folder taxonomy on day one."
-    ],
-    takeaway: "The real product is clarity, not document count."
-  },
-  {
-    id: "tradeoffs",
-    tabLabel: "Weigh trade-offs",
-    userPrompt: "Should we build our own custom model weights or specialize through prompt synthesis and real-time retrieval?",
-    thinkingNote: "Analyzing speed, costs, and flexibility",
-    responseHeadline: "Specialized context delivery wins for your stage.",
-    responseBullets: [
-      "Custom weights lock you into high training cycles before product market fit.",
-      "Deep workspace retrieval and style profiles give 90% of the personalization with instant iteration.",
-      "You can always distill into private weights once usage patterns stabilize."
-    ],
-    takeaway: "Stay nimble on retrieval while proving user retention."
-  },
-  {
-    id: "blindspots",
-    tabLabel: "Find blind spots",
-    userPrompt: "Here is our launch plan: ship everything at once to all users with a big announcement.",
-    thinkingNote: "Stress-testing launch assumptions",
-    responseHeadline: "Big bang releases create three avoidable risks:",
-    responseBullets: [
-      "Customer support spikes when unguided users hit edge cases together.",
-      "You cannot isolate which specific feature drove retention or churn.",
-      "A quiet cohort preview lets you refine the first 5 minutes of onboarding."
-    ],
-    takeaway: "Release to a 50 user circle first to observe where they hesitate."
-  }
+const DETAIL_CARDS = [
+  { title: "Style", body: "Direct, concise, and shaped around how you communicate." },
+  { title: "Memory", body: "Useful preferences and ongoing work stay available." },
+  { title: "Sources", body: "Project files and web results remain clearly cited." },
+  { title: "Control", body: "Edit, resend, regenerate, and keep moving." },
 ];
 
 export function LandingPreview() {
   const { spotlightProps } = useSpotlight<HTMLDivElement>();
-  const [activeId, setActiveId] = useState<string>("explore");
-  const [isSimulating, setIsSimulating] = useState(false);
-
-  const scenario = SCENARIOS.find((s) => s.id === activeId) || SCENARIOS[0];
-
-  function handleSelect(id: string) {
-    if (id === activeId) return;
-    setIsSimulating(true);
-    setActiveId(id);
-    setTimeout(() => {
-      setIsSimulating(false);
-    }, 450);
-  }
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
     <div
       id="workspace"
-      className="panel spotlight overflow-hidden p-3 sm:p-5"
+      className="panel spotlight overflow-hidden p-4"
       style={{
         ...spotlightProps.style,
-        ["--spot-size" as string]: "420px",
+        ["--spot-size" as string]: "360px",
       }}
       ref={spotlightProps.ref}
       onMouseMove={spotlightProps.onMouseMove}
@@ -88,116 +32,94 @@ export function LandingPreview() {
       onMouseLeave={spotlightProps.onMouseLeave}
       data-active={spotlightProps["data-active"]}
     >
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 sm:p-7 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
-            </span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted-strong)]">
-              Lumen 1 Interactive Preview
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-            <Sparkles size={13} className="text-amber-600" />
-            <span>Click a scenario to watch it think</span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {SCENARIOS.map((item) => {
-            const isSelected = item.id === activeId;
+      <div className="grid min-h-[520px] grid-cols-[190px_1fr] overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--background-elevated)] max-sm:grid-cols-1">
+        <aside
+          className="border-r border-[var(--border)] p-4 max-sm:hidden"
+          onMouseLeave={() => setHovered(null)}
+        >
+          {NAV_ITEMS.map((item, index) => {
+            const isActive = index === 0;
+            const isHovered = hovered === index;
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSelect(item.id)}
-                className={`relative rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
-                  isSelected
-                    ? "bg-[var(--text)] text-white shadow-xs"
-                    : "border border-[var(--border)] bg-white/70 text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:bg-white"
+              <div
+                key={item}
+                onMouseEnter={() => setHovered(index)}
+                className={`relative mb-2 cursor-pointer rounded-2xl px-3 py-3 text-sm font-bold transition-colors duration-200 ${
+                  isActive || isHovered ? "text-[var(--text)]" : "text-[var(--muted)]"
                 }`}
               >
-                {item.tabLabel}
-              </button>
+                {isHovered && (
+                  <motion.div
+                    layoutId="hoverPill"
+                    className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
+                  />
+                )}
+                {isActive && !isHovered && (
+                  <span className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]" />
+                )}
+                <span className="relative z-10">{item}</span>
+              </div>
             );
           })}
-        </div>
-
-        <div className="mt-6 space-y-4">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={scenario.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-4"
-            >
-              <div className="flex justify-end">
-                <div className="max-w-[90%] sm:max-w-[80%] rounded-2xl border border-[var(--border)] bg-white/90 p-4 sm:p-5 shadow-2xs">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">You</p>
-                  <p className="mt-1 text-sm font-medium leading-relaxed text-[var(--text)]">
-                    {scenario.userPrompt}
-                  </p>
-                </div>
-              </div>
-
-              {isSimulating ? (
-                <div className="flex items-center gap-2 py-3 text-xs font-bold text-[var(--muted)]">
-                  <div className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
-                  <span>Lumen 1 is reasoning...</span>
-                </div>
-              ) : (
-                <div className="relative rounded-2xl border border-amber-500/20 bg-gradient-to-b from-white/95 to-amber-500/[0.03] p-5 sm:p-6 shadow-xs">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-900">
-                      Lumen 1
-                    </span>
-                    <span className="text-xs text-[var(--muted)]">
-                      {scenario.thinkingNote}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-extrabold text-[var(--text)] sm:text-lg">
-                    {scenario.responseHeadline}
-                  </h3>
-                  <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--muted-strong)]">
-                    {scenario.responseBullets.map((bullet) => (
-                      <li key={bullet} className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-amber-600" />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-4 rounded-xl border border-[var(--border)] bg-white/80 p-3 text-xs font-semibold text-[var(--muted-strong)]">
-                    <span className="font-bold text-[var(--text)]">Core takeaway: </span>
-                    {scenario.takeaway}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
-          <div className="flex items-center gap-4 text-xs font-semibold text-[var(--muted)]">
-            <span className="flex items-center gap-1.5">
-              <Compass size={14} className="text-stone-700" />
-              Directional recaps
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Layers size={14} className="text-stone-700" />
-              Grounded sources
-            </span>
-          </div>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text)] hover:underline"
+        </aside>
+        <div className="p-6">
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Lumen 1 Thinking Space</p>
+          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Lumen 1.</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Explore ideas and decisions with an adaptive thinking partner.</p>
+          <motion.div
+            className="group panel mt-10 overflow-hidden shadow-none"
+            initial={false}
+            whileHover={{ y: -2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 24 }}
           >
-            <span>Try it with your own thought</span>
-            <ArrowRight size={13} />
-          </Link>
+            <div className="flex items-start justify-between gap-6 p-6">
+              <div>
+                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
+                  <LibraryBig size={14} strokeWidth={2.25} />
+                  Grounded workspace
+                </p>
+                <p className="mt-4 text-xl font-extrabold tracking-[-0.025em]">Every source stays in its place.</p>
+                <p className="mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">
+                  Bring notes, files, and live research into one answer without losing where anything came from.
+                </p>
+              </div>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--text)] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                <ArrowUpRight size={18} strokeWidth={2.25} />
+              </span>
+            </div>
+            <div className="grid grid-cols-3 border-t border-[var(--border)] bg-white/38">
+              {[
+                { label: "Notes", Icon: BookOpenText },
+                { label: "Files", Icon: Files },
+                { label: "Live web", Icon: Globe2 }
+              ].map(({ label, Icon }, index) => (
+                <div
+                  key={label}
+                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-[var(--muted-strong)] ${
+                    index > 0 ? "border-l border-[var(--border)]" : ""
+                  }`}
+                >
+                  <Icon size={15} strokeWidth={2.1} className="text-[var(--muted)]" />
+                  {label}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {DETAIL_CARDS.map((item) => (
+              <motion.div
+                key={item.title}
+                className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5"
+                initial={false}
+                whileHover={{ y: -3 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+              >
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
+                <p className="mt-6 text-sm font-bold leading-6 text-[var(--muted-strong)]">{item.body}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
