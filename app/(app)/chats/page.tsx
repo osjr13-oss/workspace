@@ -270,9 +270,27 @@ function ChatsContent() {
             ))
           ) : (
             <div className="grid h-full place-items-center text-center">
-              <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Talk to Selrano.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere, or add a project when your own material should guide the answer.</p>
+              <div className="max-w-md px-4">
+                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">{"What's on your mind?"}</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">Start with an idea, a decision, or a feeling of being stuck. We can start wherever you are.</p>
+                <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+                  {[
+                    "I have an idea, but I don't know where to start.",
+                    "Help me choose between a few directions.",
+                    "I'm stuck. Can we think it through?"
+                  ].map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => {
+                        setText(example);
+                      }}
+                      className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold text-[var(--text)] hover:border-[var(--border-strong)] transition"
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -280,7 +298,18 @@ function ChatsContent() {
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
-            <ChatComposer value={text} disabled={loading} onChange={setText} />
+            <ChatComposer
+              value={text}
+              disabled={loading}
+              onChange={setText}
+              hasMessages={messages.length > 0}
+              onRecap={() =>
+                requestReply({
+                  message:
+                    "Where we are: summarize our current direction, what I have decided, what remains uncertain, and one possible next step."
+                })
+              }
+            />
           </div>
         </form>
       </section>

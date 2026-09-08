@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Compass } from "lucide-react";
 import { autocorrectOnBoundary } from "@/lib/autocorrect";
 import { removeEmDashes } from "@/lib/text";
 
@@ -9,6 +9,8 @@ type ChatComposerProps = {
   value: string;
   disabled: boolean;
   onChange: (value: string) => void;
+  onRecap?: () => void;
+  hasMessages?: boolean;
 };
 
 const BOUNDARY = /[\s.,!?;:]/;
@@ -16,7 +18,9 @@ const BOUNDARY = /[\s.,!?;:]/;
 export function ChatComposer({
   value,
   disabled,
-  onChange
+  onChange,
+  onRecap,
+  hasMessages
 }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hintTimerRef = useRef<number | null>(null);
@@ -76,7 +80,7 @@ export function ChatComposer({
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Ask anything, or paste text to transform..."
+        placeholder="Start with a thought. It doesn't have to be clear yet..."
         rows={1}
         spellCheck
       />
@@ -84,6 +88,18 @@ export function ChatComposer({
         <span className="pointer-events-none absolute bottom-1 left-4 translate-y-full text-[11px] font-bold text-[var(--muted)]">
           {hint}
         </span>
+      ) : null}
+      {onRecap && hasMessages ? (
+        <button
+          type="button"
+          onClick={onRecap}
+          disabled={disabled}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white/70 px-3 py-2 text-xs font-bold text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:text-[var(--text)] transition disabled:opacity-50"
+          title="Summarize where we are in this conversation"
+        >
+          <Compass size={14} />
+          <span>Where we are</span>
+        </button>
       ) : null}
       <button type="submit" className="btn-primary min-h-11 px-4" disabled={disabled || !value.trim()}>
         <Send size={18} />
