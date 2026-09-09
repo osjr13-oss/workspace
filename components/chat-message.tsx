@@ -74,7 +74,7 @@ export function ChatMessageBubble({
   return (
     <article
       className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
-      aria-label={message.role === "user" ? "Your thought" : "Selrano response"}
+      aria-label={message.role === "user" ? "Your thought" : "Lumen response"}
     >
       <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
         {editing ? (

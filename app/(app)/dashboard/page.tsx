@@ -69,7 +69,7 @@ export default function DashboardPage() {
             <MessageSquare size={21} />
           </span>
           <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Work through a thought with Selrano</h2>
+            <h2 className="text-base font-extrabold tracking-[-0.01em]">Work through a thought with Lumen 1</h2>
             <p className="text-sm text-[var(--muted)]">Explore an early idea, weigh options, or organize project materials.</p>
           </div>
         </div>

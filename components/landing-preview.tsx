@@ -78,7 +78,7 @@ export function LandingPreview() {
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-              Selrano 1
+              Lumen 1
             </span>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function LandingPreview() {
               </div>
 
               <div className="flex items-center gap-2.5">
-                <span className="text-xs font-medium text-white/60">Selrano 1</span>
+                <span className="text-xs font-medium text-white/60">Lumen 1</span>
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black shadow-sm">
                   <ArrowUp size={14} strokeWidth={2.5} />
                 </span>
