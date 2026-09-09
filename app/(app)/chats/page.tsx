@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { ChatComposer } from "@/components/chat-composer";
+import { ChatComposer, type AttachedFileItem } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { ThinkingTrace } from "@/components/thinking-trace";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -11,6 +11,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { ModelSelector } from "@/components/model-selector";
 import { formatRelative } from "@/lib/format";
 import { removeEmDashes } from "@/lib/text";
+import { uploadWorkspaceFile } from "@/lib/file-upload";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 
 export default function ChatsPage() {
@@ -33,7 +34,27 @@ function ChatsContent() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFileItem[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [fileUploadError, setFileUploadError] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+
+  async function attachFile(file: File) {
+    setUploadingFile(true);
+    setFileUploadError("");
+    try {
+      const uploaded = await uploadWorkspaceFile(file, { projectId: projectId || null });
+      setAttachedFiles((current) => [...current, uploaded]);
+    } catch (err) {
+      setFileUploadError(err instanceof Error ? err.message : "Failed to upload file");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  function removeAttachedFile(fileId: string) {
+    setAttachedFiles((current) => current.filter((f) => f.id !== fileId));
+  }
 
   async function loadThreads() {
     const supabase = createSupabaseBrowserClient();
@@ -52,7 +73,11 @@ function ChatsContent() {
       return;
     }
     const supabase = createSupabaseBrowserClient();
-    const { data } = await supabase.from("chat_messages").select("*").eq("thread_id", id).order("created_at", { ascending: true });
+    const { data } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("thread_id", id)
+      .order("created_at", { ascending: true });
     setMessages((data as ChatMessage[]) || []);
   }
 
@@ -77,6 +102,7 @@ function ChatsContent() {
     message?: string;
     editMessageId?: string;
     regenerateMessageId?: string;
+    fileIds?: string[];
   }) {
     setLoading(true);
 
@@ -144,8 +170,17 @@ function ChatsContent() {
   async function send(event: React.FormEvent) {
     event.preventDefault();
     const prompt = removeEmDashes(text).trim();
-    if (!prompt) return;
+    if (!prompt && attachedFiles.length === 0) return;
+
+    const filesToSend = [...attachedFiles];
+    const fileIds = filesToSend.map((f) => f.id);
+    const fileNames = filesToSend.map((f) => f.name).join(", ");
+    const fullUserPrompt = filesToSend.length > 0
+      ? (prompt ? `[Attached: ${fileNames}]\n\n${prompt}` : `[Attached: ${fileNames}]\nPlease review and analyze the attached document.`)
+      : prompt;
+
     setText("");
+    setAttachedFiles([]);
     setMessages((current) => [
       ...current,
       {
@@ -153,11 +188,11 @@ function ChatsContent() {
         thread_id: threadId || "pending",
         user_id: "",
         role: "user",
-        content: prompt,
+        content: fullUserPrompt,
         created_at: new Date().toISOString()
       }
     ]);
-    await requestReply({ message: prompt });
+    await requestReply({ message: fullUserPrompt, fileIds });
   }
 
   async function editAndResend(messageId: string, content: string) {
@@ -297,7 +332,16 @@ function ChatsContent() {
                   projectId={projectId}
                   onSelectProject={setProjectId}
                   placeholder="Ask anything or start with an unformed thought..."
+                  attachedFiles={attachedFiles}
+                  onAttachFile={attachFile}
+                  onRemoveAttachedFile={removeAttachedFile}
+                  isUploadingFile={uploadingFile}
                 />
+                {fileUploadError ? (
+                  <p className="mt-2 text-center text-xs font-semibold text-red-600">
+                    {fileUploadError}
+                  </p>
+                ) : null}
 
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                   {[
@@ -342,6 +386,10 @@ function ChatsContent() {
                 projects={projects}
                 projectId={projectId}
                 onSelectProject={setProjectId}
+                attachedFiles={attachedFiles}
+                onAttachFile={attachFile}
+                onRemoveAttachedFile={removeAttachedFile}
+                isUploadingFile={uploadingFile}
                 onRecap={() =>
                   requestReply({
                     message:
@@ -349,6 +397,11 @@ function ChatsContent() {
                   })
                 }
               />
+              {fileUploadError ? (
+                <p className="mt-2 text-xs font-semibold text-red-600">
+                  {fileUploadError}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}

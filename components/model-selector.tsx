@@ -13,8 +13,8 @@ type ModelOption = {
 
 const MODELS: ModelOption[] = [
   {
-    id: "lumen-1",
-    name: "Lumen 1",
+    id: "selrano-1",
+    name: "Selrano 1",
     description: "Flagship thinking partner for exploring ideas and making decisions.",
     tag: "Active",
     active: true,
@@ -61,7 +61,7 @@ export function ModelSelector() {
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <span>Lumen 1</span>
+        <span>Selrano 1</span>
         <ChevronDown
           size={14}
           className={`text-neutral-400 transition-transform duration-150 group-hover:text-neutral-700 ${

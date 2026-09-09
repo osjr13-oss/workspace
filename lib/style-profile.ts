@@ -62,8 +62,8 @@ function directiveFromDimensions(dimensions: StyleDimensions) {
         : "Use concise, conversational sentences.";
   const structure =
     dimensions.listRate > 0.35
-      ? "Use clean lists when they make the answer easier to scan."
-      : "Prefer connected prose unless a list is clearly useful.";
+      ? "Use clean lists and bullet points to break down complex ideas."
+      : "Use clear, separated paragraphs with generous spacing between ideas, and lists when helpful.";
   const energy =
     dimensions.exclamationRate > 0.25
       ? "A little visible enthusiasm is welcome."

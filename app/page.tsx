@@ -52,7 +52,7 @@ export default function LandingPage() {
 
           <div className="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-10 text-center sm:px-12 sm:pt-20">
             <p className="text-xs font-semibold tracking-[0.16em] uppercase text-white/60">
-              Introducing Lumen 1
+              Introducing Selrano
             </p>
             <h1 className="mt-5 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-[-0.04em] text-white leading-[1.04] text-balance">
               Where early thoughts turn into clear decisions.
@@ -95,7 +95,7 @@ export default function LandingPage() {
             Designed for depth. Grounded in your truth.
           </h2>
           <p className="mt-3 text-base text-neutral-600 leading-relaxed">
-            Lumen 1 is built around how people actually solve hard problems: starting with messy thoughts, pulling in private sources, and refining decisions over time.
+            Selrano is built around how people actually solve hard problems: starting with messy thoughts, pulling in private sources, and refining decisions over time.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export default function LandingPage() {
                 Learns your cadence without losing the facts.
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-                Lumen 1 adapts to your writing tone and thinking structure as you work together. It never reverts to robotic fluff, empty pleasantries, or generic templates.
+                Selrano adapts to your writing tone and thinking structure as you work together. It never reverts to robotic fluff, empty pleasantries, or generic templates.
               </p>
             </div>
           </Reveal>
@@ -198,7 +198,7 @@ export default function LandingPage() {
             Every clear decision begins with an unhurried thought.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-xl mx-auto leading-relaxed">
-            Start free with Lumen 1. Ground your sources, refine your ideas, and keep your workspace organized.
+            Start free with Selrano. Ground your sources, refine your ideas, and keep your workspace organized.
           </p>
           <div className="mt-8 flex justify-center">
             <Link

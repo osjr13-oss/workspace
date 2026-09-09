@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Check,
-  CheckCheck,
-  Copy,
-  Pencil,
-  RefreshCw,
-  Volume2,
-  VolumeX,
-  X
-} from "lucide-react";
+import { CheckCheck, Copy, Pencil, RefreshCw } from "lucide-react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CitationBadge } from "@/components/citation-badge";
@@ -32,6 +23,12 @@ function urlTransform(url: string) {
   return url.startsWith("citation:") ? url : defaultUrlTransform(url);
 }
 
+function formatStructuredContent(raw: string) {
+  // Ensures single newlines following sentence endings become double newlines
+  // so markdown parser renders clean distinct paragraphs rather than collapsing into one block.
+  return raw.replace(/([.!?:])\n(?!\n)/g, "$1\n\n");
+}
+
 export function ChatMessageBubble({
   message,
   busy,
@@ -42,13 +39,11 @@ export function ChatMessageBubble({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(content);
   const [copied, setCopied] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, []);
 
@@ -74,27 +69,12 @@ export function ChatMessageBubble({
     }
   }
 
-  function toggleSpeech() {
-    if (!("speechSynthesis" in window)) return;
-    if (speaking) {
-      window.speechSynthesis.cancel();
-      setSpeaking(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.rate = 1;
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    setSpeaking(true);
-  }
+  const structuredContent = formatStructuredContent(content);
 
   return (
     <article
       className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
-      aria-label={message.role === "user" ? "Your thought" : "Lumen response"}
+      aria-label={message.role === "user" ? "Your thought" : "Selrano response"}
     >
       <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
         {editing ? (
@@ -151,7 +131,7 @@ export function ChatMessageBubble({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               urlTransform={urlTransform}
-              className="prose max-w-none text-neutral-900 prose-p:my-0 prose-p:mb-4 prose-p:text-[15.5px] prose-p:leading-[1.7] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-neutral-900 prose-h2:mt-6 prose-h2:mb-3 prose-h3:mt-4 prose-h3:mb-2 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-li:text-[15.5px] prose-li:leading-[1.7] prose-strong:font-semibold prose-strong:text-neutral-900 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-4 prose-blockquote:text-neutral-600 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-xl prose-pre:bg-neutral-900 prose-pre:p-4 prose-pre:text-xs"
+              className="prose max-w-none text-neutral-900 prose-p:my-0 prose-p:mb-5 prose-p:text-[15.5px] prose-p:leading-[1.75] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-neutral-900 prose-h2:mt-7 prose-h2:mb-3 prose-h3:mt-5 prose-h3:mb-2 prose-ul:my-4 prose-ol:my-4 prose-li:my-1.5 prose-li:text-[15.5px] prose-li:leading-[1.75] prose-strong:font-semibold prose-strong:text-neutral-900 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-4 prose-blockquote:text-neutral-600 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-xl prose-pre:bg-neutral-900 prose-pre:p-4 prose-pre:text-xs"
               components={
                 message.citations?.length
                   ? {
@@ -173,7 +153,7 @@ export function ChatMessageBubble({
                   : undefined
               }
             >
-              {message.citations?.length ? withCitationLinks(content) : content}
+              {message.citations?.length ? withCitationLinks(structuredContent) : structuredContent}
             </ReactMarkdown>
             {!message.id.startsWith("streaming") && message.id !== "error" ? (
               <div className="mt-2 flex items-center gap-1 text-neutral-400">
@@ -185,15 +165,6 @@ export function ChatMessageBubble({
                   title={copied ? "Copied" : "Copy"}
                 >
                   {copied ? <CheckCheck size={14} className="text-neutral-900" /> : <Copy size={14} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleSpeech}
-                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
-                  aria-label={speaking ? "Stop reading response" : "Read response aloud"}
-                  title={speaking ? "Stop reading" : "Read aloud"}
-                >
-                  {speaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
                 </button>
                 <button
                   type="button"
