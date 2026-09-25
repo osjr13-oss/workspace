@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #f3f1eb;
+  --sidebar: #e8e5dd;
+  --paper: #fffcf8;
+  --ink: #1c1c1a;
+  --muted: #6f6d66;
+  --line: #ddd9d0;
+  --user: #e7e4dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.chat-copy p,
+.chat-copy ul,
+.chat-copy ol,
+.chat-copy pre,
+.chat-copy blockquote {
+  margin: 0 0 0.9rem;
+}
+
+.chat-copy p:last-child,
+.chat-copy ul:last-child,
+.chat-copy ol:last-child {
+  margin-bottom: 0;
+}
+
+.chat-copy ul,
+.chat-copy ol {
+  padding-left: 1.2rem;
+}
+
+.chat-copy a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+
+.chat-copy code {
+  font-size: 0.85em;
+  background: #efece4;
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+
+.chat-copy pre {
+  overflow: auto;
+  background: #1c1c1a;
+  color: #f6f5f2;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+}
+
+.chat-copy pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
