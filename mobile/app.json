@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Selrano",
+    "slug": "selrano",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "selrano",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.selrano.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "package": "com.selrano.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
