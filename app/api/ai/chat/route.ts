@@ -25,9 +25,7 @@ export async function POST(request: Request) {
       projectId?: string | null;
       editMessageId?: string;
       regenerateMessageId?: string;
-      fileIds?: string[];
     };
-    const fileIds = Array.isArray(body.fileIds) ? body.fileIds.filter(Boolean) : [];
     let userContent = removeEmDashes(body.message || "").trim();
 
     let threadId = body.threadId || null;
@@ -166,39 +164,18 @@ export async function POST(request: Request) {
       if (userMessageError) throw userMessageError;
     }
 
-    const [historyResult, context, styleProfile, memories, attachedFilesResult] = await Promise.all([
+    const [historyResult, context, styleProfile, memories] = await Promise.all([
       supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(16),
       loadProjectContext(supabase, projectId, userContent),
       ingestUserStyle(supabase, user.id, userContent),
-      retrieveMemories(supabase, user.id, userContent),
-      fileIds.length > 0
-        ? supabase.from("files").select("id, name, extracted_text").in("id", fileIds).eq("user_id", user.id)
-        : Promise.resolve({ data: [] })
+      retrieveMemories(supabase, user.id, userContent)
     ]);
-
-    const attachedCitations: Record<string, Citation> = {};
-    const attachedFiles = (attachedFilesResult.data || []) as Array<{ id: string; name: string; extracted_text: string | null }>;
-    const attachedText = attachedFiles
-      .filter((f) => f.extracted_text && f.extracted_text.trim())
-      .map((f, i) => {
-        const marker = String(Object.keys(context.citations).length + i + 1);
-        attachedCitations[marker] = {
-          marker,
-          fileId: f.id,
-          fileName: f.name,
-          pageNumber: null,
-          charStart: null,
-          charEnd: null
-        };
-        return `[${marker}] Attached document "${f.name}":\n${f.extracted_text!.slice(0, 16000)}`;
-      })
-      .join("\n\n---\n\n");
 
     const messages = [
       {
         role: "system" as const,
         content:
-          "You are Lumen, a thoughtful thinking partner and workspace companion inside Selrano for exploring ideas and deciding what to do. Answer directly without preamble or sign-offs. Never start by listing your capabilities. Help the person make progress from incomplete thoughts. If they say 'I don't know', take initiative: offer two or three concrete possibilities, a small example, or a reversible experiment. Do not turn uncertainty into an interrogation. Ask at most one focused question in a response, and only when it helps. Track what the user accepted, rejected, and remains uncertain about in this conversation. Never recycle an explicitly rejected option without a new reason. Separate user decisions from your suggestions. Be warm, candid, and concrete. Format and structure your answers cleanly for effortless reading: separate distinct thoughts into well-spaced paragraphs using double line breaks. Never combine all thoughts into a single dense wall of text. Use clean markdown bullet points or numbered lists when presenting options, trade-offs, steps, or observations. Use short bold keywords to make sections easy to scan. Offer respectful disagreement with reasons when useful. Avoid flattery, hype, canned motivational speeches, diagnostic labels, and claims of guaranteed success. Explain material tradeoffs. If asked 'Where we are', summarize: current direction, decisions the user actually made, remaining uncertainty, and one possible next step. Never use em dashes, en dashes, double hyphens, or hyphens for punctuation or pauses. Structure thoughts using clean sentences, commas, colons, or periods instead. Only use hyphens when strictly necessary inside a standard compound word. If project context or attached documents are relevant, use them naturally without announcing that you are doing so. Treat attached documents and project context as the source of truth for facts about the user's materials. Do not add unsupported claims about those materials. If the context does not cover the question, say so plainly instead of guessing. Answer unrelated general questions normally. When stating a fact drawn from project context or attached documents, add the matching reference id in brackets immediately after the claim, like this: <claim> [1]. Cite only ids that were provided."
+          "You are Selrano, an adaptive AI workspace assistant. Answer directly without preamble or sign-offs. Never start by listing your capabilities. Use bullets or numbered lists only when requested or when the content is genuinely list-like. Write in plain prose and keep responses focused. Never use an em dash. If project context is relevant, use it naturally without announcing that you are doing so. Treat project context as the source of truth for facts about the user's own notes and files. Do not add unsupported claims about those materials. If the context does not cover the question, say so plainly instead of guessing. This grounding rule applies only to the user's own material. Answer unrelated general questions normally. When stating a fact drawn from project context, add the matching reference id in brackets immediately after the claim, like this: <claim> [1]. Cite only ids that were provided."
       },
       ...(styleProfile?.styleDirective
         ? [
@@ -215,14 +192,6 @@ export async function POST(request: Request) {
               content:
                 "Durable personal context learned from earlier conversations follows. Use it only when relevant. It is not source evidence and must never be cited as project material.\n" +
                 memories.map((memory) => `- ${memory}`).join("\n")
-            }
-          ]
-        : []),
-      ...(attachedText
-        ? [
-            {
-              role: "system" as const,
-              content: `The user attached the following document(s) directly to this message. Use their contents as direct primary source context to answer the question:\n\n${attachedText}`
             }
           ]
         : []),
@@ -262,9 +231,9 @@ export async function POST(request: Request) {
       supabase,
       userId: user.id,
       projectId,
-      citationOffset: Object.keys(context.citations).length + Object.keys(attachedCitations).length
+      citationOffset: Object.keys(context.citations).length
     });
-    const allCitations = { ...context.citations, ...attachedCitations, ...webCitations };
+    const allCitations = { ...context.citations, ...webCitations };
 
     const encoder = new TextEncoder();
 

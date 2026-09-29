@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCheck, Copy, Pencil, RefreshCw } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  Copy,
+  Pencil,
+  RefreshCw,
+  Volume2,
+  VolumeX,
+  X
+} from "lucide-react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CitationBadge } from "@/components/citation-badge";
@@ -23,12 +32,6 @@ function urlTransform(url: string) {
   return url.startsWith("citation:") ? url : defaultUrlTransform(url);
 }
 
-function formatStructuredContent(raw: string) {
-  // Ensures single newlines following sentence endings become double newlines
-  // so markdown parser renders clean distinct paragraphs rather than collapsing into one block.
-  return raw.replace(/([.!?:])\n(?!\n)/g, "$1\n\n");
-}
-
 export function ChatMessageBubble({
   message,
   busy,
@@ -39,11 +42,13 @@ export function ChatMessageBubble({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(content);
   const [copied, setCopied] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, []);
 
@@ -69,69 +74,82 @@ export function ChatMessageBubble({
     }
   }
 
-  const structuredContent = formatStructuredContent(content);
+  function toggleSpeech() {
+    if (!("speechSynthesis" in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.rate = 1;
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    setSpeaking(true);
+  }
 
   return (
     <article
       className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
-      aria-label={message.role === "user" ? "Your thought" : "Lumen response"}
+      aria-label={message.role === "user" ? "Your message" : "Selrano response"}
     >
       <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
         {editing ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-white/90 p-4 shadow-sm sm:min-w-[min(34rem,70vw)]">
+          <div className="rounded-[26px] bg-[var(--surface-subtle)] p-4 sm:min-w-[min(34rem,70vw)]">
             <textarea
-              aria-label="Edit thought"
-              className="min-h-28 w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
+              aria-label="Edit message"
+              className="min-h-28 w-full resize-y rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
               value={draft}
               onChange={(event) => setDraft(removeEmDashes(event.target.value))}
               autoFocus
             />
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="mt-2 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setEditing(false);
                   setDraft(content);
                 }}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)] transition"
+                className="rounded-full p-2 text-[var(--muted)] hover:bg-white hover:text-[var(--text)]"
                 aria-label="Cancel editing"
               >
-                Cancel
+                <X size={15} />
               </button>
               <button
                 type="button"
                 onClick={saveEdit}
-                className="rounded-full bg-[var(--text)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition"
+                className="rounded-full bg-[var(--text)] p-2 text-white"
                 aria-label="Save and resend"
               >
-                Save
+                <Check size={15} />
               </button>
             </div>
           </div>
         ) : message.role === "user" ? (
-          <div className="rounded-3xl bg-neutral-100 px-5 py-3 text-[15px] leading-relaxed text-neutral-900">
+          <div className="rounded-[26px] bg-[rgba(21,24,31,0.055)] px-5 py-4 text-[15px] font-medium leading-7 text-[var(--text)] sm:px-6 sm:py-5 sm:text-base">
             <p className="whitespace-pre-wrap">{content}</p>
             {!message.id.startsWith("pending") && message.id !== "error" ? (
-              <div className="mt-1 flex items-center justify-end">
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  disabled={busy}
-                  className="rounded p-1 text-neutral-400 opacity-0 transition hover:text-neutral-800 group-hover:opacity-100 focus:opacity-100"
-                  aria-label="Edit thought"
-                  title="Edit"
-                >
-                  <Pencil size={12} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={busy}
+                className="mt-2 rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-white/70 hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
+                aria-label="Edit and resend message"
+                title="Edit and resend"
+              >
+                <Pencil size={14} />
+              </button>
             ) : null}
           </div>
         ) : (
-          <div className="py-1">
+          <div className="py-2">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               urlTransform={urlTransform}
-              className="prose max-w-none text-neutral-900 prose-p:my-0 prose-p:mb-5 prose-p:text-[15.5px] prose-p:leading-[1.75] prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-neutral-900 prose-h2:mt-7 prose-h2:mb-3 prose-h3:mt-5 prose-h3:mb-2 prose-ul:my-4 prose-ol:my-4 prose-li:my-1.5 prose-li:text-[15.5px] prose-li:leading-[1.75] prose-strong:font-semibold prose-strong:text-neutral-900 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-4 prose-blockquote:text-neutral-600 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-pre:rounded-xl prose-pre:bg-neutral-900 prose-pre:p-4 prose-pre:text-xs"
+              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-8 prose-headings:font-extrabold prose-headings:tracking-tight prose-li:text-[16px] prose-li:leading-8 prose-strong:font-extrabold prose-code:text-xs prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
               components={
                 message.citations?.length
                   ? {
@@ -153,28 +171,37 @@ export function ChatMessageBubble({
                   : undefined
               }
             >
-              {message.citations?.length ? withCitationLinks(structuredContent) : structuredContent}
+              {message.citations?.length ? withCitationLinks(content) : content}
             </ReactMarkdown>
             {!message.id.startsWith("streaming") && message.id !== "error" ? (
-              <div className="mt-2 flex items-center gap-1 text-neutral-400">
+              <div className="mt-2 flex items-center gap-1 text-[var(--muted)]">
                 <button
                   type="button"
                   onClick={copyResponse}
-                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label={copied ? "Response copied" : "Copy response"}
                   title={copied ? "Copied" : "Copy"}
                 >
-                  {copied ? <CheckCheck size={14} className="text-neutral-900" /> : <Copy size={14} />}
+                  {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleSpeech}
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
+                  aria-label={speaking ? "Stop reading response" : "Read response aloud"}
+                  title={speaking ? "Stop reading" : "Read aloud"}
+                >
+                  {speaking ? <VolumeX size={17} /> : <Volume2 size={17} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => onRegenerate(message.id)}
                   disabled={busy}
-                  className="rounded p-1.5 transition hover:bg-neutral-100 hover:text-neutral-800"
+                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
                   aria-label="Regenerate response"
                   title="Regenerate"
                 >
-                  <RefreshCw size={14} />
+                  <RefreshCw size={16} />
                 </button>
               </div>
             ) : null}

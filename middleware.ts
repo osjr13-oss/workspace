@@ -65,10 +65,10 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    const chats = request.nextUrl.clone();
-    chats.pathname = "/chats";
-    chats.search = "";
-    return NextResponse.redirect(chats);
+    const dashboard = request.nextUrl.clone();
+    dashboard.pathname = "/dashboard";
+    dashboard.search = "";
+    return NextResponse.redirect(dashboard);
   }
 
   return response;

@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpen,
+  Brain,
+  BrainCircuit,
   Files,
   FolderOpen,
-  GraduationCap,
   Home,
-  Layers,
   LifeBuoy,
   LogOut,
   MessageSquare,
@@ -20,13 +20,13 @@ import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const nav = [
+  { href: "/dashboard", label: "Workspace", icon: Home },
   { href: "/chats", label: "Chats", icon: MessageSquare },
   { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/notes", label: "Notes", icon: BookOpen },
   { href: "/files", label: "Files", icon: Files },
-  { href: "/flashcards", label: "Flashcards", icon: Layers },
-  { href: "/study", label: "Study", icon: GraduationCap },
-  { href: "/dashboard", label: "Workspace", icon: Home }
+  { href: "/notes", label: "Notes", icon: BookOpen },
+  { href: "/flashcards", label: "Flashcards", icon: Brain },
+  { href: "/study", label: "Study", icon: BrainCircuit }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -55,10 +55,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="layout-grid">
       <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-[var(--border)] bg-[rgba(255,255,255,0.42)] px-5 py-6 backdrop-blur-xl lg:flex lg:flex-col">
-        <SelranoLogo href="/chats" />
+        <SelranoLogo href="/dashboard" />
         <Link href="/chats" className="btn-secondary mt-8 justify-start px-4">
           <Plus size={18} />
-          New thought
+          New chat
         </Link>
         <nav className="mt-7 space-y-1">
           {nav.map((item) => {
@@ -115,11 +115,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-w-0">
         <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(247,245,240,0.84)] backdrop-blur-xl lg:hidden">
           <div className="flex items-center justify-between px-5 py-4">
-            <SelranoLogo href="/chats" />
+            <SelranoLogo href="/dashboard" />
             <div className="flex items-center gap-2">
               <Link href="/chats" className="btn-primary min-h-10 px-4 text-sm">
                 <Plus size={17} />
-                Thought
+                Chat
               </Link>
               <button
                 type="button"

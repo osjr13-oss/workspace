@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, Files, FolderOpen, Layers, MessageSquare, Plus } from "lucide-react";
+import { BookOpen, Brain, Files, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { QuickActions } from "@/components/quick-actions";
@@ -56,21 +56,21 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
-      <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Workspace">
+      <WorkspaceHeader title={`Good ${getDayPart()}, ${name}.`} eyebrow="Home">
         <Link href="/chats" className="btn-primary">
           <Plus size={18} />
-          New thought
+          New chat
         </Link>
       </WorkspaceHeader>
 
-      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)] transition">
+      <Link href="/chats" className="panel flex items-center justify-between p-6 hover:border-[var(--border-strong)]">
         <div className="flex items-center gap-4">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-subtle)]">
             <MessageSquare size={21} />
           </span>
           <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Work through a thought with Lumen 1</h2>
-            <p className="text-sm text-[var(--muted)]">Explore an early idea, weigh options, or organize project materials.</p>
+            <h2 className="text-base font-extrabold tracking-[-0.01em]">Ask your workspace a question</h2>
+            <p className="text-sm text-[var(--muted)]">Use a project to include notes, files, and flashcards as context.</p>
           </div>
         </div>
         <Plus size={20} />
@@ -80,11 +80,11 @@ export default function DashboardPage() {
         <Stat icon={<FolderOpen size={20} />} label="Projects" value={counts.projects.toString()} />
         <Stat icon={<BookOpen size={20} />} label="Notes" value={counts.notes.toString()} />
         <Stat icon={<Files size={20} />} label="Files" value={counts.files.toString()} />
-        <Stat icon={<Layers size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
+        <Stat icon={<Brain size={20} />} label="Flashcards" value={counts.flashcards.toString()} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <PanelList title="Recent thoughts" href="/chats" empty="No thoughts yet">
+        <PanelList title="Recent chats" href="/chats" empty="No chats yet">
           {chats.map((chat) => (
             <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
               <span className="font-bold">{chat.title}</span>

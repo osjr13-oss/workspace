@@ -1,196 +1,125 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp, BookOpen, Check, Copy, FileText } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUpRight, BookOpenText, Files, Globe2, LibraryBig } from "lucide-react";
+import { motion } from "framer-motion";
+import { useSpotlight } from "@/components/use-spotlight";
 
-interface PromptScenario {
-  id: string;
-  pill: string;
-  attachment: string;
-  query: string;
-  citation: string;
-  response: string;
-  actionTaken: string;
-}
+const NAV_ITEMS = ["Chats", "Workspace", "Projects", "Files", "Notes", "Flashcards"];
 
-const SCENARIOS: PromptScenario[] = [
-  {
-    id: "architecture",
-    pill: "Weigh architecture trade-offs",
-    attachment: "Q3 Architecture RFC.pdf",
-    query: "Compare our edge caching plan against regional replicas, referencing the Q3 RFC.",
-    citation: "Q3 Architecture RFC.pdf (Page 4, Section 2.1)",
-    response: "Looking at your RFC specs, edge caching cuts p99 latency by 42ms for global readers, but increases cache invalidation complexity across 18 points of presence. If your write frequency exceeds 100 updates per minute, regional replicas provide stronger consistency guarantees with fewer sync races.",
-    actionTaken: "Saved to Notes",
-  },
-  {
-    id: "strategy",
-    pill: "Pressure-test launch strategy",
-    attachment: "Launch Strategy Brief.md",
-    query: "Where are the biggest distribution bottlenecks in our launch timeline?",
-    citation: "Launch Strategy Brief.md (Milestones)",
-    response: "The primary risk is the two-week gap between the closed beta feedback cutoff and public onboarding. If onboarding setup takes more than three steps, self-serve conversion will drop before users experience your adaptive style profiles.",
-    actionTaken: "Added to Review Deck",
-  },
-  {
-    id: "research",
-    pill: "Extract synthesis from notes",
-    attachment: "Customer Interviews.txt",
-    query: "What recurring objection appeared across our ten user conversations?",
-    citation: "Customer Interviews.txt (Interviews 3, 7, 9)",
-    response: "Seven of ten users hesitated at complex onboarding menus. They wanted a single empty composer where they could start typing immediately, with model choices and source attachments available in the bottom toolbar when needed.",
-    actionTaken: "Synthesized into Notes",
-  },
+const DETAIL_CARDS = [
+  { title: "Style", body: "Direct, concise, and shaped around how you communicate." },
+  { title: "Memory", body: "Useful preferences and ongoing work stay available." },
+  { title: "Sources", body: "Project files and web results remain clearly cited." },
+  { title: "Control", body: "Edit, resend, regenerate, and keep moving." },
 ];
 
 export function LandingPreview() {
-  const [activeId, setActiveId] = useState<string>("architecture");
-  const [copied, setCopied] = useState(false);
-
-  const scenario = SCENARIOS.find((s) => s.id === activeId) ?? SCENARIOS[0];
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(scenario.response);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const { spotlightProps } = useSpotlight<HTMLDivElement>();
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <div className="relative mx-auto w-full max-w-4xl">
-      {/* Outer ambient glow */}
-      <div
-        className="pointer-events-none absolute -inset-4 rounded-[32px] opacity-40 blur-2xl transition-opacity duration-500"
-        style={{
-          background: "radial-gradient(ellipse at center, rgba(140, 155, 240, 0.25) 0%, rgba(20, 22, 35, 0) 70%)",
-        }}
-      />
-
-      {/* Main product window */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/12 bg-[#11121a]/95 text-white shadow-2xl backdrop-blur-2xl">
-        {/* Subtle window chrome */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3 bg-white/[0.02]">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="ml-2 text-xs font-medium text-white/40 tracking-tight">selrano.com/chats</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-white/70">
-              Lumen 1
-            </span>
-          </div>
-        </div>
-
-        {/* Content area */}
-        <div className="p-5 sm:p-7 space-y-6">
-          {/* Scenario selector chips */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-white/40 font-medium mr-1 hidden sm:inline">Try scenario:</span>
-            {SCENARIOS.map((item) => {
-              const isSelected = item.id === activeId;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveId(item.id)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                    isSelected
-                      ? "bg-white text-black shadow-sm"
-                      : "bg-white/[0.06] text-white/70 hover:bg-white/[0.12] hover:text-white"
+    <div
+      id="workspace"
+      className="panel spotlight overflow-hidden p-4"
+      style={{
+        ...spotlightProps.style,
+        ["--spot-size" as string]: "360px",
+      }}
+      ref={spotlightProps.ref}
+      onMouseMove={spotlightProps.onMouseMove}
+      onMouseEnter={spotlightProps.onMouseEnter}
+      onMouseLeave={spotlightProps.onMouseLeave}
+      data-active={spotlightProps["data-active"]}
+    >
+      <div className="grid min-h-[520px] grid-cols-[190px_1fr] overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--background-elevated)] max-sm:grid-cols-1">
+        <aside
+          className="border-r border-[var(--border)] p-4 max-sm:hidden"
+          onMouseLeave={() => setHovered(null)}
+        >
+          {NAV_ITEMS.map((item, index) => {
+            const isActive = index === 0;
+            const isHovered = hovered === index;
+            return (
+              <div
+                key={item}
+                onMouseEnter={() => setHovered(index)}
+                className={`relative mb-2 cursor-pointer rounded-2xl px-3 py-3 text-sm font-bold transition-colors duration-200 ${
+                  isActive || isHovered ? "text-[var(--text)]" : "text-[var(--muted)]"
+                }`}
+              >
+                {isHovered && (
+                  <motion.div
+                    layoutId="hoverPill"
+                    className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
+                  />
+                )}
+                {isActive && !isHovered && (
+                  <span className="absolute inset-0 rounded-2xl bg-[var(--surface-subtle)]" />
+                )}
+                <span className="relative z-10">{item}</span>
+              </div>
+            );
+          })}
+        </aside>
+        <div className="p-6">
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
+          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
+          <motion.div
+            className="group panel mt-10 overflow-hidden shadow-none"
+            initial={false}
+            whileHover={{ y: -2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 24 }}
+          >
+            <div className="flex items-start justify-between gap-6 p-6">
+              <div>
+                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
+                  <LibraryBig size={14} strokeWidth={2.25} />
+                  Grounded workspace
+                </p>
+                <p className="mt-4 text-xl font-extrabold tracking-[-0.025em]">Every source stays in its place.</p>
+                <p className="mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">
+                  Bring notes, files, and live research into one answer without losing where anything came from.
+                </p>
+              </div>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--text)] text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                <ArrowUpRight size={18} strokeWidth={2.25} />
+              </span>
+            </div>
+            <div className="grid grid-cols-3 border-t border-[var(--border)] bg-white/38">
+              {[
+                { label: "Notes", Icon: BookOpenText },
+                { label: "Files", Icon: Files },
+                { label: "Live web", Icon: Globe2 }
+              ].map(({ label, Icon }, index) => (
+                <div
+                  key={label}
+                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-[var(--muted-strong)] ${
+                    index > 0 ? "border-l border-[var(--border)]" : ""
                   }`}
                 >
-                  {item.pill}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Composer Capsule */}
-          <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4 shadow-inner transition-all">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={scenario.id}
-                initial={{ opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -3 }}
-                transition={{ duration: 0.18 }}
-                className="text-sm sm:text-base font-normal text-white/90 leading-relaxed min-h-[44px]"
-              >
-                {scenario.query}
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Bottom Toolbar inside capsule */}
-            <div className="mt-3 flex items-center justify-between border-t border-white/[0.08] pt-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/80 font-medium">
-                  <FileText size={12} className="text-white/60" />
-                  <span className="truncate max-w-[180px]">{scenario.attachment}</span>
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <span className="text-xs font-medium text-white/60">Lumen 1</span>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black shadow-sm">
-                  <ArrowUp size={14} strokeWidth={2.5} />
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Assistant Response Card */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={scenario.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22 }}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-3"
-            >
-              {/* Citation badge */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  <span className="text-xs font-medium text-white/50">
-                    Grounded in <span className="text-white/80 font-semibold">{scenario.citation}</span>
-                  </span>
+                  <Icon size={15} strokeWidth={2.1} className="text-[var(--muted)]" />
+                  {label}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="flex items-center gap-1 text-[11px] font-medium text-white/50 hover:text-white transition-colors"
-                >
-                  {copied ? (
-                    <>
-                      <Check size={12} className="text-emerald-400" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={12} />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Response body */}
-              <p className="text-sm leading-relaxed text-white/85 font-normal">
-                {scenario.response}
-              </p>
-
-              {/* Action summary */}
-              <div className="flex items-center gap-2 pt-1 border-t border-white/[0.06]">
-                <BookOpen size={12} className="text-white/40" />
-                <span className="text-xs text-white/50 font-medium">
-                  {scenario.actionTaken}
-                </span>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+              ))}
+            </div>
+          </motion.div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {DETAIL_CARDS.map((item) => (
+              <motion.div
+                key={item.title}
+                className="rounded-[16px] border border-[var(--border)] bg-white/60 p-5"
+                initial={false}
+                whileHover={{ y: -3 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+              >
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
+                <p className="mt-6 text-sm font-bold leading-6 text-[var(--muted-strong)]">{item.body}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

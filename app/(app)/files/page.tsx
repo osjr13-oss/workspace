@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Trash2, Upload as UploadIcon } from "lucide-react";
-import { uploadFileResumable } from "@/lib/file-upload";
+import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { FileProcessingStatus } from "@/components/file-processing-status";
@@ -174,4 +174,40 @@ function FilesContent() {
       )}
     </div>
   );
+}
+
+function uploadFileResumable(file: File, storagePath: string, token: string, onProgress: (progress: number) => void) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return Promise.reject(new Error("Storage is not configured."));
+  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+
+  return new Promise<void>((resolve, reject) => {
+    const upload = new TusUpload(file, {
+      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable/sign`,
+      headers: { "x-signature": token },
+      chunkSize: 6 * 1024 * 1024,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: "workspace-files",
+        objectName: storagePath,
+        contentType: file.type || "application/octet-stream"
+      },
+      onError(error) {
+        reject(error);
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        onProgress(Math.round((bytesUploaded / bytesTotal) * 100));
+      },
+      onSuccess() {
+        resolve();
+      }
+    });
+
+    upload.findPreviousUploads().then((previousUploads) => {
+      if (previousUploads.length) upload.resumeFromPreviousUpload(previousUploads[0]);
+      upload.start();
+    }).catch(reject);
+  });
 }
