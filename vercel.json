@@ -1,6 +1,8 @@
 {
-  "framework": null,
-  "installCommand": "",
-  "buildCommand": "",
-  "outputDirectory": "public"
+  "crons": [
+    {
+      "path": "/api/cron/lifecycle-emails",
+      "schedule": "0 14 * * *"
+    }
+  ]
 }
