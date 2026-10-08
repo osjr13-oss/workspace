@@ -23,10 +23,6 @@ test("support pages and email are removed", async ({ page }) => {
 });
 
 test("protected routes redirect signed-out visitors to sign in", async ({ page }) => {
-  test.skip(
-    !process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.E2E_BASE_URL,
-    "Redirects need Supabase configured (or E2E_BASE_URL pointing at a deployed app)."
-  );
   await page.goto("/chats");
   await expect(page).toHaveURL(/signin/);
 });

@@ -17,11 +17,11 @@ export const toolDefinitions = [
     function: {
       name: "search_workspace",
       description:
-        "Search the user's own notes and uploaded files for relevant text. Use when the user asks about their materials or you need facts from their documents before answering.",
+        "Search the user's notes and uploaded files.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "What to look for, in plain words." }
+          query: { type: "string", description: "What to look for." }
         },
         required: ["query"]
       }
@@ -32,7 +32,7 @@ export const toolDefinitions = [
     function: {
       name: "web_search",
       description:
-        "Search the live web for current, real-time, or recent information. Use this whenever you are not confident your training data is current enough to answer well: news, prices, recent releases, current events, or anything about people, products, or facts that may have changed since your training cutoff.",
+        "Search the live web for current or recent information.",
       parameters: {
         type: "object",
         properties: {
@@ -46,12 +46,12 @@ export const toolDefinitions = [
     type: "function",
     function: {
       name: "create_note",
-      description: "Create a new note in the user's workspace. Use only when the user clearly asks you to write, draft, or save a note.",
+      description: "Create a note. Only when the user asks to write or save one.",
       parameters: {
         type: "object",
         properties: {
-          title: { type: "string", description: "Short title for the note." },
-          content: { type: "string", description: "The note body, in Markdown." }
+          title: { type: "string", description: "Note title." },
+          content: { type: "string", description: "Note body in Markdown." }
         },
         required: ["title", "content"]
       }
@@ -61,19 +61,19 @@ export const toolDefinitions = [
     type: "function",
     function: {
       name: "create_flashcards",
-      description: "Create a new flashcard deck with cards. Use only when the user clearly asks for flashcards or study cards.",
+      description: "Create a flashcard deck. Only when the user asks for flashcards.",
       parameters: {
         type: "object",
         properties: {
-          deck_name: { type: "string", description: "Name for the new deck." },
+          deck_name: { type: "string", description: "Deck name." },
           cards: {
             type: "array",
-            description: "The flashcards to create.",
+            description: "Cards.",
             items: {
               type: "object",
               properties: {
-                front: { type: "string", description: "Question or prompt side." },
-                back: { type: "string", description: "Answer side." }
+                front: { type: "string", description: "Question." },
+                back: { type: "string", description: "Answer." }
               },
               required: ["front", "back"]
             }

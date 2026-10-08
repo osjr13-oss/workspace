@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { completeAi } from "@/lib/ai";
+import { allowRequest } from "@/lib/rate-limit";
 import { removeEmDashes } from "@/lib/text";
 
 type MemoryRow = {
@@ -30,6 +31,9 @@ function overlap(query: string, content: string) {
   }
   return matches / queryWords.size;
 }
+
+const PERSONAL_CUE =
+  /\b(?:i am|i['\u2019]m|i have|i['\u2019]ve|i['\u2019]ll|i will|i like|i love|i hate|i prefer|i want|i need|i study|i work|i live|my|we are|we['\u2019]re|our)\b/i;
 
 function isRecallQuery(query: string) {
   return /\b(?:what do you know|what do you remember|remember about me|know about me|my preferences|my goals|who am i|tell me about myself)\b/i.test(
@@ -65,7 +69,7 @@ async function extractMemoryCandidates(source: string, maxCount: number) {
         content: source
       }
     ],
-    { temperature: 0.1 }
+    { temperature: 0.1, maxTokens: 600, background: true }
   );
 
   const match = result.text.match(/\[[\s\S]*\]/);
@@ -149,18 +153,7 @@ export async function retrieveMemories(
   limit = 5
 ) {
   try {
-    let rows = await loadMemoryRows(supabase, userId);
-
-    if (rows.length === 0) {
-      const inserted = await bootstrapMemoriesFromHistory(supabase, userId);
-      if (inserted > 0) {
-        console.info("[memory] history bootstrap completed", {
-          userId,
-          inserted
-        });
-        rows = await loadMemoryRows(supabase, userId);
-      }
-    }
+    const rows = await loadMemoryRows(supabase, userId);
 
     const recallQuery = isRecallQuery(query);
     const ranked = recallQuery
@@ -175,12 +168,17 @@ export async function retrieveMemories(
           .slice(0, limit);
 
     if (ranked.length) {
-      await supabase
+      // Bookkeeping only: never make the reply wait for it.
+      void supabase
         .from("content_memories")
         .update({ last_accessed: new Date().toISOString() })
         .in(
           "id",
           ranked.map((row) => row.id)
+        )
+        .then(
+          () => undefined,
+          () => undefined
         );
     }
 
@@ -191,6 +189,24 @@ export async function retrieveMemories(
   }
 }
 
+/**
+ * For established accounts with no memories yet, learn durable facts from
+ * earlier messages. This is a large model call, so it runs after the reply has
+ * been delivered and at most once a day per account, never in front of an answer.
+ */
+export async function maybeBootstrapMemories(supabase: SupabaseClient, userId: string) {
+  try {
+    const rows = await loadMemoryRows(supabase, userId);
+    if (rows.length > 0) return;
+    if (!(await allowRequest("memory.bootstrap", userId, 1, 86_400))) return;
+
+    const inserted = await bootstrapMemoriesFromHistory(supabase, userId);
+    if (inserted > 0) console.info("[memory] history bootstrap completed", { userId, inserted });
+  } catch (error) {
+    console.error("[memory] bootstrap failed", error);
+  }
+}
+
 export async function extractMemories(
   supabase: SupabaseClient,
   userId: string,
@@ -198,6 +214,9 @@ export async function extractMemories(
   assistantMessage: string
 ) {
   if (userMessage.trim().length < 24) return;
+  // Most messages are plain questions. Only spend a model call when the user is
+  // talking about themselves, their plans, or their preferences.
+  if (!PERSONAL_CUE.test(userMessage)) return;
 
   try {
     const candidates = await extractMemoryCandidates(

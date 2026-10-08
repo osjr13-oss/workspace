@@ -14,6 +14,7 @@ import {
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CitationBadge } from "@/components/citation-badge";
+import { healStreamingMarkdown } from "@/lib/stream-markdown";
 import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage } from "@/lib/types";
 
@@ -39,6 +40,9 @@ export function ChatMessageBubble({
   onRegenerate
 }: ChatMessageProps) {
   const content = removeEmDashes(message.content);
+  // Unfinished formatting at the tail of a reply that is still arriving is tidied so it never flashes as raw symbols.
+  const streaming = message.id.startsWith("streaming");
+  const displayed = streaming ? healStreamingMarkdown(content) : content;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(content);
   const [copied, setCopied] = useState(false);
@@ -171,9 +175,9 @@ export function ChatMessageBubble({
                   : undefined
               }
             >
-              {message.citations?.length ? withCitationLinks(content) : content}
+              {message.citations?.length ? withCitationLinks(displayed) : displayed}
             </ReactMarkdown>
-            {!message.id.startsWith("streaming") && message.id !== "error" ? (
+            {!streaming && message.id !== "error" ? (
               <div className="mt-2 flex items-center gap-1 text-[var(--muted)]">
                 <button
                   type="button"

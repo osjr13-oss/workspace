@@ -97,15 +97,21 @@ export async function ingestUserStyle(
     const confidence = Math.min(1, messageCount / 20);
     const styleDirective = directiveFromDimensions(dimensions);
 
-    const { error } = await supabase.from("style_profiles").upsert({
-      user_id: userId,
-      dimensions,
-      style_directive: styleDirective,
-      confidence,
-      message_count: messageCount,
-      updated_at: new Date().toISOString()
-    });
-    if (error) return null;
+    // The reply only needs the directive, so the write is not awaited.
+    void supabase
+      .from("style_profiles")
+      .upsert({
+        user_id: userId,
+        dimensions,
+        style_directive: styleDirective,
+        confidence,
+        message_count: messageCount,
+        updated_at: new Date().toISOString()
+      })
+      .then(
+        () => undefined,
+        () => undefined
+      );
 
     return { styleDirective, confidence, messageCount };
   } catch {

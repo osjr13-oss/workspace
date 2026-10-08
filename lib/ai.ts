@@ -1,4 +1,12 @@
-import { callGroq, callGroqStructured, groqModel, streamGroq, type GroqChatMessage } from "@/lib/groq";
+import {
+  callGroq,
+  callGroqStructured,
+  groqBackgroundModel,
+  groqFallbackModel,
+  groqModel,
+  streamGroq,
+  type GroqChatMessage
+} from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
 
 type SimpleMessage = {
@@ -97,12 +105,20 @@ export async function completeStructured<T>(params: {
   return { data, provider: "groq", usage: result.usage };
 }
 
+/**
+ * Plain completion. `background` work (memory extraction and the like) runs on
+ * its own model first so it never uses up the main model's rate limit.
+ */
 export async function completeAi(
   messages: SimpleMessage[],
-  options?: { temperature?: number }
+  options?: { temperature?: number; maxTokens?: number; background?: boolean }
 ): Promise<CompletionResult> {
   if (!groqReady()) throw new Error("No AI provider is configured.");
-  const groq = await callGroq(messages, options);
+  const groq = await callGroq(messages, {
+    temperature: options?.temperature,
+    maxTokens: options?.maxTokens,
+    models: options?.background ? [groqBackgroundModel(), groqModel(), groqFallbackModel()] : undefined
+  });
   return {
     text: removeEmDashes(groq.text),
     provider: "groq",
@@ -112,7 +128,7 @@ export async function completeAi(
 
 export async function streamAi(
   messages: GroqChatMessage[],
-  options: { temperature?: number; onToken: (token: string) => void }
+  options: { temperature?: number; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<CompletionResult> {
   if (!groqReady()) throw new Error("No AI provider is configured.");
   return {

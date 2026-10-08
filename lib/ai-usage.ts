@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPlan, PLANS } from "@/lib/plans";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { aiRequestLimit, effectiveTier, getUserLimits } from "@/lib/tier";
 
 function startOfUtcDay() {
@@ -74,4 +75,25 @@ export async function getMonthUsageCount(supabase: SupabaseClient, userId: strin
 /** Usage for the caller's current plan period (UTC day on Free, UTC month on Pro). */
 export async function getPeriodUsageCount(supabase: SupabaseClient, userId: string, period: "day" | "month") {
   return period === "month" ? getMonthUsageCount(supabase, userId) : getTodayUsageCount(supabase, userId);
+}
+
+/**
+ * Gives back the request just reserved when the model could not answer, so a
+ * failure never costs the user one of their messages. Best effort only.
+ */
+export async function refundAiRequest(userId: string, route: string) {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data } = await admin
+      .from("ai_usage_events")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("route", route)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const id = data?.[0]?.id;
+    if (id) await admin.from("ai_usage_events").delete().eq("id", id);
+  } catch (error) {
+    console.error("[ai-usage] refund failed", error);
+  }
 }

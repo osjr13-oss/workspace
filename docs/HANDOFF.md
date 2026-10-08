@@ -115,21 +115,21 @@ The July 24 memory investigation found historical user messages but no content-m
 
 ## AI request lifecycle
 
-1. Authenticate the user and resolve owned thread/project context.
-2. Reserve daily AI usage atomically.
-3. Persist the user message.
-4. Load recent conversation history, project context, style profile, and relevant durable memories.
-5. If an established account has no memories, extract durable facts from earlier user messages before answering.
-6. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer.
-7. If the tool-enabled request fails before any text is shown, retry as a plain streamed answer.
+1. Authenticate the user (API routes skip the middleware session check, so there is one auth round trip, not two).
+2. In parallel: verify thread/project ownership and reserve daily AI usage atomically.
+3. In parallel: load recent history (trimmed to a character budget), project context, style profile, and relevant durable memories, while saving the user message.
+4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer.
+5. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen. The response headers are sent only once the first words exist, so a failure is a clean JSON error, not a broken stream.
+6. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
+7. An empty reply is retried once without tools. If nothing can be produced, the just-saved user message (and a thread created by this request) is removed, the reserved usage is refunded, and the page puts the text back in the box.
 8. Remove em dashes at every model-output boundary.
-9. Persist the assistant response before closing the browser stream.
-10. Update the thread timestamp and extract new durable memories after the response is delivered (`after()`).
-11. Reload the thread from database truth.
+9. Persist the assistant response before closing the stream. Generation runs to completion even if the browser leaves.
+10. After the response (`after()`): update the thread timestamp, extract new durable memories (only when the message is personal; background model `GROQ_BACKGROUND_MODEL`), and bootstrap memories from history at most once a day. None of this is ever in front of an answer.
+11. The page keeps one reply in flight (Enter is ignored while busy), tidies half-streamed Markdown (`lib/stream-markdown.ts`), and hands the streamed bubble over to the saved row without remounting it.
 
-Do not reintroduce an environment switch for streaming, AI actions, or full-text search.
+## Tests
 
-The July 25 investigation found that web search was gated by a keyword regex that missed most real current-info questions (for example "what is X"), and separately that Groq's `llama-3.3-70b-versatile` sometimes emits tool calls as malformed inline text that its own API rejects. Both were fixed and confirmed via production logs: `web_search` is now a model-callable tool run on every message, and malformed tool-call output is parsed and recovered instead of discarded.
+`npm run test:e2e` builds the app and runs it against offline stand-ins for Supabase and Groq (`e2e/support/mock-servers.mjs`), so it needs no accounts. It covers streaming smoothness, rate limits, empty replies, memory work staying off the critical path, prompt size, and the double-Enter bug. Set `E2E_EMAIL` and `E2E_PASSWORD` (your own test account) to also run the signed-in tests.
 
 ## Validation and release
 

@@ -12,6 +12,33 @@ import { formatRelative } from "@/lib/format";
 import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage, ChatThread, Project } from "@/lib/types";
 
+/** A message plus a React key that survives the swap from streamed text to the saved row. */
+type DisplayMessage = ChatMessage & { clientKey?: string };
+
+type Handoff = { userKey?: string | null; assistantKey?: string | null };
+
+function withHandoffKeys(rows: ChatMessage[], handoff?: Handoff): DisplayMessage[] {
+  const out: DisplayMessage[] = rows.map((row) => ({ ...row }));
+  if (!handoff) return out;
+  let assistantIndex = -1;
+  for (let i = out.length - 1; i >= 0; i -= 1) {
+    if (out[i].role === "assistant") {
+      assistantIndex = i;
+      break;
+    }
+  }
+  if (assistantIndex >= 0 && handoff.assistantKey) out[assistantIndex].clientKey = handoff.assistantKey;
+  if (handoff.userKey) {
+    for (let i = (assistantIndex >= 0 ? assistantIndex : out.length) - 1; i >= 0; i -= 1) {
+      if (out[i].role === "user") {
+        out[i].clientKey = handoff.userKey;
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 export default function ChatsPage() {
   return (
     <Suspense>
@@ -26,13 +53,28 @@ function ChatsContent() {
   const initialProject = searchParams.get("project");
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(initialThread);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [threadId, setThreadIdState] = useState<string | null>(initialThread);
+  // The conversation id is also kept in a ref that is updated the instant it is known, so the next
+  // message can never be sent with a stale id while React is still applying the state update.
+  const threadIdRef = useRef<string | null>(initialThread);
+  function setThreadId(id: string | null) {
+    threadIdRef.current = id;
+    setThreadIdState(id);
+  }
   const [projectId, setProjectId] = useState(initialProject || "");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  // True once the first words of a reply are on screen, so the thinking mark never returns after them.
+  const [replyStarted, setReplyStarted] = useState(false);
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const turnRef = useRef(0);
+  // Only one reply can be in flight. Enter in the text box submits even while busy, so this is checked synchronously.
+  const busyRef = useRef(false);
+  const loadingRef = useRef(false);
+  const skipLoadRef = useRef<string | null>(null);
+  loadingRef.current = loading;
 
   async function loadThreads() {
     const supabase = createSupabaseBrowserClient();
@@ -45,14 +87,14 @@ function ChatsContent() {
     setProjects((projectResult.data as Project[]) || []);
   }
 
-  async function loadMessages(id: string | null) {
+  async function loadMessages(id: string | null, handoff?: Handoff) {
     if (!id) {
       setMessages([]);
       return;
     }
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase.from("chat_messages").select("*").eq("thread_id", id).order("created_at", { ascending: true });
-    setMessages((data as ChatMessage[]) || []);
+    setMessages(withHandoffKeys((data as ChatMessage[]) || [], handoff));
   }
 
   useEffect(() => {
@@ -60,6 +102,11 @@ function ChatsContent() {
   }, []);
 
   useEffect(() => {
+    // A thread created by our own reply is loaded once, by the reply itself.
+    if (skipLoadRef.current && skipLoadRef.current === threadId) {
+      skipLoadRef.current = null;
+      return;
+    }
     loadMessages(threadId);
   }, [threadId]);
 
@@ -69,15 +116,47 @@ function ChatsContent() {
   }, [threadId, threads]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    // Jump while a reply is streaming; a smooth scroll restarted on every update falls behind.
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: loadingRef.current ? "auto" : "smooth" });
   }, [messages]);
 
-  async function requestReply(options: {
-    message?: string;
-    editMessageId?: string;
-    regenerateMessageId?: string;
-  }) {
+  async function requestReply(
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
+    userKey: string | null = null
+  ) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      await runReply(options, userKey);
+    } finally {
+      busyRef.current = false;
+    }
+  }
+
+  async function runReply(
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
+    userKey: string | null
+  ) {
     setLoading(true);
+    setReplyStarted(false);
+    turnRef.current += 1;
+    const assistantKey = `streaming-${turnRef.current}`;
+    const canRestoreText = !options.editMessageId && !options.regenerateMessageId;
+    let streamStarted = false;
+    const startingThreadId = threadIdRef.current;
+    let streamThreadId: string | null = startingThreadId;
+
+    // A reply that could not be produced leaves nothing behind on the server, so
+    // the user's own message is taken off the screen and put back in the box.
+    const fail = (text: string) => {
+      setMessages((current) => [
+        ...current.filter((message) => message.id !== "pending-user" && message.id !== "streaming"),
+        { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: text, created_at: new Date().toISOString() }
+      ]);
+      if (canRestoreText && options.message) setText((current) => current || options.message || "");
+      setReplyStarted(false);
+      setLoading(false);
+    };
 
     try {
       const response = await fetch("/api/ai/chat", {
@@ -85,18 +164,14 @@ function ChatsContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...options,
-          threadId,
+          threadId: threadIdRef.current,
           projectId: projectId || null
         })
       });
 
       if (!response.ok || !response.body) {
         const payload = await response.json().catch(() => ({}));
-        setMessages((current) => [
-          ...current.filter((message) => message.id !== "pending-user"),
-          { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: payload.error || "Chat failed.", created_at: new Date().toISOString() }
-        ]);
-        setLoading(false);
+        fail(payload.error || "Chat failed.");
         return;
       }
 
@@ -104,51 +179,79 @@ function ChatsContent() {
       const isStreaming = (response.headers.get("content-type") || "").includes("text/plain");
       if (!isStreaming) {
         const payload = await response.json();
+        if (payload.threadId && payload.threadId !== startingThreadId) skipLoadRef.current = payload.threadId;
         setThreadId(payload.threadId);
-        await Promise.all([loadThreads(), loadMessages(payload.threadId)]);
+        await loadMessages(payload.threadId, { userKey, assistantKey });
+        setReplyStarted(false);
         setLoading(false);
+        void loadThreads();
         return;
       }
 
-      const newThreadId = response.headers.get("X-Thread-Id") || threadId;
+      const newThreadId = response.headers.get("X-Thread-Id") || startingThreadId;
+      streamStarted = true;
+      streamThreadId = newThreadId;
 
-      // Streaming ON: reply fills into an assistant bubble as tokens arrive.
+      // Reply fills into an assistant bubble as tokens arrive.
       setMessages((current) => [
         ...current,
-        { id: "streaming", thread_id: newThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
+        { id: "streaming", clientKey: assistantKey, thread_id: newThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
       ]);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let acc = "";
+      let frame = 0;
+      // At most one redraw per frame, however fast the words arrive.
+      const flush = () => {
+        frame = 0;
+        const text = acc;
+        if (text.trim()) setReplyStarted(true);
+        setMessages((current) => current.map((message) => (message.id === "streaming" ? { ...message, content: text } : message)));
+      };
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         acc += decoder.decode(value, { stream: true });
-        setMessages((current) => current.map((message) => (message.id === "streaming" ? { ...message, content: acc } : message)));
+        if (!frame) frame = requestAnimationFrame(flush);
       }
+      if (frame) cancelAnimationFrame(frame);
+      flush();
 
-      if (newThreadId) setThreadId(newThreadId);
-      await Promise.all([loadThreads(), loadMessages(newThreadId)]);
+      if (newThreadId && newThreadId !== startingThreadId) {
+        skipLoadRef.current = newThreadId;
+        setThreadId(newThreadId);
+      }
+      // The saved rows take over the same on-screen elements, so nothing flickers.
+      await loadMessages(newThreadId, { userKey, assistantKey });
+      setReplyStarted(false);
       setLoading(false);
-    } catch {
-      setMessages((current) => [
-        ...current.filter((message) => message.id !== "pending-user" && message.id !== "streaming"),
-        { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: "Network error. Please try again.", created_at: new Date().toISOString() }
-      ]);
-      setLoading(false);
+      void loadThreads();
+    } catch (error) {
+      console.error("[chat] request failed", error);
+      if (streamStarted) {
+        // The connection dropped mid-reply. The server finishes and saves the answer,
+        // so keep what has arrived and then show the saved copy.
+        setReplyStarted(false);
+        setLoading(false);
+        window.setTimeout(() => void loadMessages(streamThreadId, { userKey, assistantKey }), 2500);
+        return;
+      }
+      fail("Network error. Please try again.");
     }
   }
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
     const prompt = removeEmDashes(text).trim();
-    if (!prompt) return;
+    if (!prompt || busyRef.current) return;
     setText("");
+    const userKey = `pending-user-${turnRef.current + 1}`;
     setMessages((current) => [
-      ...current,
+      ...current.filter((message) => message.id !== "error"),
       {
         id: "pending-user",
+        clientKey: userKey,
         thread_id: threadId || "pending",
         user_id: "",
         role: "user",
@@ -156,10 +259,11 @@ function ChatsContent() {
         created_at: new Date().toISOString()
       }
     ]);
-    await requestReply({ message: prompt });
+    await requestReply({ message: prompt }, userKey);
   }
 
   async function editAndResend(messageId: string, content: string) {
+    if (busyRef.current) return;
     setMessages((current) => {
       const index = current.findIndex((message) => message.id === messageId);
       if (index === -1) return current;
@@ -175,6 +279,7 @@ function ChatsContent() {
   }
 
   async function regenerate(messageId: string) {
+    if (busyRef.current) return;
     setMessages((current) => {
       const index = current.findIndex((message) => message.id === messageId);
       return index === -1 ? current : current.slice(0, index);
@@ -239,7 +344,7 @@ function ChatsContent() {
         </div>
       </aside>
 
-      <section className="panel flex min-h-0 flex-col overflow-hidden">
+      <section className="panel flex min-h-0 flex-col overflow-hidden" aria-busy={loading}>
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div>
             <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
@@ -261,7 +366,7 @@ function ChatsContent() {
           {messages.length ? (
             messages.map((message) => (
               <ChatMessageBubble
-                key={message.id}
+                key={message.clientKey ?? message.id}
                 message={message}
                 busy={loading}
                 onEdit={editAndResend}
@@ -276,7 +381,7 @@ function ChatsContent() {
               </div>
             </div>
           )}
-          {loading && !messages.some((message) => message.id === "streaming" && message.content.trim()) ? <ThinkingTrace /> : null}
+          {loading && !replyStarted ? <ThinkingTrace /> : null}
         </div>
         <form onSubmit={send} className="border-t border-[var(--border)] p-4">
           <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">

@@ -27,6 +27,12 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // API routes check the session themselves. Skipping it here saves a full
+  // round trip to Supabase on every request, including each chat message.
+  if (pathname.startsWith("/api/")) {
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
