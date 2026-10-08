@@ -59,7 +59,7 @@ export function lifecycleEmail(
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
         <p style="margin:0 0 16px;">Drop a syllabus, article, or lecture PDF into ${brand.name}. We extract the text and use it in project chat, including quotes from the right pages.</p>
         <p style="margin:0 0 24px;">${cta("/files", "Upload a file")}</p>
-        <p style="margin:0;font-size:13px;">PDF, DOCX, and plain text supported.</p>
+        <p style="margin:0;font-size:13px;">PDF, DOCX, images, and plain text supported.</p>
       `
     },
     tip_chat: {

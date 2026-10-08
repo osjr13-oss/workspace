@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { IMAGE_EXTENSIONS } from "@/lib/ocr";
 import { serializeError } from "@/lib/serialize-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -6,7 +7,7 @@ import { assertFileSizeLimit, getUserLimits } from "@/lib/tier";
 
 export const runtime = "nodejs";
 
-const SUPPORTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "md", "markdown"]);
+const SUPPORTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "md", "markdown", ...IMAGE_EXTENSIONS]);
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
 
     const extension = name.toLowerCase().split(".").pop() || "";
     if (!SUPPORTED_EXTENSIONS.has(extension)) {
-      return NextResponse.json({ error: "Unsupported file type. Upload a PDF, DOCX, TXT, or Markdown file." }, { status: 415 });
+      return NextResponse.json({ error: "Unsupported file type. Upload a PDF, DOCX, TXT, Markdown, or image file." }, { status: 415 });
     }
 
     const limits = await getUserLimits(supabase, user.id);

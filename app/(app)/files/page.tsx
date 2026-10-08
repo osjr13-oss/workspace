@@ -117,10 +117,10 @@ function FilesContent() {
           <input
             className="sr-only"
             type="file"
-            accept=".pdf,.docx,.txt,.md,.markdown"
+            accept=".pdf,.docx,.txt,.md,.markdown,.png,.jpg,.jpeg,.webp,.gif"
             onChange={(event) => setFile(event.target.files?.[0] || null)}
           />
-          {file ? file.name : "Choose PDF, DOCX, TXT, or Markdown"}
+          {file ? file.name : "Choose PDF, DOCX, TXT, Markdown, or image"}
         </label>
         <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
           <option value="">No project</option>
