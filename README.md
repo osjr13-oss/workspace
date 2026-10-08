@@ -29,14 +29,12 @@ TAVILY_API_KEY=
 NEXT_PUBLIC_APP_URL=
 RESEND_API_KEY=
 EMAIL_FROM=
-SUPPORT_INBOX=
 ```
 
 ## Public pages
 
 | Route | Purpose |
 |-------|---------|
-| `/support` | Help center + contact form |
 | `/security` | Security practices & disclosure |
 | `/terms`, `/privacy` | Legal |
 | `/help` | In-app support (authenticated) |

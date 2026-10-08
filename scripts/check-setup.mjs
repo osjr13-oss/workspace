@@ -40,7 +40,7 @@ const required = [
 
 const branding = ["NEXT_PUBLIC_APP_URL"];
 
-const email = ["RESEND_API_KEY", "EMAIL_FROM", "SUPPORT_INBOX"];
+const email = ["RESEND_API_KEY", "EMAIL_FROM"];
 
 const optionalRag = ["EMBEDDING_API_KEY", "TAVILY_API_KEY"];
 

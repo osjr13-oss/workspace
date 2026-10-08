@@ -58,5 +58,5 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 - `EMBEDDING_MODEL` (optional, default `text-embedding-3-small`)
 - `EMBEDDING_BASE_URL` (optional, default OpenAI)
 - `AI_DAILY_LIMIT` (optional, default `100`)
-- `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, `CRON_SECRET` (email — see `docs/OPERATIONS.md`)
-- `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPPORT_EMAIL` (optional)
+- `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (email — see `docs/OPERATIONS.md`)
+- `NEXT_PUBLIC_APP_URL`
