@@ -8,7 +8,7 @@ Last updated: **August 3, 2026**
 - Repository: `osjr13-oss/workspace`
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
-- AI provider: Groq only (`GROQ_MODEL`, default `llama-3.3-70b-versatile`). Anthropic was removed on 2026-10-08.
+- AI provider: Groq only (`GROQ_MODEL`, default `openai/gpt-oss-120b`; Groq shut down the llama-3.x models on 2026-08-16). Anthropic was removed on 2026-10-08.
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.

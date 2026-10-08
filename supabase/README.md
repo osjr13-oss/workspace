@@ -51,8 +51,8 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `GROQ_API_KEY`
-- `GROQ_MODEL` (optional, defaults to `llama-3.3-70b-versatile`)
-- `GROQ_VISION_MODEL` (optional, reads text in uploaded images)
+- `GROQ_MODEL` (optional, defaults to `openai/gpt-oss-120b`)
+- `GROQ_VISION_MODEL` (optional, defaults to `qwen/qwen3.8-27b`; reads text in uploaded images)
 - `EMBEDDING_API_KEY` (optional, enables RAG over uploaded files)
 - `EMBEDDING_MODEL` (optional, default `text-embedding-3-small`)
 - `EMBEDDING_BASE_URL` (optional, default OpenAI)

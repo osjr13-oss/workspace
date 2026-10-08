@@ -14,7 +14,7 @@ const IMAGE_MEDIA_TYPES: Record<string, string> = {
 // Groq limits base64 image requests to 4MB, and base64 adds roughly a third.
 const MAX_IMAGE_BYTES = 2.8 * 1024 * 1024;
 
-export const DEFAULT_GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+export const DEFAULT_GROQ_VISION_MODEL = "qwen/qwen3.8-27b";
 
 const OCR_PROMPT =
   "Transcribe all readable text from this image exactly as written, in reading order. " +
@@ -25,7 +25,7 @@ export function imageMediaType(extension: string) {
   return IMAGE_MEDIA_TYPES[extension] || null;
 }
 
-/** Reads the text in a photo or screenshot with a Groq vision model. Returns "" when nothing is readable. */
+/** Reads the text in a photo or screenshot with a Groq vision model (qwen/qwen3.8-27b by default). Returns "" when nothing is readable. */
 export async function transcribeImage(bytes: Buffer, mediaType: string): Promise<string> {
   if (bytes.length > MAX_IMAGE_BYTES) {
     throw new Error("This image is too large to read. Try a smaller photo or a cropped screenshot (under 2.5MB).");
@@ -59,5 +59,7 @@ export async function transcribeImage(bytes: Buffer, mediaType: string): Promise
   }
 
   const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return removeEmDashes(payload.choices?.[0]?.message?.content?.trim() || "");
+  const raw = payload.choices?.[0]?.message?.content || "";
+  // Some vision models inline their reasoning in <think> tags; keep only the transcription.
+  return removeEmDashes(raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim());
 }

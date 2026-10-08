@@ -3,11 +3,35 @@ import { removeEmDashes } from "@/lib/text";
 
 const GROQ_URL = `${process.env.GROQ_BASE_URL?.trim() || "https://api.groq.com/openai/v1"}/chat/completions`;
 
-export const DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile";
+export const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
+
+/** Model ids Groq has shut down. A stale GROQ_MODEL pointing at one of these falls back to the default. */
+const SHUT_DOWN_MODELS = new Set([
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "qwen/qwen3-32b",
+  "qwen/qwen3.6-27b"
+]);
 
 /** The one chat model. Override with GROQ_MODEL; otherwise a fast default is used. */
 export function groqModel() {
-  return process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+  const configured = process.env.GROQ_MODEL?.trim();
+  if (!configured) return DEFAULT_GROQ_MODEL;
+  if (SHUT_DOWN_MODELS.has(configured)) {
+    console.warn(`[groq] GROQ_MODEL "${configured}" has been shut down by Groq; using ${DEFAULT_GROQ_MODEL}.`);
+    return DEFAULT_GROQ_MODEL;
+  }
+  return configured;
+}
+
+/**
+ * Model plus per-model request options. gpt-oss models reason before answering,
+ * so reasoning is set to low and hidden to keep time-to-first-word short.
+ */
+function modelParams() {
+  const model = groqModel();
+  return model.startsWith("openai/gpt-oss") ? { model, reasoning_effort: "low", include_reasoning: false } : { model };
 }
 
 type GroqMessage = {
@@ -46,7 +70,7 @@ export async function callGroqWithTools(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: groqModel(),
+      ...modelParams(),
       messages,
       tools,
       tool_choice: "auto",
@@ -123,7 +147,7 @@ export async function streamGroqWithTools(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: groqModel(),
+      ...modelParams(),
       messages,
       tools,
       tool_choice: "auto",
@@ -242,7 +266,7 @@ export async function streamGroq(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: groqModel(),
+      ...modelParams(),
       messages,
       temperature: options.temperature ?? 0.4,
       stream: true
@@ -309,7 +333,7 @@ export async function callGroqStructured(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: groqModel(),
+      ...modelParams(),
       messages,
       tools: [{ type: "function", function: tool }],
       tool_choice: { type: "function", function: { name: tool.name } },
@@ -348,7 +372,7 @@ export async function callGroq(
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: groqModel(),
+      ...modelParams(),
       messages,
       temperature: options?.temperature ?? 0.4
     })
