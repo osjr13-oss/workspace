@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
 import { configuredAiModel, streamAi } from "@/lib/ai";
 import { extractMemories, retrieveMemories } from "@/lib/content-memory";
-import { callGroqWithTools, type GroqChatMessage } from "@/lib/groq";
+import { streamGroqWithTools, type GroqChatMessage } from "@/lib/groq";
 import { searchChunksFullText, searchProjectChunks, type RetrievedChunk } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { ingestUserStyle } from "@/lib/style-profile";
@@ -154,18 +154,27 @@ export async function POST(request: Request) {
       threadId = data.id;
     }
 
-    if (!editTarget && !regenerateTarget) {
-      const { error: userMessageError } = await supabase.from("chat_messages").insert({
-        user_id: user.id,
-        thread_id: threadId,
-        role: "user",
-        content: userContent
-      });
-      if (userMessageError) throw userMessageError;
-    }
-
+    // Everything the prompt needs is loaded in parallel. Saving the new user
+    // message and then reading history stay in order inside one branch so the
+    // history always includes it.
     const [historyResult, context, styleProfile, memories] = await Promise.all([
-      supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(16),
+      (async () => {
+        if (!editTarget && !regenerateTarget) {
+          const { error: userMessageError } = await supabase.from("chat_messages").insert({
+            user_id: user.id,
+            thread_id: threadId,
+            role: "user",
+            content: userContent
+          });
+          if (userMessageError) throw userMessageError;
+        }
+        return supabase
+          .from("chat_messages")
+          .select("role, content")
+          .eq("thread_id", threadId)
+          .order("created_at", { ascending: false })
+          .limit(16);
+      })(),
       loadProjectContext(supabase, projectId, userContent),
       ingestUserStyle(supabase, user.id, userContent),
       retrieveMemories(supabase, user.id, userContent)
@@ -227,30 +236,58 @@ export async function POST(request: Request) {
     if (!threadId) return NextResponse.json({ error: "Could not resolve conversation" }, { status: 500 });
     const finalThreadId = threadId;
 
-    const { messages: streamMessages, webCitations } = await prepareToolMessages(messages, {
+    const webCitations: Record<string, Citation> = {};
+    const toolCtx: ToolContext = {
       supabase,
       userId: user.id,
       projectId,
+      webCitations,
       citationOffset: Object.keys(context.citations).length
-    });
-    const allCitations = { ...context.citations, ...webCitations };
+    };
+    const toolMessages: GroqChatMessage[] = [messages[0], ACTION_GUIDE, ...messages.slice(1)];
 
     const encoder = new TextEncoder();
 
-    // Stream the model's answer to the browser token-by-token. Once the stream
-    // finishes we persist the complete assistant message and bump the thread.
+    // One streaming request answers or asks for tools. Normal answers start
+    // flowing immediately; only a tool call costs a second request. When the
+    // stream finishes we persist the complete assistant message.
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         let answer = "";
+        const emit = (token: string) => {
+          const normalized = removeEmDashes(token);
+          answer += normalized;
+          controller.enqueue(encoder.encode(normalized));
+        };
+
         try {
-          await streamAi(streamMessages, {
-            temperature: 0.6,
-            onToken: (token) => {
-              const normalized = removeEmDashes(token);
-              answer += normalized;
-              controller.enqueue(encoder.encode(normalized));
+          let first: Awaited<ReturnType<typeof streamGroqWithTools>> | null = null;
+          try {
+            first = await streamGroqWithTools(toolMessages, toolDefinitions, { temperature: 0.6, onToken: emit });
+          } catch (error) {
+            // A malformed or unavailable tool request should never prevent a
+            // normal answer, as long as nothing has been shown yet.
+            if (answer) throw error;
+            console.error("[chat] tool-enabled stream failed, retrying without tools", serializeError(error));
+          }
+
+          if (!first) {
+            await streamAi(messages, { temperature: 0.6, onToken: emit });
+          } else if (first.toolCalls.length) {
+            toolMessages.push({ role: "assistant", content: first.text || null, tool_calls: first.toolCalls });
+            for (const call of first.toolCalls) {
+              let result: string;
+              try {
+                const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+                result = await executeTool(call.function.name, args, toolCtx);
+              } catch (error) {
+                result = `Error running ${call.function.name}: ${serializeError(error)}`;
+              }
+              toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
             }
-          });
+            if (answer) emit("\n\n");
+            await streamAi(toolMessages, { temperature: 0.6, onToken: emit });
+          }
         } catch (error) {
           console.error("[chat] stream failed", serializeError(error), error);
           if (!answer) {
@@ -260,12 +297,11 @@ export async function POST(request: Request) {
         } finally {
           // Persist before closing so the browser's post-stream reload is
           // guaranteed to find the same complete (or partial) assistant reply.
-          // Wrapped so a persistence failure (network blip, transient DB
-          // error) can never prevent controller.close() below. Otherwise
-          // the stream never signals completion and the client hangs
-          // waiting for more data that will never arrive.
+          // Wrapped so a persistence failure can never prevent controller.close()
+          // below, otherwise the client would hang waiting for more data.
           try {
             if (answer) {
+              const allCitations = { ...context.citations, ...webCitations };
               const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
               const citations = usedMarkers
                 .map((marker) => allCitations[marker])
@@ -281,8 +317,18 @@ export async function POST(request: Request) {
               if (assistantMessageError) {
                 console.error("[chat] persist assistant message failed", assistantMessageError);
               }
-              await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
-              await extractMemories(supabase, user.id, userContent, answer);
+
+              // Bookkeeping and memory extraction (a model call) happen after
+              // the response has been delivered so they never delay the reply.
+              const finalAnswer = answer;
+              after(async () => {
+                try {
+                  await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+                  await extractMemories(supabase, user.id, userContent, finalAnswer);
+                } catch (afterError) {
+                  console.error("[chat] post-response work failed", serializeError(afterError));
+                }
+              });
             }
           } catch (persistError) {
             console.error("[chat] persist assistant message threw", serializeError(persistError));
@@ -308,57 +354,11 @@ export async function POST(request: Request) {
   }
 }
 
-async function prepareToolMessages(
-  baseMessages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-  ctx: {
-    supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"];
-    userId: string;
-    projectId: string | null;
-    citationOffset: number;
-  }
-): Promise<{ messages: GroqChatMessage[]; webCitations: Record<string, Citation> }> {
-  const actionGuide = {
-    role: "system" as const,
-    content:
-      "You can take actions with the provided tools: search the user's notes and files, search the live web, create a note, or create a flashcard deck. Call web_search whenever you are not confident your training data is current enough to answer well, such as news, prices, recent releases, or anything that may have changed since your training cutoff. Call the workspace tools only when the user clearly asks about their own materials or asks you to create something. After using tools, answer normally in plain prose. Cite web search results using the bracketed reference id each result provides, like this: <claim> [1]. Cite only ids that were given to you."
-  };
-
-  const toolMessages: GroqChatMessage[] = [baseMessages[0], actionGuide, ...baseMessages.slice(1)];
-  const webCitations: Record<string, Citation> = {};
-  const toolCtx: ToolContext = {
-    supabase: ctx.supabase,
-    userId: ctx.userId,
-    projectId: ctx.projectId,
-    webCitations,
-    citationOffset: ctx.citationOffset
-  };
-
-  let reply;
-  try {
-    reply = await callGroqWithTools(toolMessages, toolDefinitions, { temperature: 0.4 });
-  } catch (error) {
-    // A malformed or unavailable tool request should never prevent a normal
-    // streamed answer from reaching the user.
-    console.error("[chat] tool call failed, falling back to streamed answer", serializeError(error));
-    return { messages: baseMessages, webCitations };
-  }
-
-  if (!reply.tool_calls?.length) return { messages: baseMessages, webCitations };
-
-  toolMessages.push({ role: "assistant", content: reply.content ?? "", tool_calls: reply.tool_calls });
-  for (const call of reply.tool_calls) {
-    let result: string;
-    try {
-      const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
-      result = await executeTool(call.function.name, args, toolCtx);
-    } catch (error) {
-      result = `Error running ${call.function.name}: ${serializeError(error)}`;
-    }
-    toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
-  }
-
-  return { messages: toolMessages, webCitations };
-}
+const ACTION_GUIDE = {
+  role: "system" as const,
+  content:
+    "You can take actions with the provided tools: search the user's notes and files, search the live web, create a note, or create a flashcard deck. Call web_search whenever you are not confident your training data is current enough to answer well, such as news, prices, recent releases, or anything that may have changed since your training cutoff. Call the workspace tools only when the user clearly asks about their own materials or asks you to create something. After using tools, answer normally in plain prose. Cite web search results using the bracketed reference id each result provides, like this: <claim> [1]. Cite only ids that were given to you."
+};
 
 type FallbackChunkRow = {
   id: string;

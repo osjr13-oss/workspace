@@ -278,40 +278,51 @@ select {
   color: #fffefa;
 }
 
-.thinking-trace {
-  width: fit-content;
-  max-width: 100%;
-  border-left: 2px solid var(--border-strong);
-  padding: 8px 0 8px 16px;
+.thinking-orbit {
+  display: inline-flex;
+  padding: 6px 0;
+  color: var(--text);
 }
 
-.thinking-phase {
-  background: rgba(255, 255, 255, 0.5);
-  animation: selrano-thought-current 2.7s ease-in-out infinite;
+.thinking-orbit svg {
+  overflow: visible;
 }
 
-.thinking-phase[data-phase="1"] {
-  animation-delay: 900ms;
+.thinking-orbit-track {
+  stroke: var(--border-strong);
+  opacity: 0.55;
 }
 
-.thinking-phase[data-phase="2"] {
-  animation-delay: 1800ms;
+.thinking-orbit-arc {
+  stroke: currentColor;
+  stroke-dasharray: 14 43;
+  transform-origin: 12px 12px;
+  animation: selrano-orbit-sweep 1.1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
 }
 
-@keyframes selrano-thought-current {
-  0%,
-  65%,
-  100% {
-    color: var(--muted);
-    background: rgba(255, 255, 255, 0.5);
-    transform: translateY(0);
+.thinking-orbit-dot {
+  fill: currentColor;
+  opacity: 0.7;
+  transform-origin: 12px 12px;
+  animation: selrano-orbit-dot 1.9s linear infinite reverse;
+}
+
+@keyframes selrano-orbit-sweep {
+  to {
+    transform: rotate(360deg);
   }
+}
 
-  18%,
-  38% {
-    color: var(--text);
-    background: var(--surface-strong);
-    transform: translateY(-2px);
+@keyframes selrano-orbit-dot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-orbit-arc,
+  .thinking-orbit-dot {
+    animation-duration: 4s;
   }
 }
 

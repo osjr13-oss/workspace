@@ -33,7 +33,7 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 ## Important paths
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, workspace tools, streaming, and message persistence.
-- `lib/ai.ts` — Anthropic-first completion and streaming with Groq fallback before any token has been emitted.
+- `lib/ai.ts` — Groq-only completion, structured output, and streaming. Groq is the single AI provider.
 - `lib/groq.ts` — Groq Chat Completions, SSE parsing, tool-call transport, and recovery from malformed tool-call output.
 - `lib/ai-tools.ts` — authenticated workspace search/note/deck actions plus the `web_search` tool (backed by `lib/web-search.ts`).
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.

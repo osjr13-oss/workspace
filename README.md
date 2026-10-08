@@ -2,12 +2,12 @@
 
 Selrano is a personal AI workspace that learns how you think and write. Chat is the primary experience, supported by projects, notes, private files, web search, review tools, and flashcards.
 
-The current chat uses Anthropic first with Groq fallback, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+The current chat uses Groq, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
 
 ## Local Setup
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env.local` and fill in Supabase, Anthropic, and Groq values.
+2. Copy `.env.example` to `.env.local` and fill in Supabase and Groq values.
 3. Review the migration history and live schema before applying anything. The personalization tables are defined in `20260724000000_selrano_personalization.sql`, but the production tables already exist even though that filename is not present in tracked production migration history.
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
 5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
@@ -21,10 +21,8 @@ See `.env.example` for the full list. Core variables:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
 GROQ_API_KEY=
-GROQ_MODEL=
+GROQ_MODEL=llama-3.3-70b-versatile
 TAVILY_API_KEY=
 NEXT_PUBLIC_APP_URL=
 RESEND_API_KEY=

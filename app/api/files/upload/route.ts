@@ -1,4 +1,4 @@
-import { imageMediaType, ocrAvailable, transcribeWithVision } from "@/lib/ocr";
+import { imageMediaType, transcribeImage } from "@/lib/ocr";
 import { NextResponse } from "next/server";
 import { embedChunksForFile } from "@/lib/embeddings";
 import { chunkTextWithLocations } from "@/lib/chunk";
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       const bytes = Buffer.from(await storedFile.arrayBuffer());
       const extraction = await extractText(name, mimeType, bytes);
       if (!extraction.supported) throw new Error("Unsupported file type. Upload a PDF, DOCX, TXT, Markdown, or image file.");
-      if (!extraction.text.trim()) throw new Error("No readable text was found. Try a clearer scan or photo.");
+      if (!extraction.text.trim()) throw new Error("No readable text was found. Scanned PDFs are not supported yet. Upload a text-based PDF, or a clear photo of the page as an image.");
 
       const { data: fileRecord, error: insertError } = await supabase
         .from("files")
@@ -184,18 +184,12 @@ async function extractText(name: string, mimeType: string, bytes: Buffer): Promi
       };
     });
 
-    // No text layer means a scanned PDF. Fall back to vision OCR (no page ranges).
-    if (!trimmed && ocrAvailable()) {
-      const ocrText = await transcribeWithVision(bytes, "pdf", "application/pdf");
-      return { supported: true, text: ocrText, pages: [] };
-    }
-
     return { supported: true, text: trimmed, pages };
   }
 
   const imageType = imageMediaType(extension);
   if (imageType) {
-    const ocrText = await transcribeWithVision(bytes, "image", imageType);
+    const ocrText = await transcribeImage(bytes, imageType);
     return { supported: true, text: ocrText, pages: [] };
   }
 

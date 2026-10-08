@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
+      <p className="text-sm font-bold text-[var(--muted)]">Last updated: October 8, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Terms of Service</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Selrano (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
@@ -76,8 +76,7 @@ export default function TermsPage() {
         <p>The Service integrates with and depends on third-party services including:</p>
         <ul>
           <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
-          <li><strong>Anthropic</strong>: primary AI inference for chat and content generation.</li>
-          <li><strong>Groq, Inc.</strong>: fallback AI inference and workspace tool planning.</li>
+          <li><strong>Groq, Inc.</strong>: AI inference for chat, content generation, and workspace tools.</li>
           <li><strong>Tavily</strong>: optional live web search.</li>
           <li><strong>Vercel</strong>: hosting and infrastructure.</li>
         </ul>

@@ -8,7 +8,7 @@ Last updated: **August 3, 2026**
 - Repository: `osjr13-oss/workspace`
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
-- AI providers: Anthropic first, defaulting to `claude-sonnet-4-6`, with Groq fallback when Anthropic fails before streaming any text
+- AI provider: Groq only (`GROQ_MODEL`, default `llama-3.3-70b-versatile`). Anthropic was removed on 2026-10-08.
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Product feature flags: **none**. Shipped capabilities are always enabled.
@@ -67,7 +67,7 @@ Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and
 - All product feature flags and their environment variables were removed.
 - Desktop/mobile logout is accessible and uses local-session scope.
 - CI blocks on typecheck, lint, production dependency audit, and build.
-- Anthropic is the preferred provider; Groq remains the fallback and tool-capable provider.
+- Groq is the only AI provider.
 - Selrano learns a style directive from conversation history and uses durable content memories when relevant.
 - Established accounts with no memories can bootstrap up to 12 durable facts from as many as 80 earlier user messages on the next chat request.
 - Explicit recall prompts such as "what do you remember about me?" return the strongest stored memories without requiring lexical overlap.
@@ -120,11 +120,11 @@ The July 24 memory investigation found historical user messages but no content-m
 3. Persist the user message.
 4. Load recent conversation history, project context, style profile, and relevant durable memories.
 5. If an established account has no memories, extract durable facts from earlier user messages before answering.
-6. Run the tool-decision pass on every message, offering workspace search, live web search, note creation, and flashcard creation; the model decides which, if any, to call.
-7. Stream Anthropic text when configured. Fall back to Groq only if Anthropic fails before any text is emitted.
+6. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer.
+7. If the tool-enabled request fails before any text is shown, retry as a plain streamed answer.
 8. Remove em dashes at every model-output boundary.
 9. Persist the assistant response before closing the browser stream.
-10. Extract new durable memories and update the style profile after the exchange.
+10. Update the thread timestamp and extract new durable memories after the response is delivered (`after()`).
 11. Reload the thread from database truth.
 
 Do not reintroduce an environment switch for streaming, AI actions, or full-text search.

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: June 1, 2026</p>
+      <p className="text-sm font-bold text-[var(--muted)]">Last updated: October 8, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -53,9 +53,8 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content may be transmitted to <strong>Anthropic</strong> for primary AI inference or <strong>Groq, Inc.</strong> for fallback processing. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
+        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content may be transmitted to <strong>Groq, Inc.</strong> for AI inference. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
         <ul>
-          <li>Data sent to Anthropic is governed by <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="underline">Anthropic&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Tavily is governed by <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Tavily&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
@@ -66,7 +65,7 @@ export default function PrivacyPage() {
       <Section title="4. How We Share Your Information">
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), Anthropic and Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
