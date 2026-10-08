@@ -1,20 +1,13 @@
 /**
- * Single source of truth for product branding and public contact channels.
+ * Single source of truth for product branding.
  * Override via environment variables in production (Vercel).
  */
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@selrano.com";
-
 export const brand = {
   name: "Selrano",
   tagline: "An AI workspace that learns how you think and write.",
   legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "Selrano",
 
   emails: {
-    /** Public contact. Legal pages use this address too. */
-    support: supportEmail,
-    hello: supportEmail,
-    security: supportEmail,
-    privacy: supportEmail,
     noreply: process.env.EMAIL_FROM || "Selrano <noreply@selrano.com>"
   },
 
@@ -23,15 +16,9 @@ export const brand = {
     terms: "/terms",
     privacy: "/privacy",
     security: "/security",
-    support: "/support",
     changelog: "/changelog",
     status: process.env.NEXT_PUBLIC_STATUS_URL || "",
     docs: process.env.NEXT_PUBLIC_DOCS_URL || ""
-  },
-
-  support: {
-    responseSla: "1 business day",
-    hours: "Monday-Friday, 9:00-17:00 US Eastern"
   },
 
   colors: {

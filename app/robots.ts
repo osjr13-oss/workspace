@@ -17,7 +17,6 @@ export default function robots(): MetadataRoute.Robots {
         "/projects",
         "/settings",
         "/study",
-        "/help",
         "/reset-password"
       ]
     },

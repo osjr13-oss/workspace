@@ -152,8 +152,7 @@ export async function runLifecycleEmailBatch() {
           const result = await sendEmail({
             to: user.email,
             subject: template.subject,
-            html: template.html,
-            replyTo: process.env.SUPPORT_INBOX || undefined
+            html: template.html
           });
 
           if (result.ok) {

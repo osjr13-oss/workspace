@@ -10,7 +10,6 @@ import {
   Files,
   FolderOpen,
   Home,
-  LifeBuoy,
   LogOut,
   MessageSquare,
   Plus,
@@ -81,15 +80,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="mt-auto border-t border-[var(--border)] pt-5">
-          <Link
-            href="/help"
-            className={`flex min-h-11 items-center gap-3 rounded-2xl px-4 text-sm font-bold ${
-              pathname.startsWith("/help") ? "bg-[var(--surface-strong)]" : "text-[var(--muted)] hover:bg-[var(--surface-subtle)]"
-            }`}
-          >
-            <LifeBuoy size={18} />
-            Help
-          </Link>
           <Link
             href="/settings"
             className={`flex min-h-11 items-center gap-3 rounded-2xl px-4 text-sm font-bold ${

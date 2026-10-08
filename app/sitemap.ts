@@ -14,7 +14,6 @@ const staticRoutes: Array<{ path: string; priority: number; changeFrequency: Met
   { path: "/pricing", priority: 0.8, changeFrequency: "monthly" },
   { path: "/guides", priority: 0.6, changeFrequency: "weekly" },
   { path: "/changelog", priority: 0.5, changeFrequency: "weekly" },
-  { path: "/support", priority: 0.4, changeFrequency: "monthly" },
   { path: "/security", priority: 0.3, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" }

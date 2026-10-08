@@ -4,7 +4,6 @@ import { brand } from "@/lib/brand";
 const links = [
   { href: "/pricing", label: "Pricing" },
   { href: brand.urls.changelog, label: "Changelog" },
-  { href: brand.urls.support, label: "Support" },
   { href: brand.urls.security, label: "Security" },
   { href: brand.urls.terms, label: "Terms" },
   { href: brand.urls.privacy, label: "Privacy" }
@@ -30,12 +29,6 @@ export function SiteFooter({ showHome = true }: { showHome?: boolean }) {
           ) : null}
         </nav>
       </div>
-      <p className="mt-4 text-center text-xs text-[var(--muted)]">
-        Support:{" "}
-        <a href={`mailto:${brand.emails.support}`} className="font-bold text-[var(--muted-strong)] hover:text-[var(--text)]">
-          {brand.emails.support}
-        </a>
-      </p>
     </footer>
   );
 }

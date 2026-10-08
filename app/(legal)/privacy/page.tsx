@@ -101,7 +101,7 @@ export default function PrivacyPage() {
           <li><strong>Portability:</strong> request your data in a portable, machine-readable format.</li>
           <li><strong>Objection:</strong> object to certain uses of your data.</li>
         </ul>
-        <p>To exercise any of these rights, contact us at <strong>{brand.emails.privacy}</strong>. We will respond within 30 days.</p>
+        <p>You can exercise most of these rights directly in the app: delete your account and data, and manage email preferences, from the Settings page.</p>
         <p><strong>California residents:</strong> under the California Consumer Privacy Act (CCPA), you have the right to know what personal information we collect, request deletion, and opt out of any sale of personal information (we do not sell personal information). To submit a CCPA request, contact us at the email above.</p>
       </Section>
 
@@ -111,7 +111,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="9. Children&apos;s Privacy">
-        <p>Selrano is intended for users who are 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <strong>{brand.emails.privacy}</strong> and we will delete that information promptly.</p>
+        <p>Selrano is intended for users who are 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are a parent or guardian and believe your child has provided us with personal information, please delete the account from Settings and we will remove that information.</p>
       </Section>
 
       <Section title="10. Links to Third-Party Sites">
@@ -123,9 +123,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="12. Contact Us">
-        <p>If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
-        <p><strong>Email:</strong> {brand.emails.privacy}</p>
-        <p>We aim to respond to all privacy-related inquiries within 5 business days.</p>
+        <p>Selrano does not currently offer a public email address. For privacy requests, use the account controls in Settings. We will publish a contact channel here as soon as one is available.</p>
       </Section>
     </article>
   );

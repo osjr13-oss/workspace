@@ -13,7 +13,6 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             <Link href="/pricing" className="hover:text-[var(--text)] transition-colors">Pricing</Link>
             <Link href="/guides" className="hover:text-[var(--text)] transition-colors">Guides</Link>
             <Link href="/changelog" className="hover:text-[var(--text)] transition-colors">Changelog</Link>
-            <Link href={brand.urls.support} className="hover:text-[var(--text)] transition-colors">Support</Link>
             <Link href={brand.urls.security} className="hover:text-[var(--text)] transition-colors">Security</Link>
             <Link href={brand.urls.terms} className="hover:text-[var(--text)] transition-colors">Terms</Link>
             <Link href={brand.urls.privacy} className="hover:text-[var(--text)] transition-colors">Privacy</Link>

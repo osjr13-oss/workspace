@@ -50,7 +50,7 @@ export default function SecurityPage() {
       <Section title="Operational practices">
         <ul className="list-disc space-y-2 pl-5">
           <li>Environment secrets stored in Vercel, never committed to source control.</li>
-          <li>Audit logging for sensitive actions (account deletion, support requests).</li>
+          <li>Audit logging for sensitive actions such as account deletion.</li>
           <li>Transactional email via a dedicated provider with domain authentication (SPF/DKIM).</li>
           <li>Regular dependency updates and production builds on every main-branch deploy.</li>
         </ul>
@@ -58,36 +58,18 @@ export default function SecurityPage() {
 
       <Section title="Report a vulnerability">
         <p>
-          If you believe you have found a security issue, please email{" "}
-          <a href={`mailto:${brand.emails.security}`} className="font-bold text-[var(--text)]">
-            {brand.emails.security}
-          </a>
-          . Do not disclose publicly until we have had a reasonable time to investigate. We aim to acknowledge reports
-          within 2 business days.
+          We do not currently have a public reporting channel. Do not disclose security issues publicly. A contact
+          method will be listed here as soon as one is available.
         </p>
       </Section>
 
       <Section title="Privacy & compliance">
         <p>
           See our <Link href={brand.urls.privacy} className="font-bold text-[var(--text)]">Privacy Policy</Link> for data
-          collection and your rights. For privacy-specific requests, contact{" "}
-          <a href={`mailto:${brand.emails.privacy}`} className="font-bold text-[var(--text)]">
-            {brand.emails.privacy}
-          </a>
-          .
+          collection and your rights.
         </p>
       </Section>
 
-      <Section title="Contact">
-        <p>
-          General support:{" "}
-          <a href={`mailto:${brand.emails.support}`} className="font-bold text-[var(--text)]">
-            {brand.emails.support}
-          </a>
-          . Use our <Link href={brand.urls.support} className="font-bold text-[var(--text)]">support form</Link> for
-          account help.
-        </p>
-      </Section>
     </article>
   );
 }

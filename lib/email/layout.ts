@@ -31,8 +31,7 @@ export function emailLayout(content: string, preview: string, options?: { showUn
             <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:${brand.colors.muted};">
               © ${new Date().getFullYear()} ${brand.legalName}. All rights reserved.<br />
               <a href="${absoluteUrl(brand.urls.privacy)}" style="color:${brand.colors.text};">Privacy</a>
-              · <a href="${absoluteUrl(brand.urls.terms)}" style="color:${brand.colors.text};">Terms</a>
-              · <a href="${absoluteUrl(brand.urls.support)}" style="color:${brand.colors.text};">Support</a>${unsubscribe}
+              · <a href="${absoluteUrl(brand.urls.terms)}" style="color:${brand.colors.text};">Terms</a>${unsubscribe}
             </td>
           </tr>
         </table>

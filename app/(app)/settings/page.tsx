@@ -121,7 +121,7 @@ export default function SettingsPage() {
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          A useful weekly workspace check-in plus occasional feature tips. Welcome and support emails are always sent when relevant.
+          A useful weekly workspace check-in plus occasional feature tips. The welcome email is always sent.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
@@ -133,16 +133,6 @@ export default function SettingsPage() {
           />
           <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
         </label>
-      </section>
-
-      <section className="panel p-6">
-        <h2 className="text-base font-extrabold tracking-[-0.01em]">Help & support</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          Questions, billing, or account issues. Our team typically responds within one business day.
-        </p>
-        <Link href="/help" className="btn-secondary mt-5">
-          Open help center
-        </Link>
       </section>
 
       <section className="panel p-6">

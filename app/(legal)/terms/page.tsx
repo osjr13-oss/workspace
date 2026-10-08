@@ -24,7 +24,7 @@ export default function TermsPage() {
         <ul>
           <li>Maintaining the confidentiality of your login credentials.</li>
           <li>All activity that occurs under your account.</li>
-          <li>Notifying us immediately at <strong>{brand.emails.hello}</strong> if you suspect unauthorized access.</li>
+          <li>Changing your password and signing out of other sessions if you suspect unauthorized access.</li>
         </ul>
         <p>You may not share your account, create accounts for others without their consent, or use automated methods to create accounts.</p>
       </Section>
@@ -123,8 +123,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="17. Contact">
-        <p>If you have questions about these Terms, please contact us at:</p>
-        <p><strong>Email:</strong> {brand.emails.hello}</p>
+        <p>Selrano does not currently offer a public email address. We will publish a contact channel here as soon as one is available.</p>
       </Section>
     </article>
   );

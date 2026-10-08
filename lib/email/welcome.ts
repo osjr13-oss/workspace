@@ -34,8 +34,7 @@ export async function sendWelcomeEmailOnce(user: User, options: { name?: string;
     await sendEmail({
       to: user.email,
       subject: template.subject,
-      html: template.html,
-      replyTo: process.env.SUPPORT_INBOX || undefined
+      html: template.html
     });
   } catch (sendError) {
     // Release the claim so a later retry or the recovery batch can try again.
