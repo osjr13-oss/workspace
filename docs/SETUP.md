@@ -17,7 +17,7 @@ For a brand-new database:
 
 Before every deployment, confirm the production migration history matches the repository. A successful Next.js build does not verify the live database schema.
 
-The `support_requests` table still exists from earlier versions, but nothing writes to it any more: the support form was removed on 2026-09-29.
+The `support_requests` table still exists from earlier versions, but nothing writes to it any more: the support form was removed on 2026-10-08.
 
 ---
 

@@ -11,7 +11,7 @@ Last updated: **October 13, 2026**
 - AI provider: **Groq only**. Chat model `GROQ_MODEL` (default `openai/gpt-oss-120b`), fallback `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`), background work `GROQ_BACKGROUND_MODEL` (default: the fallback model), image reading `GROQ_VISION_MODEL` (default `qwen/qwen3.8-27b`). Anthropic was removed on 2026-10-08 and `ANTHROPIC_*` variables are no longer read. See "Groq models".
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
-- Support: there is **no support page, form, or inbox** (removed 2026-09-29). See "Support and contact".
+- Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
 - Latest functional commit: `72776ef` (chat speed, reliability, and the offline test setup). The documentation was refreshed after it.
@@ -29,7 +29,7 @@ Last updated: **October 13, 2026**
 ## Changes since the August 13 baseline
 
 - **Security:** `npm audit fix` patched the critical and high advisories (Next.js, sharp, `@xmldom/xmldom`, qs). Three moderate advisories remain (`mammoth` through `argparse` to `sprintf-js`); the only fix is a forced downgrade of `mammoth`, so they are accepted for now. CI's `--audit-level=high` passes.
-- **Support removed (2026-09-29):** see "Support and contact".
+- **Support removed (2026-10-08):** see "Support and contact".
 - **Image uploads:** PNG, JPG, WebP, and GIF files are read by a Groq vision model (`lib/ocr.ts`, up to about 2.8 MB each). Scanned PDFs are **not** supported: Groq cannot read PDFs directly, and a PDF with no text layer is rejected with a clear message. See `app/api/files/upload/route.ts`.
 - **Error reporting:** `instrumentation.ts` logs failed server requests as one `[server-error]` JSON line; `/api/client-error` receives browser crashes (rate limited) and logs `[client-error]`; `app/error.tsx` and `app/global-error.tsx` show a friendly page instead of a blank one. Search these tags in Vercel logs. There is no alerting.
 - **AI:** Groq-only, with a streaming, rate-limit-aware request path. See "AI request lifecycle". Chat time to first word, the "no responses after a few messages" failures, and the flashing reply were all fixed on 2026-10-08.
@@ -56,7 +56,7 @@ Last updated: **October 13, 2026**
 
 ## Support and contact
 
-- Removed on 2026-09-29: `/support`, `/help`, the support contact form, `/api/support/contact`, the support email in footers and email footers, the Settings "Help & support" panel, and the welcome email's "reply to us" line. `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read and can be deleted from Vercel.
+- Removed on 2026-10-08: `/support`, `/help`, the support contact form, `/api/support/contact`, the support email in footers and email footers, the Settings "Help & support" panel, and the welcome email's "reply to us" line. `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read and can be deleted from Vercel.
 - Still in the database: the `support_requests` table and its history. Migrations were left unchanged.
 - The Privacy, Terms, and Security pages state that Selrano does not currently offer a public email address and that a contact channel will be published. A privacy policy normally needs a contact method: when one exists, update `app/(legal)/privacy/page.tsx`, `terms/page.tsx`, and `security/page.tsx`, and reword the "Respond to your support requests" line in the Privacy page's data-use list.
 - Check once: the Supabase Auth email templates (pasted into the Supabase dashboard from `docs/OPERATIONS.md`) used to link to `/support`, which is now a 404. Make sure the live templates no longer contain that link.

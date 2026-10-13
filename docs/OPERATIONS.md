@@ -157,7 +157,7 @@ Email HTML: shared layout [`lib/email/layout.ts`](../lib/email/layout.ts); trans
 
 ## 3. Support and contact
 
-There is **no support page, contact form, or support inbox** (removed 2026-09-29, because the inbox could not be reached). Nothing in the app asks users to email anyone.
+There is **no support page, contact form, or support inbox** (removed 2026-10-08, because the inbox could not be reached). Nothing in the app asks users to email anyone.
 
 - The `support_requests` table and its history remain in the database (migration `004_ops_support.sql`); nothing writes to it now.
 - `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read. They can be deleted from Vercel.
