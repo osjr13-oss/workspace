@@ -38,6 +38,21 @@ Last updated: **October 13, 2026**
 - **Tailwind config:** `tailwind.config.ts` imports `@tailwindcss/typography` instead of calling `require`, because newer Node versions load TypeScript configs natively and `require` crashed the dev server.
 - **Tooling:** Playwright tests with offline stand-ins for Supabase and Groq. See "Tests".
 - **Hosting:** only `main` deploys. See "Hosting and deploys".
+- **Private access (2026-10-13):** see "Private access".
+- **Chat redesign (2026-10-13):** see "Chat experience".
+
+## Chat experience
+
+Rebuilt on 2026-10-13. Chat is the signed-in home: `/`, sign-in, the auth callback, password update, and the installed app all land on `/chats`.
+
+- **One sidebar** (`components/app-shell.tsx`): New chat, the workspace sections, and recent chats grouped by day, with search, inline delete, and a collapse toggle. On phones it is a drawer behind the menu button. The chat page no longer has its own thread list.
+- **Conversation**: a centered reading column. The header shows the chat's title with Rename and Delete. A new chat offers four starter prompts.
+- **Composer**: grows with the text; attach up to four files; pick a project for a new chat (an existing chat keeps its project); the send button turns into **Stop** while a reply runs (Esc also stops). `/` focuses the box.
+- **Stop** keeps the words already shown. The page calls `POST /api/ai/chat/stop`, which saves them as the reply; the generating request keeps running, sees that newer message when it finishes, and saves nothing on top. A reply stopped before any words is saved empty and shows "Stopped before replying." with a regenerate button; empty replies are left out of the model's history.
+- **Tool status**: while a tool runs the page shows what Selrano is doing (for example `Searching the web for "..."`) until the first words arrive.
+- **Attachments** upload into the workspace like the Files page (`lib/upload-file.ts`, in the chat's project). The chat request sends `fileIds`; their text (6,000 characters in total) goes into the prompt, and a reference to each file is saved in the user message's `citations` (marker `attachment-N`), so the message shows them after a reload. No schema change.
+- **Answers**: code blocks with a copy button and highlighting (`highlight.js`, loaded only when code appears), scrolling tables, and a Sources row for web citations.
+- **Scrolling** follows new words only while you are at the bottom; scrolling up shows a jump-to-latest button.
 
 ## Groq models
 
@@ -179,14 +194,14 @@ The July 24 memory investigation found historical user messages but no content-m
 1. Authenticate the user (API routes skip the middleware session check, so there is one auth round trip, not two).
 2. In parallel: verify thread/project ownership and reserve daily AI usage atomically.
 3. In parallel: load recent history, project context, style profile, and relevant durable memories, while saving the user message. History is the last 12 messages within 8,000 characters (each clipped to 2,000); project context is capped at 9,000 characters; replies are capped at 3,072 tokens. These limits keep every request small enough for Groq's per-model token limits.
-4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer.
-5. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen. The response headers are sent only once the first words exist, so a failure is a clean JSON error, not a broken stream.
+4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer. Attached files (`fileIds`) are added to the prompt as the user's own material.
+5. The reply is a stream of JSON lines (`lib/chat-stream.ts`): `start` (the conversation id, sent at once), `status` (what a tool is doing), `text` (the next words), and `error` (nothing could be produced; the page restores the user's text). Checks that fail before generation starts (sign in, ownership, the daily limit) are still plain JSON errors. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen.
 6. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
 7. An empty reply is retried once without tools. If nothing can be produced, the just-saved user message (and a thread created by this request) is removed, the reserved usage is refunded, and the page puts the text back in the box.
 8. Remove em dashes at every model-output boundary.
-9. Persist the assistant response before closing the stream. Generation runs to completion even if the browser leaves.
+9. Persist the assistant response before closing the stream, unless Stop already saved a reply (the newest message in the thread is then an assistant message). Generation runs to completion even if the browser leaves.
 10. After the response (`after()`): update the thread timestamp, extract new durable memories (only when the message is personal; background model `GROQ_BACKGROUND_MODEL`), and bootstrap memories from history at most once a day. None of this is ever in front of an answer.
-11. The page keeps one reply in flight (Enter is ignored while busy), tidies half-streamed Markdown (`lib/stream-markdown.ts`), and hands the streamed bubble over to the saved row without remounting it.
+11. The page keeps one reply in flight (Enter is ignored while busy), tidies half-streamed Markdown (`lib/stream-markdown.ts`), and hands the streamed bubble over to the saved row without remounting it. Opening another chat mid-reply stops listening (the server still saves the answer); Stop saves what was shown.
 
 Each finished reply logs one `[chat] reply` line with time to first word, total time, length, tool count, and whether the browser left, which is the quickest way to check speed in Vercel logs.
 
@@ -196,11 +211,12 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 
 - `e2e/public.spec.ts`: private access. Closed marketing, signup, and shared-deck pages; open legal pages; robots and `noindex`; an allowed account getting in and a non-allowed one being refused and signed out (the fake Supabase can report another email through `GET http://localhost:54321/__user?email=...`).
 - `e2e/chat.spec.ts`: streaming without flashes, unfinished Markdown, empty replies, rate limits and model fallback, memory work staying off the critical path, prompt size, tool lead-ins, leaving mid-answer, double Enter, and the daily limit. These only run against the local setup, not a deployed site.
+- `e2e/chat-experience.spec.ts`: Stop (button and Esc) saves only what was shown, tool status, the sidebar (new chat appears, rename, reopen, delete), attachments reaching the model and showing on the message, code blocks and tables, jump to latest, and the phone menu.
 - `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
 
 If the machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
 
-To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
+To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
 
 ## Validation and release
 
@@ -228,7 +244,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 6. The Supabase performance-advisor warnings (missing foreign-key indexes, RLS policies calling `auth.uid()` without a scalar subquery) are addressed by the August 8 migrations in the repo. Confirm they are applied and re-run the advisor.
 7. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
 8. Monitoring is logs only: `[server-error]`, `[client-error]`, and the `[chat] reply` timing line. There is no alerting, error grouping, or product analytics beyond Vercel Web Analytics. Add them before scaling paid acquisition.
-9. Browser tests cover public pages and chat. Signup, notes, upload, flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
+9. Browser tests cover private access and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
 10. There is no public contact channel (see "Support and contact").
 11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
 12. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.

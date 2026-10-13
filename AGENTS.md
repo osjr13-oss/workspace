@@ -38,7 +38,9 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 
 ## Important paths
 
-- `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, workspace tools, streaming, and message persistence.
+- `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
+- `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
+- `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
 - `lib/ai.ts` — Groq-only completion, structured output, and streaming. Groq is the single AI provider.
 - `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).
 - `lib/ocr.ts` — reads text in uploaded images with a Groq vision model. Scanned PDFs are not supported.

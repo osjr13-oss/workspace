@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { isValidElement, useEffect, useRef, useState } from "react";
 import {
   Check,
   CheckCheck,
   Copy,
+  FileText,
   Pencil,
   RefreshCw,
   Volume2,
-  VolumeX,
-  X
+  VolumeX
 } from "lucide-react";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CitationBadge } from "@/components/citation-badge";
 import { healStreamingMarkdown } from "@/lib/stream-markdown";
 import { removeEmDashes } from "@/lib/text";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, FileCitation, WebCitation } from "@/lib/types";
 
 type ChatMessageProps = {
   message: ChatMessage;
@@ -33,12 +34,19 @@ function urlTransform(url: string) {
   return url.startsWith("citation:") ? url : defaultUrlTransform(url);
 }
 
-export function ChatMessageBubble({
-  message,
-  busy,
-  onEdit,
-  onRegenerate
-}: ChatMessageProps) {
+function isAttachment(citation: { marker: string }): citation is FileCitation {
+  return citation.marker.startsWith("attachment-");
+}
+
+function hostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatMessageProps) {
   const content = removeEmDashes(message.content);
   // Unfinished formatting at the tail of a reply that is still arriving is tidied so it never flashes as raw symbols.
   const streaming = message.id.startsWith("streaming");
@@ -48,6 +56,9 @@ export function ChatMessageBubble({
   const [copied, setCopied] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
+  const citations = message.citations || [];
+  const attachments = citations.filter(isAttachment);
+  const webSources = citations.filter((citation): citation is WebCitation => citation.kind === "web");
 
   useEffect(() => {
     return () => {
@@ -67,7 +78,7 @@ export function ChatMessageBubble({
     await onEdit(message.id, next);
   }
 
-  async function copyResponse() {
+  async function copyText() {
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
@@ -85,7 +96,6 @@ export function ChatMessageBubble({
       setSpeaking(false);
       return;
     }
-
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.rate = 1;
     utterance.onend = () => setSpeaking(false);
@@ -95,123 +105,225 @@ export function ChatMessageBubble({
     setSpeaking(true);
   }
 
-  return (
-    <article
-      className={`group flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
-      aria-label={message.role === "user" ? "Your message" : "Selrano response"}
-    >
-      <div className={message.role === "user" ? "max-w-[88%] sm:max-w-[78%]" : "w-full max-w-3xl"}>
+  if (message.role === "user") {
+    const saved = !message.id.startsWith("pending") && message.id !== "error";
+    return (
+      <article className="group flex w-full flex-col items-end" aria-label="Your message">
+        {attachments.length ? (
+          <ul className="mb-2 flex max-w-[88%] flex-wrap justify-end gap-1.5" aria-label="Attached files">
+            {attachments.map((file) => (
+              <li key={file.marker}>
+                <Link href={`/files/${file.fileId}`} className="attachment-chip hover:border-[var(--border-strong)]">
+                  <FileText size={14} />
+                  <span className="max-w-[14rem] truncate">{file.fileName}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {editing ? (
-          <div className="rounded-[26px] bg-[var(--surface-subtle)] p-4 sm:min-w-[min(34rem,70vw)]">
+          <div className="w-full max-w-[88%] rounded-[22px] border border-[var(--border-strong)] bg-[var(--background-elevated)] p-3 sm:max-w-[78%]">
             <textarea
               aria-label="Edit message"
-              className="min-h-28 w-full resize-y rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-base leading-7 text-[var(--text)] outline-none focus:border-[var(--border-strong)]"
+              className="min-h-24 w-full resize-y bg-transparent px-2 py-1 text-[15px] leading-7 text-[var(--text)] outline-none"
               value={draft}
               onChange={(event) => setDraft(removeEmDashes(event.target.value))}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void saveEdit();
+                }
+                if (event.key === "Escape") {
+                  setEditing(false);
+                  setDraft(content);
+                }
+              }}
               autoFocus
             />
-            <div className="mt-2 flex justify-end gap-2">
+            <div className="flex justify-end gap-1.5">
               <button
                 type="button"
                 onClick={() => {
                   setEditing(false);
                   setDraft(content);
                 }}
-                className="rounded-full p-2 text-[var(--muted)] hover:bg-white hover:text-[var(--text)]"
-                aria-label="Cancel editing"
+                className="chip-button text-[var(--muted-strong)]"
               >
-                <X size={15} />
+                Cancel
               </button>
-              <button
-                type="button"
-                onClick={saveEdit}
-                className="rounded-full bg-[var(--text)] p-2 text-white"
-                aria-label="Save and resend"
-              >
-                <Check size={15} />
+              <button type="button" onClick={saveEdit} className="chip-button bg-[var(--text)] text-white hover:bg-[var(--text)]" aria-label="Save and resend">
+                Send
               </button>
             </div>
           </div>
-        ) : message.role === "user" ? (
-          <div className="rounded-[26px] bg-[rgba(21,24,31,0.055)] px-5 py-4 text-[15px] font-medium leading-7 text-[var(--text)] sm:px-6 sm:py-5 sm:text-base">
-            <p className="whitespace-pre-wrap">{content}</p>
-            {!message.id.startsWith("pending") && message.id !== "error" ? (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                disabled={busy}
-                className="mt-2 rounded-full p-1.5 text-[var(--muted)] opacity-0 transition hover:bg-white/70 hover:text-[var(--text)] group-hover:opacity-100 focus:opacity-100"
-                aria-label="Edit and resend message"
-                title="Edit and resend"
-              >
-                <Pencil size={14} />
-              </button>
-            ) : null}
-          </div>
         ) : (
-          <div className="py-2">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              urlTransform={urlTransform}
-              className="prose max-w-none text-[var(--text)] prose-p:my-0 prose-p:mb-5 prose-p:text-[16px] prose-p:leading-8 prose-headings:font-extrabold prose-headings:tracking-tight prose-li:text-[16px] prose-li:leading-8 prose-strong:font-extrabold prose-code:text-xs prose-pre:text-xs sm:prose-p:text-[17px] sm:prose-li:text-[17px]"
-              components={
-                message.citations?.length
-                  ? {
-                      a: ({ href, children }) => {
-                        const marker = href?.startsWith("citation:")
-                          ? href.slice("citation:".length)
-                          : null;
-                        const citation = marker
-                          ? message.citations?.find((item) => item.marker === marker)
-                          : null;
-                        if (citation) return <CitationBadge citation={citation} />;
-                        return (
-                          <a href={href} target="_blank" rel="noreferrer">
-                            {children}
-                          </a>
-                        );
-                      }
-                    }
-                  : undefined
-              }
-            >
-              {message.citations?.length ? withCitationLinks(displayed) : displayed}
-            </ReactMarkdown>
-            {!streaming && message.id !== "error" ? (
-              <div className="mt-2 flex items-center gap-1 text-[var(--muted)]">
-                <button
-                  type="button"
-                  onClick={copyResponse}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
-                  aria-label={copied ? "Response copied" : "Copy response"}
-                  title={copied ? "Copied" : "Copy"}
-                >
-                  {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleSpeech}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
-                  aria-label={speaking ? "Stop reading response" : "Read response aloud"}
-                  title={speaking ? "Stop reading" : "Read aloud"}
-                >
-                  {speaking ? <VolumeX size={17} /> : <Volume2 size={17} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRegenerate(message.id)}
-                  disabled={busy}
-                  className="rounded-full p-2 transition hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]"
-                  aria-label="Regenerate response"
-                  title="Regenerate"
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-            ) : null}
+          <div className="user-bubble">
+            <p className="whitespace-pre-wrap">{content}</p>
           </div>
         )}
+        {saved && !editing ? (
+          <div className="message-actions mt-1 flex items-center gap-0.5">
+            <button type="button" onClick={copyText} className="icon-button h-8 w-8" aria-label={copied ? "Message copied" : "Copy message"} title="Copy">
+              {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(content);
+                setEditing(true);
+              }}
+              disabled={busy}
+              className="icon-button h-8 w-8"
+              aria-label="Edit and resend message"
+              title="Edit and resend"
+            >
+              <Pencil size={15} />
+            </button>
+          </div>
+        ) : null}
+      </article>
+    );
+  }
+
+  const isError = message.id === "error";
+  const stoppedEmpty = !streaming && !isError && !content.trim();
+
+  const components: Components = {
+    pre: ({ children }) => {
+      const child = Array.isArray(children) ? children[0] : children;
+      const props = isValidElement<{ className?: string; children?: React.ReactNode }>(child) ? child.props : null;
+      const language = /language-([\w+#-]+)/.exec(props?.className || "")?.[1] || "";
+      const code = String(props?.children ?? "").replace(/\n$/, "");
+      return <CodeBlock code={code} language={language} highlight={!streaming} />;
+    },
+    table: ({ children }) => (
+      <div className="table-scroll">
+        <table>{children}</table>
       </div>
+    ),
+    a: ({ href, children }) => {
+      const marker = href?.startsWith("citation:") ? href.slice("citation:".length) : null;
+      const citation = marker ? citations.find((item) => item.marker === marker) : null;
+      if (citation) return <CitationBadge citation={citation} />;
+      if (marker) return <>{children}</>;
+      return (
+        <a href={href} target="_blank" rel="noreferrer">
+          {children}
+        </a>
+      );
+    }
+  };
+
+  return (
+    <article className="group w-full" aria-label="Selrano response">
+      {isError ? (
+        <div className="rounded-2xl border border-[rgba(194,65,61,0.22)] bg-[rgba(194,65,61,0.05)] px-4 py-3 text-[15px] leading-7 text-[var(--text)]">
+          {content}
+        </div>
+      ) : stoppedEmpty ? (
+        <p className="text-sm italic text-[var(--muted)]">Stopped before replying.</p>
+      ) : (
+        <div className="answer-prose">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={urlTransform} components={components}>
+            {citations.length ? withCitationLinks(displayed) : displayed}
+          </ReactMarkdown>
+        </div>
+      )}
+
+      {!streaming && webSources.length ? (
+        <div className="mt-4">
+          <p className="text-xs font-bold text-[var(--muted)]">Sources</p>
+          <ol className="mt-1.5 flex flex-wrap gap-1.5">
+            {webSources.map((source) => (
+              <li key={source.marker}>
+                <a href={source.url} target="_blank" rel="noreferrer" className="source-chip" title={source.title}>
+                  <span className="source-chip-marker">{source.marker}</span>
+                  <span className="max-w-[14rem] truncate">{hostname(source.url)}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+
+      {!streaming && !isError ? (
+        <div className="message-actions mt-2 flex items-center gap-0.5 text-[var(--muted)]">
+          {!stoppedEmpty ? (
+            <>
+              <button type="button" onClick={copyText} className="icon-button h-8 w-8" aria-label={copied ? "Response copied" : "Copy response"} title={copied ? "Copied" : "Copy"}>
+                {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
+              </button>
+              <button
+                type="button"
+                onClick={toggleSpeech}
+                className="icon-button h-8 w-8"
+                aria-label={speaking ? "Stop reading response" : "Read response aloud"}
+                title={speaking ? "Stop reading" : "Read aloud"}
+              >
+                {speaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onRegenerate(message.id)}
+            disabled={busy}
+            className="icon-button h-8 w-8"
+            aria-label="Regenerate response"
+            title="Regenerate"
+          >
+            <RefreshCw size={15} />
+          </button>
+        </div>
+      ) : null}
     </article>
+  );
+}
+
+let highlighter: Promise<typeof import("highlight.js").default> | null = null;
+
+/** Code with a language label and a copy button. Highlighting loads only when a reply contains code. */
+function CodeBlock({ code, language, highlight }: { code: string; language: string; highlight: boolean }) {
+  const [html, setHtml] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!highlight || !code) return;
+    let cancelled = false;
+    highlighter ??= import("highlight.js/lib/common").then((module) => module.default);
+    void highlighter.then((hljs) => {
+      if (cancelled) return;
+      const result = language && hljs.getLanguage(language) ? hljs.highlight(code, { language }) : hljs.highlightAuto(code);
+      // highlight.js escapes the code itself; only its own span markup is added.
+      setHtml(result.value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [code, language, highlight]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="code-block">
+      <div className="code-block-header">
+        <span>{language || "code"}</span>
+        <button type="button" onClick={copy} className="code-copy" aria-label={copied ? "Code copied" : "Copy code"}>
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre>
+        {html !== null && highlight ? <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} /> : <code>{code}</code>}
+      </pre>
+    </div>
   );
 }

@@ -303,37 +303,39 @@ Use for: tags, labels, mobile nav items, loading indicators.
 
 ## Layout
 
-### App shell grid
+### App frame
 
 ```css
-.layout-grid {
-  display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
-  min-height: 100vh;
-}
-
-@media (max-width: 920px) {
-  .layout-grid {
-    grid-template-columns: 1fr;  /* sidebar hidden on mobile */
-  }
-}
+.app-frame { display: flex; min-height: 100dvh; --topbar-height: 56px; }
 ```
+
+- Desktop (`lg` and up): a sticky sidebar beside the page.
+- Phone and tablet: a 56px `.topbar` (menu, Selrano, new chat) and the sidebar as a slide-in drawer (`.drawer-panel` over `.drawer-scrim`). Any link in the drawer closes it.
 
 ### Sidebar
 
-- Width: `272px`
-- Background: `rgba(255, 255, 255, 0.42)` + `backdrop-blur-xl`
-- Right border: `1px solid var(--border)`
-- Padding: `20px horizontal, 24px vertical`
-- Sticky, full viewport height
+- Width `268px`, or a `64px` icon rail when collapsed (`.sidebar-collapsed`, remembered per browser).
+- Background `rgba(255, 255, 255, 0.42)` with blur; right border `1px solid var(--border)`.
+- Order: logo and collapse toggle, **New chat**, section links, recent chats grouped Today / Yesterday / Previous 7 days / Older (with search once there are more than six), then Settings and Sign out.
+- Recent chats come from `ChatThreadsProvider` (`components/chat-threads.tsx`), shared with the chat page so titles, new chats, and deletions appear in both at once. Deleting asks inline, never with a browser dialog.
 
-### Nav items
+### Nav items (`.side-item`)
 
 ```
-Active:   border + bg-surface-strong + shadow-tight + text-primary
-Default:  text-muted, hover → bg-surface-subtle + text-primary
-Shape:    rounded-2xl (16px), min-height 48px, gap-3, bold
+Default:  14px semibold, text-muted-strong, 38px tall, rounded 12px
+Hover:    bg-surface-subtle + text-primary
+Active:   .side-item-active (bg-surface-strong, bold)
+Primary:  .side-item-strong (New chat: border, surface-strong, shadow-tight)
 ```
+
+### Chat
+
+- `.chat-page` fills the viewport under the top bar; the conversation column is `max-w-[46rem]`, centered.
+- User messages: `.user-bubble` (soft tinted, right aligned, 20px radius); their copy and edit actions appear on hover.
+- Answers: `.answer-prose` (16px, 1.75 line height) without a container. Code uses `.code-block` (dark, language label, copy button, highlight.js loaded only when code appears). Tables sit in `.table-scroll`. Web sources show as `.source-chip`s under the answer.
+- `.composer`: a 22px-radius card with the message box on top and a row of attach, project (`.project-chip`), and send or stop (`.send-button`).
+- While waiting: the orbit ring until a tool starts, then `.tool-status` ("Searching the web for ...") until the first words.
+- `.jump-button` appears above the composer when the reader scrolls up.
 
 ### Data table
 

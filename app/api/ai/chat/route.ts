@@ -9,6 +9,7 @@ import { serializeError } from "@/lib/serialize-error";
 import { ingestUserStyle } from "@/lib/style-profile";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { removeEmDashes } from "@/lib/text";
+import type { ChatStreamEvent } from "@/lib/chat-stream";
 import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
       projectId?: string | null;
       editMessageId?: string;
       regenerateMessageId?: string;
+      fileIds?: string[];
     };
     let userContent = removeEmDashes(body.message || "").trim();
 
@@ -89,9 +91,11 @@ export async function POST(request: Request) {
 
     if (!userContent) return NextResponse.json({ error: "Message is required" }, { status: 400 });
 
-    // Ownership checks and the quota reservation do not depend on each other.
-    const [ownership, limitError] = await Promise.all([
+    // Ownership checks, attached files, and the quota reservation do not depend on each other.
+    const fileIds = Array.isArray(body.fileIds) ? body.fileIds.filter((id) => typeof id === "string").slice(0, MAX_ATTACHMENTS) : [];
+    const [ownership, attachments, limitError] = await Promise.all([
       resolveConversation(supabase, user.id, threadId, projectId),
+      loadAttachments(supabase, user.id, fileIds),
       reserveAiRequest(supabase, user.id, "chat", { model: configuredAiModel(), input_chars: userContent.length })
     ]);
     if ("response" in ownership) return ownership.response;
@@ -158,7 +162,7 @@ export async function POST(request: Request) {
       isNewMessage
         ? supabase
             .from("chat_messages")
-            .insert({ user_id: user.id, thread_id: finalThreadId, role: "user", content: userContent })
+            .insert({ user_id: user.id, thread_id: finalThreadId, role: "user", content: userContent, citations: attachments.citations })
             .select("id")
             .single()
             .then(({ data, error }) => {
@@ -208,6 +212,14 @@ export async function POST(request: Request) {
               }
             ]
           : []),
+      ...(attachments.text
+        ? [
+            {
+              role: "system" as const,
+              content: `Files the user attached to this message. Treat them as the user's own material:\n${attachments.text}`
+            }
+          ]
+        : []),
       ...buildHistory((historyResult.data || []) as HistoryRow[], isNewMessage ? userContent : null)
     ];
 
@@ -224,14 +236,13 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     const startedAt = Date.now();
     let clientGone = false;
-    let resolveFirstOutput!: (outcome: FirstOutcome) => void;
-    const firstOutput = new Promise<FirstOutcome>((resolve) => {
-      resolveFirstOutput = resolve;
-    });
 
-    // Generation starts immediately and runs to completion even if the browser
-    // goes away, so a finished answer is always saved. Output is held until the
-    // first words are ready so a failure can still be reported as a clean error.
+    // The reply is a stream of JSON lines (ChatStreamEvent in lib/chat-stream.ts):
+    // the conversation id, what Selrano is doing while it uses a tool, the
+    // answer text as it arrives, or an error when nothing could be produced.
+    // Generation runs to completion even if the browser goes away, so a
+    // finished answer is always saved, unless the user pressed Stop
+    // (/api/ai/chat/stop saves what they saw instead).
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         void generate(controller);
@@ -250,20 +261,23 @@ export async function POST(request: Request) {
       let failure: unknown = null;
       let toolsUsed = 0;
 
-      const push = (text: string) => {
-        if (!text) return;
-        answer += text;
-        if (!firstVisibleAt) {
-          firstVisibleAt = Date.now();
-          resolveFirstOutput({ type: "text" });
-        }
+      const send = (event: ChatStreamEvent) => {
         if (clientGone) return;
         try {
-          controller.enqueue(encoder.encode(text));
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
         } catch {
           clientGone = true;
         }
       };
+
+      const push = (text: string) => {
+        if (!text) return;
+        answer += text;
+        if (!firstVisibleAt) firstVisibleAt = Date.now();
+        send({ type: "text", text });
+      };
+
+      send({ type: "start", threadId: finalThreadId });
 
       // Models often write a short lead-in ("Let me look that up") before a tool
       // call. Hold back the opening words until it is clear whether a tool call
@@ -317,6 +331,7 @@ export async function POST(request: Request) {
             let result: string;
             try {
               const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+              send({ type: "status", label: describeToolCall(call.function.name, args) });
               result = await executeTool(call.function.name, args, toolCtx);
             } catch (error) {
               result = `Error running ${call.function.name}: ${serializeError(error)}`;
@@ -324,6 +339,7 @@ export async function POST(request: Request) {
             results.push(result);
             toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
           }
+          // The status stays up while the answer is written; the page clears it at the first words.
           if (answer) push("\n\n");
           const before = answer.length;
           try {
@@ -349,9 +365,40 @@ export async function POST(request: Request) {
         console.error("[chat] stream failed", serializeError(error), error);
       }
 
-      if (!answer.trim()) {
-        resolveFirstOutput({ type: "failure", error: failure });
-      } else if (failure) {
+      // Stop saves the words the user saw as the newest message
+      // (/api/ai/chat/stop). If that happened, nothing more is saved or undone.
+      let stopped = false;
+      {
+        try {
+          const { data: newest } = await supabase
+            .from("chat_messages")
+            .select("role")
+            .eq("thread_id", finalThreadId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          stopped = newest?.role === "assistant";
+        } catch (stopCheckError) {
+          console.error("[chat] stop check failed", serializeError(stopCheckError));
+        }
+      }
+
+      if (!answer.trim() && !stopped) {
+        // The turn produced nothing, so leave no trace of it: the message the
+        // user just sent (and the thread, if this request created it) is removed
+        // and the page puts their text back in the box.
+        try {
+          if (savedUserMessageId) {
+            await supabase.from("chat_messages").delete().eq("id", savedUserMessageId).eq("user_id", user!.id);
+          }
+          if (createdThread) {
+            await supabase.from("chat_threads").delete().eq("id", finalThreadId).eq("user_id", user!.id);
+          }
+        } catch (rollbackError) {
+          console.error("[chat] rollback failed", serializeError(rollbackError));
+        }
+        send({ type: "error", error: describeFailure(failure), restore: true });
+      } else if (failure && answer.trim()) {
         push("\n\nThe response was cut short. Try regenerating it.");
       }
 
@@ -359,7 +406,7 @@ export async function POST(request: Request) {
       // same complete (or partial) reply. A failure here must never stop the
       // stream from closing.
       try {
-        if (answer.trim()) {
+        if (answer.trim() && !stopped) {
           const allCitations = { ...context.citations, ...webCitations };
           const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
           const citations = usedMarkers
@@ -374,7 +421,8 @@ export async function POST(request: Request) {
             citations
           });
           if (assistantMessageError) console.error("[chat] persist assistant message failed", assistantMessageError);
-
+        }
+        if (answer.trim()) {
           console.info(
             "[chat] reply",
             JSON.stringify({
@@ -383,7 +431,9 @@ export async function POST(request: Request) {
               totalMs: Date.now() - startedAt,
               chars: answer.length,
               tools: toolsUsed,
+              attachments: attachments.citations.length,
               clientGone,
+              stopped,
               partial: Boolean(failure)
             })
           );
@@ -402,37 +452,20 @@ export async function POST(request: Request) {
       // for memory, runs once the response is done.
       const finalAnswer = answer;
       runAfterResponse(async () => {
-        if (!finalAnswer.trim()) {
+        if (!finalAnswer.trim() && !stopped) {
           await refundAiRequest(user!.id, "chat");
           return;
         }
         await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
+        if (stopped) return;
         await extractMemories(supabase, user!.id, userContent, finalAnswer);
         await maybeBootstrapMemories(supabase, user!.id);
       });
     }
 
-    const outcome = await firstOutput;
-    if (outcome.type === "failure") {
-      // The turn produced nothing, so leave no trace of it: the message the
-      // user just sent (and the thread, if this request created it) is removed
-      // and the page puts their text back in the box.
-      try {
-        if (savedUserMessageId) {
-          await supabase.from("chat_messages").delete().eq("id", savedUserMessageId).eq("user_id", user.id);
-        }
-        if (createdThread) {
-          await supabase.from("chat_threads").delete().eq("id", finalThreadId).eq("user_id", user.id);
-        }
-      } catch (rollbackError) {
-        console.error("[chat] rollback failed", serializeError(rollbackError));
-      }
-      return NextResponse.json({ error: describeFailure(outcome.error) }, { status: failureStatus(outcome.error) });
-    }
-
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "application/x-ndjson; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         "X-Thread-Id": finalThreadId,
         "X-AI-Model": configuredAiModel()
@@ -460,7 +493,8 @@ const HOLD_CHARS = 160;
 const HOLD_MS = 350;
 
 type HistoryRow = { role: "user" | "assistant"; content: string };
-type FirstOutcome = { type: "text" } | { type: "failure"; error: unknown };
+const MAX_ATTACHMENTS = 4;
+const ATTACHMENT_CHAR_BUDGET = 6000;
 
 function clip(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -480,6 +514,7 @@ function buildHistory(newestFirst: HistoryRow[], newMessage: string | null) {
   const kept: Array<{ role: "user" | "assistant"; content: string }> = [];
   let used = 0;
   for (const row of rows) {
+    if (!row.content.trim()) continue; // a reply stopped before any words
     const content = clip(removeEmDashes(row.content), HISTORY_MESSAGE_MAX);
     if (used + content.length > HISTORY_CHAR_BUDGET && kept.length) break;
     used += content.length;
@@ -530,8 +565,57 @@ function describeFailure(error: unknown) {
   return "The AI returned an empty reply. Please try again. This did not count against your limit.";
 }
 
-function failureStatus(error: unknown) {
-  return error instanceof GroqHttpError && error.rateLimited ? 429 : 502;
+/** What the page shows while a tool runs, e.g. Searching the web for "mars rover news". */
+function describeToolCall(name: string, args: Record<string, unknown>) {
+  const quoted = (value: unknown) => {
+    const text = removeEmDashes(String(value ?? "")).trim();
+    return text ? ` for "${clip(text, 60)}"` : "";
+  };
+  switch (name) {
+    case "web_search":
+      return `Searching the web${quoted(args.query)}`;
+    case "search_workspace":
+      return `Searching your materials${quoted(args.query)}`;
+    case "create_note":
+      return "Writing a note";
+    case "create_flashcards":
+      return "Making flashcards";
+    default:
+      return "Working on it";
+  }
+}
+
+/**
+ * Files attached to this message: their text goes into the prompt (within a
+ * budget, since Groq limits tokens per minute) and a reference to each is saved
+ * on the user's message so the page can show it.
+ */
+async function loadAttachments(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"],
+  userId: string,
+  fileIds: string[]
+): Promise<{ text: string; citations: Citation[] }> {
+  if (!fileIds.length) return { text: "", citations: [] };
+  const { data, error } = await supabase
+    .from("files")
+    .select("id, name, extracted_text")
+    .in("id", fileIds)
+    .eq("user_id", userId);
+  if (error) throw error;
+  const files = (data || []) as Array<{ id: string; name: string; extracted_text: string | null }>;
+  const share = Math.floor(ATTACHMENT_CHAR_BUDGET / Math.max(files.length, 1));
+  return {
+    text: files.map((file) => `File: ${removeEmDashes(file.name)}\n${clip(removeEmDashes(file.extracted_text || ""), share)}`).join("\n\n---\n\n"),
+    citations: files.map((file, index) => ({
+      kind: "file" as const,
+      marker: `attachment-${index + 1}`,
+      fileId: file.id,
+      fileName: file.name,
+      pageNumber: null,
+      charStart: null,
+      charEnd: null
+    }))
+  };
 }
 
 /** Runs work after the response is delivered, or right away if that is not possible. */

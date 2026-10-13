@@ -1,21 +1,31 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Trash2 } from "lucide-react";
-import { ChatComposer } from "@/components/chat-composer";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowDown, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
+import { useChatThreads } from "@/components/chat-threads";
 import { ThinkingTrace } from "@/components/thinking-trace";
-import { WorkspaceHeader } from "@/components/workspace-header";
+import { readChatStream } from "@/lib/chat-stream";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { formatRelative } from "@/lib/format";
 import { removeEmDashes } from "@/lib/text";
-import type { ChatMessage, ChatThread, Project } from "@/lib/types";
+import { uploadWorkspaceFile } from "@/lib/upload-file";
+import type { ChatMessage, Project } from "@/lib/types";
 
 /** A message plus a React key that survives the swap from streamed text to the saved row. */
 type DisplayMessage = ChatMessage & { clientKey?: string };
 
 type Handoff = { userKey?: string | null; assistantKey?: string | null };
+
+const MAX_ATTACHMENTS = 4;
+
+const STARTERS = [
+  { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on." },
+  { title: "Quiz me", prompt: "Quiz me on what I have been studying. Ask one question at a time." },
+  { title: "Make flashcards", prompt: "Turn my latest notes into a flashcard deck." },
+  { title: "What changed today", prompt: "What are the most important news stories today?" }
+];
 
 function withHandoffKeys(rows: ChatMessage[], handoff?: Handoff): DisplayMessage[] {
   const out: DisplayMessage[] = rows.map((row) => ({ ...row }));
@@ -48,113 +58,195 @@ export default function ChatsPage() {
 }
 
 function ChatsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const initialThread = searchParams.get("thread");
-  const initialProject = searchParams.get("project");
-  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const urlThread = searchParams.get("thread");
+  const urlProject = searchParams.get("project");
+  const { threads, refresh: refreshThreads, rename, remove } = useChatThreads();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
-  const [threadId, setThreadIdState] = useState<string | null>(initialThread);
+  const [threadId, setThreadIdState] = useState<string | null>(urlThread);
   // The conversation id is also kept in a ref that is updated the instant it is known, so the next
   // message can never be sent with a stale id while React is still applying the state update.
-  const threadIdRef = useRef<string | null>(initialThread);
+  const threadIdRef = useRef<string | null>(urlThread);
   function setThreadId(id: string | null) {
     threadIdRef.current = id;
     setThreadIdState(id);
   }
-  const [projectId, setProjectId] = useState(initialProject || "");
+  const [projectId, setProjectId] = useState(urlProject || "");
   const [text, setText] = useState("");
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingThread, setLoadingThread] = useState(Boolean(urlThread));
   // True once the first words of a reply are on screen, so the thinking mark never returns after them.
   const [replyStarted, setReplyStarted] = useState(false);
-  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  // What Selrano is doing while it uses a tool, e.g. Searching the web.
+  const [status, setStatus] = useState<string | null>(null);
+  const [atBottom, setAtBottom] = useState(true);
+
   const listRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const stickRef = useRef(true);
   const turnRef = useRef(0);
+  // Bumped whenever another conversation is opened, so a reply still arriving for the old one is ignored.
+  const viewRef = useRef(0);
   // Only one reply can be in flight. Enter in the text box submits even while busy, so this is checked synchronously.
   const busyRef = useRef(false);
-  const loadingRef = useRef(false);
-  const skipLoadRef = useRef<string | null>(null);
-  loadingRef.current = loading;
+  const abortRef = useRef<AbortController | null>(null);
+  const streamTextRef = useRef("");
+  const turnKeysRef = useRef<Handoff>({});
+  const stopRef = useRef<Promise<void> | null>(null);
 
-  async function loadThreads() {
-    const supabase = createSupabaseBrowserClient();
-    const [threadResult, projectResult] = await Promise.all([
-      supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }),
-      supabase.from("projects").select("*").order("name")
-    ]);
-    const loadedThreads = (threadResult.data as ChatThread[]) || [];
-    setThreads(loadedThreads);
-    setProjects((projectResult.data as Project[]) || []);
-  }
+  const activeThread = threads.find((thread) => thread.id === threadId) || null;
+  const hasMessages = messages.length > 0;
 
-  async function loadMessages(id: string | null, handoff?: Handoff) {
+  const loadMessages = useCallback(async (id: string | null, handoff?: Handoff) => {
+    const view = viewRef.current;
     if (!id) {
       setMessages([]);
+      setLoadingThread(false);
       return;
     }
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase.from("chat_messages").select("*").eq("thread_id", id).order("created_at", { ascending: true });
+    if (viewRef.current !== view) return;
     setMessages(withHandoffKeys((data as ChatMessage[]) || [], handoff));
-  }
-
-  useEffect(() => {
-    loadThreads();
+    setLoadingThread(false);
   }, []);
 
   useEffect(() => {
-    // A thread created by our own reply is loaded once, by the reply itself.
-    if (skipLoadRef.current && skipLoadRef.current === threadId) {
-      skipLoadRef.current = null;
-      return;
+    const supabase = createSupabaseBrowserClient();
+    void supabase
+      .from("projects")
+      .select("*")
+      .order("name")
+      .then(({ data }) => setProjects((data as Project[]) || []));
+    if (threadIdRef.current) void loadMessages(threadIdRef.current);
+  }, [loadMessages]);
+
+  // The address changed from outside this page: a sidebar link, New chat, or the back button.
+  useEffect(() => {
+    if (urlThread === threadIdRef.current) return;
+    viewRef.current += 1;
+    // A reply still arriving for the conversation being left keeps running on the
+    // server and is saved there; this page just stops listening to it.
+    abortRef.current?.abort();
+    abortRef.current = null;
+    busyRef.current = false;
+    setLoading(false);
+    setReplyStarted(false);
+    setStatus(null);
+    setThreadId(urlThread);
+    setMessages([]);
+    stickRef.current = true;
+    setAtBottom(true);
+    if (urlThread) {
+      setLoadingThread(true);
+      void loadMessages(urlThread);
+    } else {
+      setLoadingThread(false);
+      setProjectId(urlProject || "");
     }
-    loadMessages(threadId);
-  }, [threadId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlThread]);
 
   useEffect(() => {
-    const activeThread = threads.find((thread) => thread.id === threadId);
     if (activeThread) setProjectId(activeThread.project_id || "");
-  }, [threadId, threads]);
+  }, [activeThread]);
 
+  // Follow the newest words only while the reader is already at the bottom. The jump is
+  // instant: a smooth scroll reports in-between positions, which would read as the reader
+  // scrolling away.
   useEffect(() => {
-    // Jump while a reply is streaming; a smooth scroll restarted on every update falls behind.
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: loadingRef.current ? "auto" : "smooth" });
-  }, [messages]);
+    const list = listRef.current;
+    if (list && stickRef.current) list.scrollTop = list.scrollHeight;
+  }, [messages, status, loading]);
+
+  // Content can also grow after it renders (code highlighting, wrapped tables).
+  useEffect(() => {
+    const list = listRef.current;
+    const content = contentRef.current;
+    if (!list || !content || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (stickRef.current) list.scrollTop = list.scrollHeight;
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [hasMessages]);
+
+  function onListScroll() {
+    const list = listRef.current;
+    if (!list) return;
+    const bottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+    stickRef.current = bottom;
+    setAtBottom(bottom);
+  }
+
+  function jumpToLatest() {
+    stickRef.current = true;
+    setAtBottom(true);
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  }
+
+  function showThread(id: string | null) {
+    const url = id ? `/chats?thread=${id}` : "/chats";
+    // Updates the address without a navigation, so the page keeps its state.
+    window.history.replaceState(null, "", url);
+  }
 
   async function requestReply(
-    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
-    userKey: string | null = null
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string; fileIds?: string[] },
+    userKey: string | null = null,
+    sentAttachments: ComposerAttachment[] = []
   ) {
     if (busyRef.current) return;
     busyRef.current = true;
     try {
-      await runReply(options, userKey);
+      await runReply(options, userKey, sentAttachments);
     } finally {
       busyRef.current = false;
     }
   }
 
   async function runReply(
-    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
-    userKey: string | null
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string; fileIds?: string[] },
+    userKey: string | null,
+    sentAttachments: ComposerAttachment[]
   ) {
     setLoading(true);
     setReplyStarted(false);
+    setStatus(null);
+    stickRef.current = true;
+    setAtBottom(true);
     turnRef.current += 1;
     const assistantKey = `streaming-${turnRef.current}`;
+    turnKeysRef.current = { userKey, assistantKey };
+    streamTextRef.current = "";
+    const view = viewRef.current;
+    const current = () => viewRef.current === view;
+    const controller = new AbortController();
+    abortRef.current = controller;
     const canRestoreText = !options.editMessageId && !options.regenerateMessageId;
-    let streamStarted = false;
     const startingThreadId = threadIdRef.current;
     let streamThreadId: string | null = startingThreadId;
+    let bubbleAdded = false;
+    let failed = false;
 
     // A reply that could not be produced leaves nothing behind on the server, so
     // the user's own message is taken off the screen and put back in the box.
-    const fail = (text: string) => {
-      setMessages((current) => [
-        ...current.filter((message) => message.id !== "pending-user" && message.id !== "streaming"),
-        { id: "error", thread_id: threadId || "pending", user_id: "", role: "assistant", content: text, created_at: new Date().toISOString() }
+    const fail = (message: string, restore: boolean) => {
+      failed = true;
+      setMessages((existing) => [
+        ...existing.filter((item) => item.id !== "pending-user" && item.id !== "streaming"),
+        { id: "error", thread_id: threadIdRef.current || "pending", user_id: "", role: "assistant", content: message, created_at: new Date().toISOString() }
       ]);
-      if (canRestoreText && options.message) setText((current) => current || options.message || "");
+      if (restore && canRestoreText && options.message) {
+        setText((existing) => existing || options.message || "");
+        if (sentAttachments.length) setAttachments((existing) => (existing.length ? existing : sentAttachments));
+      }
       setReplyStarted(false);
+      setStatus(null);
       setLoading(false);
     };
 
@@ -162,6 +254,7 @@ function ChatsContent() {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           ...options,
           threadId: threadIdRef.current,
@@ -171,200 +264,240 @@ function ChatsContent() {
 
       if (!response.ok || !response.body) {
         const payload = await response.json().catch(() => ({}));
-        fail(payload.error || "Chat failed.");
+        if (current()) fail(payload.error || "Chat failed.", true);
         return;
       }
 
-      // Tool-action replies currently arrive as JSON; normal chat replies stream.
-      const isStreaming = (response.headers.get("content-type") || "").includes("text/plain");
-      if (!isStreaming) {
-        const payload = await response.json();
-        if (payload.threadId && payload.threadId !== startingThreadId) skipLoadRef.current = payload.threadId;
-        setThreadId(payload.threadId);
-        await loadMessages(payload.threadId, { userKey, assistantKey });
-        setReplyStarted(false);
-        setLoading(false);
-        void loadThreads();
-        return;
-      }
-
-      const newThreadId = response.headers.get("X-Thread-Id") || startingThreadId;
-      streamStarted = true;
-      streamThreadId = newThreadId;
-
-      // Reply fills into an assistant bubble as tokens arrive.
-      setMessages((current) => [
-        ...current,
-        { id: "streaming", clientKey: assistantKey, thread_id: newThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
-      ]);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
       let frame = 0;
       // At most one redraw per frame, however fast the words arrive.
       const flush = () => {
         frame = 0;
-        const text = acc;
-        if (text.trim()) setReplyStarted(true);
-        setMessages((current) => current.map((message) => (message.id === "streaming" ? { ...message, content: text } : message)));
+        if (!current()) return;
+        const streamed = streamTextRef.current;
+        if (streamed.trim()) setReplyStarted(true);
+        setMessages((existing) => existing.map((item) => (item.id === "streaming" ? { ...item, content: streamed } : item)));
       };
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        if (!frame) frame = requestAnimationFrame(flush);
-      }
-      if (frame) cancelAnimationFrame(frame);
-      flush();
 
-      if (newThreadId && newThreadId !== startingThreadId) {
-        skipLoadRef.current = newThreadId;
-        setThreadId(newThreadId);
+      await readChatStream(response.body, (event) => {
+        if (!current()) return;
+        if (event.type === "start") {
+          streamThreadId = event.threadId;
+          if (event.threadId !== threadIdRef.current) {
+            setThreadId(event.threadId);
+            showThread(event.threadId);
+            void refreshThreads();
+          }
+        } else if (event.type === "status") {
+          setStatus(event.label);
+        } else if (event.type === "text") {
+          streamTextRef.current += event.text;
+          if (!bubbleAdded) {
+            bubbleAdded = true;
+            setStatus(null);
+            // Reply fills into an assistant bubble as words arrive.
+            setMessages((existing) => [
+              ...existing,
+              { id: "streaming", clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
+            ]);
+          }
+          if (!frame) frame = requestAnimationFrame(flush);
+        } else if (event.type === "error") {
+          fail(event.error, event.restore);
+        }
+      });
+      if (frame) cancelAnimationFrame(frame);
+      if (!current()) return;
+
+      if (failed) {
+        // The server removed a conversation that this turn had just created.
+        if (streamThreadId && streamThreadId !== startingThreadId) {
+          setThreadId(startingThreadId);
+          showThread(startingThreadId);
+          void refreshThreads();
+        }
+        return;
       }
+
+      flush();
       // The saved rows take over the same on-screen elements, so nothing flickers.
-      await loadMessages(newThreadId, { userKey, assistantKey });
+      await loadMessages(streamThreadId, { userKey, assistantKey });
       setReplyStarted(false);
+      setStatus(null);
       setLoading(false);
-      void loadThreads();
+      void refreshThreads();
     } catch (error) {
+      // Stop finishes the turn itself; wait for it so the next message cannot overtake it.
+      if (stopRef.current) {
+        await stopRef.current;
+        return;
+      }
+      // Another conversation was opened; this reply is saved on the server.
+      if (controller.signal.aborted || !current()) return;
       console.error("[chat] request failed", error);
-      if (streamStarted) {
+      if (bubbleAdded) {
         // The connection dropped mid-reply. The server finishes and saves the answer,
         // so keep what has arrived and then show the saved copy.
         setReplyStarted(false);
+        setStatus(null);
         setLoading(false);
         window.setTimeout(() => void loadMessages(streamThreadId, { userKey, assistantKey }), 2500);
         return;
       }
-      fail("Network error. Please try again.");
+      fail("Network error. Please try again.", true);
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
+  }
+
+  /** Stop: keep the words already on screen as the reply, and save exactly those. */
+  function stop() {
+    const controller = abortRef.current;
+    if (!controller || stopRef.current) return;
+    const partial = streamTextRef.current;
+    const id = threadIdRef.current;
+    const keys = turnKeysRef.current;
+    const finish = async () => {
+      setStatus(null);
+      setMessages((existing) =>
+        existing.some((item) => item.id === "streaming")
+          ? existing.map((item) => (item.id === "streaming" ? { ...item, content: partial } : item))
+          : existing
+      );
+      if (id) {
+        await fetch("/api/ai/chat/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId: id, content: partial })
+        }).catch(() => undefined);
+        await loadMessages(id, keys);
+        void refreshThreads();
+      }
+      setReplyStarted(false);
+      setLoading(false);
+    };
+    stopRef.current = finish().finally(() => {
+      stopRef.current = null;
+    });
+    controller.abort();
   }
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
     const prompt = removeEmDashes(text).trim();
     if (!prompt || busyRef.current) return;
+    if (attachments.some((item) => item.status === "uploading" || item.status === "processing")) return;
+    const ready = attachments.filter((item) => item.status === "ready" && item.fileId);
     setText("");
+    setAttachments([]);
     const userKey = `pending-user-${turnRef.current + 1}`;
-    setMessages((current) => [
-      ...current.filter((message) => message.id !== "error"),
+    setMessages((existing) => [
+      ...existing.filter((item) => item.id !== "error"),
       {
         id: "pending-user",
         clientKey: userKey,
-        thread_id: threadId || "pending",
+        thread_id: threadIdRef.current || "pending",
         user_id: "",
         role: "user",
         content: prompt,
+        citations: ready.map((item, index) => ({
+          kind: "file" as const,
+          marker: `attachment-${index + 1}`,
+          fileId: item.fileId!,
+          fileName: item.name,
+          pageNumber: null,
+          charStart: null,
+          charEnd: null
+        })),
         created_at: new Date().toISOString()
       }
     ]);
-    await requestReply({ message: prompt }, userKey);
+    await requestReply({ message: prompt, fileIds: ready.map((item) => item.fileId!) }, userKey, ready);
   }
 
   async function editAndResend(messageId: string, content: string) {
     if (busyRef.current) return;
-    setMessages((current) => {
-      const index = current.findIndex((message) => message.id === messageId);
-      if (index === -1) return current;
-      return current
+    setMessages((existing) => {
+      const index = existing.findIndex((item) => item.id === messageId);
+      if (index === -1) return existing;
+      return existing
         .slice(0, index + 1)
-        .map((message) =>
-          message.id === messageId
-            ? { ...message, content: removeEmDashes(content) }
-            : message
-        );
+        .map((item) => (item.id === messageId ? { ...item, content: removeEmDashes(content) } : item));
     });
     await requestReply({ message: removeEmDashes(content), editMessageId: messageId });
   }
 
   async function regenerate(messageId: string) {
     if (busyRef.current) return;
-    setMessages((current) => {
-      const index = current.findIndex((message) => message.id === messageId);
-      return index === -1 ? current : current.slice(0, index);
+    setMessages((existing) => {
+      const index = existing.findIndex((item) => item.id === messageId);
+      return index === -1 ? existing : existing.slice(0, index);
     });
     await requestReply({ regenerateMessageId: messageId });
   }
 
-  async function deleteThread(targetThreadId: string) {
-    if (!confirm("Delete this conversation? All messages will be permanently removed.")) return;
-    setDeletingThreadId(targetThreadId);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.from("chat_threads").delete().eq("id", targetThreadId);
-    if (!error) {
-      setThreads((current) => current.filter((thread) => thread.id !== targetThreadId));
-      if (threadId === targetThreadId) {
-        setThreadId(null);
-        setMessages([]);
-      }
+  function attach(files: File[]) {
+    const room = MAX_ATTACHMENTS - attachments.length;
+    for (const file of files.slice(0, Math.max(room, 0))) {
+      const key = `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 8)}`;
+      const patch = (update: Partial<ComposerAttachment>) =>
+        setAttachments((existing) => existing.map((item) => (item.key === key ? { ...item, ...update } : item)));
+      setAttachments((existing) => [...existing, { key, name: file.name, status: "uploading", progress: 0 }]);
+      // Attached files are saved to the workspace (in this chat's project), so they can be found again later.
+      uploadWorkspaceFile(file, {
+        projectId: projectId || null,
+        onProgress: (progress) => patch({ progress }),
+        onProcessing: () => patch({ status: "processing" })
+      })
+        .then((saved) => patch({ status: "ready", fileId: saved.id }))
+        .catch((error: unknown) => patch({ status: "failed", error: error instanceof Error ? error.message : "Upload failed." }));
     }
-    setDeletingThreadId(null);
   }
 
-  return (
-    <div className="mx-auto grid h-screen max-w-7xl gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-10">
-      <aside className="panel flex min-h-0 flex-col p-4">
-        <WorkspaceHeader title="Chats" eyebrow="AI" />
-        <button type="button" onClick={() => { setThreadId(null); setMessages([]); }} className="btn-primary mt-5">
-          New conversation
-        </button>
-        <select aria-label="Chat context" className="input-premium mt-3 px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={Boolean(threadId)}>
-          <option value="">Global chat</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>{project.name}</option>
-          ))}
-        </select>
-        {threadId ? <p className="mt-2 px-2 text-xs text-[var(--muted)]">Start a new conversation to change project context.</p> : null}
-        <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto">
-          {threads.map((thread) => (
-            <div key={thread.id} className="group/thread relative">
-              <button
-                type="button"
-                onClick={() => { setThreadId(thread.id); setProjectId(thread.project_id || ""); }}
-                className={`w-full rounded-2xl p-4 pr-12 text-left ${threadId === thread.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
-              >
-                <p className="truncate font-extrabold">{removeEmDashes(thread.title)}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteThread(thread.id)}
-                disabled={deletingThreadId === thread.id}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-[var(--muted)] opacity-100 transition hover:bg-white hover:text-[var(--critical)] focus:opacity-100 sm:opacity-0 sm:group-hover/thread:opacity-100 ${
-                  threadId === thread.id ? "sm:opacity-100" : ""
-                }`}
-                aria-label={`Delete ${removeEmDashes(thread.title)}`}
-                title="Delete conversation"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
+  async function deleteCurrent() {
+    if (!threadId) return;
+    const failure = await remove(threadId);
+    if (!failure) router.push("/chats");
+    return failure;
+  }
 
-      <section className="panel flex min-h-0 flex-col overflow-hidden" aria-busy={loading}>
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
-          <div>
-            <h1 className="text-base font-extrabold tracking-[-0.01em]">{threadId ? "Conversation" : "New conversation"}</h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">{projectId ? "Project context enabled" : "Global workspace chat"}</p>
+  const empty = !messages.length && !loadingThread;
+
+  return (
+    <section className="chat-page" aria-busy={loading}>
+      <ChatHeader
+        title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
+        canManage={Boolean(threadId && activeThread)}
+        onRename={(title) => (threadId ? rename(threadId, title) : Promise.resolve(null))}
+        onDelete={deleteCurrent}
+      />
+
+      <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
+        {empty ? (
+          <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 py-10 sm:px-6">
+            <h1 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">What are we working on?</h1>
+            <p className="mt-2 max-w-md text-[15px] leading-6 text-[var(--muted-strong)]">
+              Ask anything. Pick a project or attach files when your own material should guide the answer.
+            </p>
+            <div className="mt-7 grid gap-2 sm:grid-cols-2">
+              {STARTERS.map((starter) => (
+                <button
+                  key={starter.title}
+                  type="button"
+                  className="starter-card"
+                  onClick={() => {
+                    setText(starter.prompt);
+                    requestAnimationFrame(() => (document.querySelector('[aria-label="Chat message"]') as HTMLTextAreaElement | null)?.focus());
+                  }}
+                >
+                  <span className="text-sm font-bold">{starter.title}</span>
+                  <span className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-[var(--muted)]">{starter.prompt}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          {threadId ? (
-            <button
-              type="button"
-              onClick={() => deleteThread(threadId)}
-              disabled={deletingThreadId === threadId}
-              title="Delete conversation"
-              className="btn-secondary shrink-0 text-[var(--critical)]"
-            >
-              <Trash2 size={16} />
-            </button>
-          ) : null}
-        </div>
-        <div ref={listRef} className="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-7 sm:px-8 lg:px-10">
-          {messages.length ? (
-            messages.map((message) => (
+        ) : (
+          <div ref={contentRef} className="mx-auto w-full max-w-[46rem] space-y-6 px-4 pb-10 pt-6 sm:px-6">
+            {messages.map((message) => (
               <ChatMessageBubble
                 key={message.clientKey ?? message.id}
                 message={message}
@@ -372,23 +505,183 @@ function ChatsContent() {
                 onEdit={editAndResend}
                 onRegenerate={regenerate}
               />
-            ))
-          ) : (
-            <div className="grid h-full place-items-center text-center">
-              <div>
-                <h2 className="text-3xl font-extrabold tracking-[-0.03em]">Talk to Selrano.</h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere, or add a project when your own material should guide the answer.</p>
-              </div>
-            </div>
-          )}
-          {loading && !replyStarted ? <ThinkingTrace /> : null}
-        </div>
-        <form onSubmit={send} className="border-t border-[var(--border)] p-4">
-          <div className="flex gap-3 rounded-full border border-[var(--border)] bg-white/80 p-2">
-            <ChatComposer value={text} disabled={loading} onChange={setText} />
+            ))}
+            {loading && !replyStarted ? (
+              status ? (
+                <div className="tool-status" role="status" aria-live="polite">
+                  <span className="tool-status-dot" aria-hidden="true" />
+                  {status}
+                </div>
+              ) : (
+                <ThinkingTrace />
+              )
+            ) : null}
           </div>
+        )}
+      </div>
+
+      <div className="relative px-3 pb-3 sm:px-6 sm:pb-5">
+        {!atBottom && !empty ? (
+          <button type="button" onClick={jumpToLatest} className="jump-button" aria-label="Jump to latest">
+            <ArrowDown size={17} />
+          </button>
+        ) : null}
+        <form onSubmit={send} className="mx-auto w-full max-w-[46rem]">
+          <ChatComposer
+            value={text}
+            busy={loading}
+            onChange={setText}
+            onStop={stop}
+            attachments={attachments}
+            onAttach={attach}
+            onRemoveAttachment={(key) => setAttachments((existing) => existing.filter((item) => item.key !== key))}
+            projects={projects}
+            projectId={projectId}
+            onProjectChange={setProjectId}
+            projectLocked={Boolean(threadId)}
+            maxAttachments={MAX_ATTACHMENTS}
+          />
         </form>
-      </section>
-    </div>
+      </div>
+    </section>
+  );
+}
+
+function ChatHeader({
+  title,
+  canManage,
+  onRename,
+  onDelete
+}: {
+  title: string;
+  canManage: boolean;
+  onRename: (title: string) => Promise<string | null>;
+  onDelete: () => Promise<string | null | undefined>;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const [error, setError] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+        setConfirmingDelete(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setConfirmingDelete(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  async function saveTitle() {
+    const failure = await onRename(draft);
+    if (failure) {
+      setError(failure);
+      return;
+    }
+    setError("");
+    setRenaming(false);
+  }
+
+  return (
+    <header className="chat-header">
+      {renaming ? (
+        <form
+          className="flex min-w-0 flex-1 items-center gap-1"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveTitle();
+          }}
+        >
+          <input
+            aria-label="Conversation title"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setRenaming(false);
+            }}
+            className="min-h-9 min-w-0 flex-1 rounded-xl border border-[var(--border-strong)] bg-[var(--background-elevated)] px-3 text-sm font-semibold outline-none"
+            autoFocus
+          />
+          <button type="submit" className="icon-button" aria-label="Save title">
+            <Check size={17} />
+          </button>
+          <button type="button" className="icon-button" aria-label="Cancel renaming" onClick={() => setRenaming(false)}>
+            <X size={17} />
+          </button>
+        </form>
+      ) : (
+        <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold">{title}</h2>
+      )}
+      {error ? <p className="text-xs font-bold text-[var(--critical)]">{error}</p> : null}
+      {canManage && !renaming ? (
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Conversation options"
+            aria-expanded={menuOpen}
+            onClick={() => {
+              setMenuOpen((open) => !open);
+              setConfirmingDelete(false);
+            }}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+          {menuOpen ? (
+            <div className="menu-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="menu-item"
+                onClick={() => {
+                  setDraft(title);
+                  setRenaming(true);
+                  setMenuOpen(false);
+                }}
+              >
+                <Pencil size={15} />
+                Rename
+              </button>
+              {confirmingDelete ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="menu-item text-[var(--critical)]"
+                  onClick={async () => {
+                    const failure = await onDelete();
+                    if (failure) setError(failure);
+                    setMenuOpen(false);
+                    setConfirmingDelete(false);
+                  }}
+                >
+                  <Trash2 size={15} />
+                  Confirm delete
+                </button>
+              ) : (
+                <button type="button" role="menuitem" className="menu-item text-[var(--critical)]" onClick={() => setConfirmingDelete(true)}>
+                  <Trash2 size={15} />
+                  Delete
+                </button>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </header>
   );
 }

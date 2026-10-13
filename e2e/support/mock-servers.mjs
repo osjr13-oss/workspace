@@ -262,12 +262,13 @@ async function handleSupabase(req, res) {
 
 // -------------------------------------------------------------------- Groq --
 
-const groqState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2 };
+const groqState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0 };
 
 function groqReset() {
   groqState.requests = [];
   groqState.failNext = [];
   groqState.toolNext = false;
+  groqState.firstTokenDelayMs = 0;
   groqState.toolPreface = "";
   groqState.reply = null;
   groqState.emptyNext = false;
@@ -328,7 +329,12 @@ async function handleGroq(req, res) {
     reasoning_effort: body.reasoning_effort,
     max_completion_tokens: body.max_completion_tokens ?? body.max_tokens,
     lastUser: lastUserText.slice(0, 80),
-    system: typeof messages[0]?.content === "string" ? messages[0].content.slice(0, 60) : ""
+    system: typeof messages[0]?.content === "string" ? messages[0].content.slice(0, 60) : "",
+    systemText: messages
+      .filter((m) => m.role === "system" && typeof m.content === "string")
+      .map((m) => m.content)
+      .join("\n")
+      .slice(0, 12000)
   });
 
   const fail = groqState.failNext.shift();
@@ -389,6 +395,7 @@ async function handleGroq(req, res) {
   const text = groqState.reply ?? defaultReply(lastUserText);
   const words = text.split(/(\s+)/);
   send({ role: "assistant", content: "" });
+  if (groqState.firstTokenDelayMs) await sleep(groqState.firstTokenDelayMs);
   for (const word of words) {
     if (!word) continue;
     send({ content: word });

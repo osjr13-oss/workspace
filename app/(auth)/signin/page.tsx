@@ -7,7 +7,7 @@ import { SelranoLogo } from "@/components/selrano-logo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/chats";
 }
 
 export default function SignInPage() {

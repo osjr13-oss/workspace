@@ -4,12 +4,12 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Trash2, Upload as UploadIcon } from "lucide-react";
-import { Upload as TusUpload } from "tus-js-client";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
+import { ACCEPTED_FILE_TYPES, uploadWorkspaceFile } from "@/lib/upload-file";
 import type { Project, WorkspaceFile } from "@/lib/types";
 
 export default function FilesPage() {
@@ -72,32 +72,11 @@ function FilesContent() {
     setUploadProgress(0);
     setMessage("");
     try {
-      const metadata = {
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size,
-        projectId: projectId || null
-      };
-      const signResponse = await fetch("/api/files/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(metadata)
+      await uploadWorkspaceFile(file, {
+        projectId: projectId || null,
+        onProgress: setUploadProgress,
+        onProcessing: () => setMessage("Upload complete. Extracting text…")
       });
-      const signed = await signResponse.json().catch(() => ({}));
-      if (!signResponse.ok || !signed.storagePath || !signed.token) {
-        throw new Error(signed.error || "Could not prepare the upload.");
-      }
-
-      await uploadFileResumable(file, signed.storagePath, signed.token, setUploadProgress);
-      setMessage("Upload complete. Extracting text…");
-
-      const response = await fetch("/api/files/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...metadata, storagePath: signed.storagePath })
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "File processing failed.");
       setMessage("File uploaded and processed.");
       setFile(null);
       await load();
@@ -117,7 +96,7 @@ function FilesContent() {
           <input
             className="sr-only"
             type="file"
-            accept=".pdf,.docx,.txt,.md,.markdown,.png,.jpg,.jpeg,.webp,.gif"
+            accept={ACCEPTED_FILE_TYPES}
             onChange={(event) => setFile(event.target.files?.[0] || null)}
           />
           {file ? file.name : "Choose PDF, DOCX, TXT, Markdown, or image"}
@@ -174,40 +153,4 @@ function FilesContent() {
       )}
     </div>
   );
-}
-
-function uploadFileResumable(file: File, storagePath: string, token: string, onProgress: (progress: number) => void) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return Promise.reject(new Error("Storage is not configured."));
-  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
-
-  return new Promise<void>((resolve, reject) => {
-    const upload = new TusUpload(file, {
-      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable/sign`,
-      headers: { "x-signature": token },
-      chunkSize: 6 * 1024 * 1024,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      metadata: {
-        bucketName: "workspace-files",
-        objectName: storagePath,
-        contentType: file.type || "application/octet-stream"
-      },
-      onError(error) {
-        reject(error);
-      },
-      onProgress(bytesUploaded, bytesTotal) {
-        onProgress(Math.round((bytesUploaded / bytesTotal) * 100));
-      },
-      onSuccess() {
-        resolve();
-      }
-    });
-
-    upload.findPreviousUploads().then((previousUploads) => {
-      if (previousUploads.length) upload.resumeFromPreviousUpload(previousUploads[0]);
-      upload.start();
-    }).catch(reject);
-  });
 }

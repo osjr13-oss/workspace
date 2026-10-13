@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    return redirectTo("/dashboard");
+    return redirectTo("/chats");
   }
 
   return response;
