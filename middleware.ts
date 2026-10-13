@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAllowedEmail, isOpenPath } from "@/lib/access";
 
 const protectedPrefixes = [
   "/dashboard",
@@ -51,17 +52,34 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { user }
+    data: { user: sessionUser }
   } = await supabase.auth.getUser();
 
-  if (!user && isProtectedPath(pathname)) {
-    const signIn = request.nextUrl.clone();
-    signIn.pathname = "/signin";
-    signIn.searchParams.set("next", pathname);
-    return NextResponse.redirect(signIn);
+  // Carries any refreshed or cleared session cookies onto a redirect.
+  const redirectTo = (pathname: string, params: Record<string, string> = {}) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = "";
+    for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  };
+
+  // Selrano is private (lib/access.ts). A session for an account that is not on
+  // the allowlist is ended here, so it can never reach the app.
+  let user = sessionUser;
+  if (user && !isAllowedEmail(user.email)) {
+    await supabase.auth.signOut({ scope: "local" });
+    user = null;
+    if (pathname !== "/signin") return redirectTo("/signin", { private: "1" });
   }
 
-  if (user && authOnlyPaths.includes(pathname)) {
+  if (!user && !isOpenPath(pathname)) {
+    return redirectTo("/signin", isProtectedPath(pathname) ? { next: pathname } : {});
+  }
+
+  if (user && (pathname === "/" || authOnlyPaths.includes(pathname))) {
     const next = request.nextUrl.searchParams.get("next");
     if (next?.startsWith("/") && !next.startsWith("//")) {
       const target = new URL(next, request.nextUrl.origin);
@@ -70,10 +88,7 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    const dashboard = request.nextUrl.clone();
-    dashboard.pathname = "/dashboard";
-    dashboard.search = "";
-    return NextResponse.redirect(dashboard);
+    return redirectTo("/dashboard");
   }
 
   return response;

@@ -33,7 +33,9 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "GROQ_API_KEY"
+  "GROQ_API_KEY",
+  // Selrano is private: only these comma-separated emails can sign in (lib/access.ts).
+  "ALLOWED_EMAILS"
 ];
 
 const branding = ["NEXT_PUBLIC_APP_URL"];

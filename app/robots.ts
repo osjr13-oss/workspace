@@ -1,25 +1,8 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl } from "@/lib/brand";
 
+// Selrano is private (lib/access.ts), so nothing is offered to search engines.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [
-        "/api/",
-        "/auth/",
-        "/dashboard",
-        "/chats",
-        "/files",
-        "/flashcards",
-        "/notes",
-        "/projects",
-        "/settings",
-        "/study",
-        "/reset-password"
-      ]
-    },
-    sitemap: absoluteUrl("/sitemap.xml")
+    rules: { userAgent: "*", disallow: "/" }
   };
 }

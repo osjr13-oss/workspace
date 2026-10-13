@@ -32,6 +32,7 @@ export default defineConfig({
             SUPABASE_SERVICE_ROLE_KEY: "test-service-key",
             NEXT_PUBLIC_APP_URL: "http://localhost:3000",
             GROQ_API_KEY: "test-groq-key",
+            ALLOWED_EMAILS: "student@example.test",
             GROQ_BASE_URL: "http://localhost:54322/openai/v1"
           }
         }

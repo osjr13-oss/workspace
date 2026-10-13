@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     statusBarStyle: "default"
   },
   applicationName: brand.name,
+  // Private while the owner builds it (lib/access.ts).
+  robots: { index: false, follow: false },
   formatDetection: {
     telephone: false
   }
