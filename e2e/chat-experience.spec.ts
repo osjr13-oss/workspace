@@ -71,6 +71,17 @@ test.describe("chat experience", () => {
     expect(growth.length, "the reply should grow over many frames").toBeGreaterThan(40);
   });
 
+  test("answers think harder than background work", async ({ page }) => {
+    await seedConversation(6);
+    await page.goto("/chats?thread=11111111-1111-4111-8111-111111111111");
+    await expect(page.locator(bubbles)).toHaveCount(6);
+    await sendAndSettle(page, "Help me plan a hard week");
+    await expect.poll(async () => (await groqRequests()).filter((request) => !request.stream).length, { timeout: 15_000 }).toBeGreaterThan(0);
+    const requests = await groqRequests();
+    expect(requests.filter((request) => request.stream).map((request) => request.reasoning_effort)).toEqual(["medium"]);
+    expect(new Set(requests.filter((request) => !request.stream).map((request) => request.reasoning_effort))).toEqual(new Set(["low"]));
+  });
+
   test("Escape stops a reply too", async ({ page }) => {
     await sendAndSettle(page, "warm up");
     await control({ reply: "Slow words. ".repeat(50), tokenDelayMs: 60 });

@@ -55,6 +55,7 @@ Groq is the only AI provider. The defaults below work; set a variable only to ch
 |------|---------|----------|
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
 | `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
+| `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
 | `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
 | `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
 | `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |

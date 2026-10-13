@@ -44,12 +44,29 @@ function groqUrl() {
 }
 
 /**
- * Per-model request options. gpt-oss models reason before answering, so
- * reasoning is set to low and hidden to keep time-to-first-word short.
+ * Per-model request options. gpt-oss models reason before answering. Reasoning
+ * is hidden, and set to low for background work (memory, structured output)
+ * so it stays quick and cheap.
  */
 function modelParams(model: string) {
   return model.startsWith("openai/gpt-oss") ? { model, reasoning_effort: "low", include_reasoning: false } : { model };
 }
+
+const REASONING_EFFORTS = new Set(["low", "medium", "high"]);
+
+/**
+ * Chat answers think harder than background work (owner decision, 2026-10-13):
+ * GROQ_REASONING_EFFORT, default medium. Higher is smarter on hard questions
+ * but takes longer before the first word.
+ */
+function answerParams(model: string) {
+  if (!model.startsWith("openai/gpt-oss")) return {};
+  const configured = process.env.GROQ_REASONING_EFFORT?.trim().toLowerCase() || "";
+  return { reasoning_effort: REASONING_EFFORTS.has(configured) ? configured : "medium" };
+}
+
+// Answers get room for the hidden reasoning as well as the reply itself.
+const ANSWER_MAX_TOKENS = 4096;
 
 type GroqMessage = {
   role: "system" | "user" | "assistant";
@@ -261,12 +278,13 @@ export async function streamGroqWithTools(
 ): Promise<{ text: string; toolCalls: GroqToolCall[] }> {
   let response: Response;
   try {
-    response = await groqRequest(() => ({
+    response = await groqRequest((model) => ({
+      ...answerParams(model),
       messages,
       tools,
       tool_choice: "auto",
       temperature: options.temperature ?? 0.5,
-      max_completion_tokens: options.maxTokens ?? 3072,
+      max_completion_tokens: options.maxTokens ?? ANSWER_MAX_TOKENS,
       stream: true
     }));
   } catch (error) {
@@ -353,10 +371,11 @@ export async function streamGroq(
   messages: GroqChatMessage[],
   options: { temperature?: number; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<string> {
-  const response = await groqRequest(() => ({
+  const response = await groqRequest((model) => ({
+    ...answerParams(model),
     messages,
     temperature: options.temperature ?? 0.4,
-    max_completion_tokens: options.maxTokens ?? 3072,
+    max_completion_tokens: options.maxTokens ?? ANSWER_MAX_TOKENS,
     stream: true
   }));
 
