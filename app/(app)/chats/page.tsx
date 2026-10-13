@@ -8,6 +8,7 @@ import { ChatMessageBubble } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
 import { ThinkingTrace } from "@/components/thinking-trace";
 import { readChatStream } from "@/lib/chat-stream";
+import { createStreamPacer, type StreamPacer } from "@/lib/stream-pacer";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 import { uploadWorkspaceFile } from "@/lib/upload-file";
@@ -94,7 +95,8 @@ function ChatsContent() {
   // Only one reply can be in flight. Enter in the text box submits even while busy, so this is checked synchronously.
   const busyRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
-  const streamTextRef = useRef("");
+  // Paces the reply on screen; it also knows exactly which words the reader has seen (for Stop).
+  const pacerRef = useRef<StreamPacer | null>(null);
   const turnKeysRef = useRef<Handoff>({});
   const stopRef = useRef<Promise<void> | null>(null);
 
@@ -133,6 +135,8 @@ function ChatsContent() {
     // server and is saved there; this page just stops listening to it.
     abortRef.current?.abort();
     abortRef.current = null;
+    pacerRef.current?.cancel();
+    pacerRef.current = null;
     busyRef.current = false;
     setLoading(false);
     setReplyStarted(false);
@@ -222,9 +226,15 @@ function ChatsContent() {
     turnRef.current += 1;
     const assistantKey = `streaming-${turnRef.current}`;
     turnKeysRef.current = { userKey, assistantKey };
-    streamTextRef.current = "";
     const view = viewRef.current;
     const current = () => viewRef.current === view;
+    // Words are revealed at a steady pace instead of in the bursts they arrive in.
+    const pacer = createStreamPacer((visible) => {
+      if (!current()) return;
+      if (visible.trim()) setReplyStarted(true);
+      setMessages((existing) => existing.map((item) => (item.id === "streaming" ? { ...item, content: visible } : item)));
+    });
+    pacerRef.current = pacer;
     const controller = new AbortController();
     abortRef.current = controller;
     const canRestoreText = !options.editMessageId && !options.regenerateMessageId;
@@ -237,6 +247,7 @@ function ChatsContent() {
     // the user's own message is taken off the screen and put back in the box.
     const fail = (message: string, restore: boolean) => {
       failed = true;
+      pacer.cancel();
       setMessages((existing) => [
         ...existing.filter((item) => item.id !== "pending-user" && item.id !== "streaming"),
         { id: "error", thread_id: threadIdRef.current || "pending", user_id: "", role: "assistant", content: message, created_at: new Date().toISOString() }
@@ -268,16 +279,6 @@ function ChatsContent() {
         return;
       }
 
-      let frame = 0;
-      // At most one redraw per frame, however fast the words arrive.
-      const flush = () => {
-        frame = 0;
-        if (!current()) return;
-        const streamed = streamTextRef.current;
-        if (streamed.trim()) setReplyStarted(true);
-        setMessages((existing) => existing.map((item) => (item.id === "streaming" ? { ...item, content: streamed } : item)));
-      };
-
       await readChatStream(response.body, (event) => {
         if (!current()) return;
         if (event.type === "start") {
@@ -290,7 +291,6 @@ function ChatsContent() {
         } else if (event.type === "status") {
           setStatus(event.label);
         } else if (event.type === "text") {
-          streamTextRef.current += event.text;
           if (!bubbleAdded) {
             bubbleAdded = true;
             setStatus(null);
@@ -300,12 +300,11 @@ function ChatsContent() {
               { id: "streaming", clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
             ]);
           }
-          if (!frame) frame = requestAnimationFrame(flush);
+          pacer.push(event.text);
         } else if (event.type === "error") {
           fail(event.error, event.restore);
         }
       });
-      if (frame) cancelAnimationFrame(frame);
       if (!current()) return;
 
       if (failed) {
@@ -318,14 +317,17 @@ function ChatsContent() {
         return;
       }
 
-      flush();
-      // The saved rows take over the same on-screen elements, so nothing flickers.
+      // Let the last words finish appearing, then the saved rows take over the same
+      // on-screen elements, so nothing flickers.
+      await pacer.finish();
+      if (!current() || stopRef.current) return;
       await loadMessages(streamThreadId, { userKey, assistantKey });
       setReplyStarted(false);
       setStatus(null);
       setLoading(false);
       void refreshThreads();
     } catch (error) {
+      pacer.cancel();
       // Stop finishes the turn itself; wait for it so the next message cannot overtake it.
       if (stopRef.current) {
         await stopRef.current;
@@ -346,6 +348,7 @@ function ChatsContent() {
       fail("Network error. Please try again.", true);
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
+      if (pacerRef.current === pacer) pacerRef.current = null;
     }
   }
 
@@ -353,7 +356,9 @@ function ChatsContent() {
   function stop() {
     const controller = abortRef.current;
     if (!controller || stopRef.current) return;
-    const partial = streamTextRef.current;
+    // Exactly the words the reader has seen, not what had arrived but was not shown yet.
+    const partial = pacerRef.current?.shown() ?? "";
+    pacerRef.current?.cancel();
     const id = threadIdRef.current;
     const keys = turnKeysRef.current;
     const finish = async () => {

@@ -262,13 +262,14 @@ async function handleSupabase(req, res) {
 
 // -------------------------------------------------------------------- Groq --
 
-const groqState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0 };
+const groqState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
   groqState.requests = [];
   groqState.failNext = [];
   groqState.toolNext = false;
   groqState.firstTokenDelayMs = 0;
+  groqState.chunkChars = 0;
   groqState.toolPreface = "";
   groqState.reply = null;
   groqState.emptyNext = false;
@@ -396,11 +397,17 @@ async function handleGroq(req, res) {
   const words = text.split(/(\s+)/);
   send({ role: "assistant", content: "" });
   if (groqState.firstTokenDelayMs) await sleep(groqState.firstTokenDelayMs);
+  // chunkChars groups words into bursts, the way the real Groq delivers a fast reply.
+  let pending = "";
   for (const word of words) {
     if (!word) continue;
-    send({ content: word });
+    pending += word;
+    if (groqState.chunkChars && pending.length < groqState.chunkChars) continue;
+    send({ content: pending });
+    pending = "";
     if (groqState.tokenDelayMs) await sleep(groqState.tokenDelayMs);
   }
+  if (pending) send({ content: pending });
   send({}, "stop");
   res.write("data: [DONE]\n\n");
   res.end();

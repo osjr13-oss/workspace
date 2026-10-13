@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { control, groqRequests, resetMocks, seed, seedConversation, signIn, tableRows } from "./support/session";
+import { control, groqRequests, installRecorder, readSamples, resetMocks, seed, seedConversation, signIn, tableRows } from "./support/session";
 
 const composer = '[aria-label="Chat message"]';
 const bubbles = 'article[aria-label="Selrano response"]';
@@ -51,6 +51,24 @@ test.describe("chat experience", () => {
     await page.reload();
     await expect(page.locator(bubbles)).toHaveCount(2);
     await expect(page.locator(bubbles).nth(1)).not.toContainText("Word60");
+  });
+
+  test("a reply that arrives in big bursts still appears smoothly", async ({ page }) => {
+    test.setTimeout(90_000);
+    await installRecorder(page);
+    await page.goto("/chats");
+    await sendAndSettle(page, "warm up");
+    const reply = Array.from({ length: 40 }, (_, i) => `Sentence ${i + 1} explains one more idea in plain words.`).join(" ");
+    await control({ reply, chunkChars: 300, tokenDelayMs: 300 });
+    const since = (await readSamples(page)).length;
+    await sendAndSettle(page, "Explain it all");
+
+    const lengths = (await readSamples(page)).slice(since).filter((sample) => sample.assistants === 2).map((sample) => sample.len);
+    const growth = lengths.slice(1).map((len, i) => len - lengths[i]).filter((step) => step > 0);
+    const biggest = Math.max(...growth);
+    // Bursts of 300 characters must be spread over many frames, not painted at once.
+    expect(biggest, `largest single-frame jump was ${biggest} characters`).toBeLessThan(80);
+    expect(growth.length, "the reply should grow over many frames").toBeGreaterThan(40);
   });
 
   test("Escape stops a reply too", async ({ page }) => {

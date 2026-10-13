@@ -52,6 +52,7 @@ Rebuilt on 2026-10-13. Chat is the signed-in home: `/`, sign-in, the auth callba
 - **Tool status**: while a tool runs the page shows what Selrano is doing (for example `Searching the web for "..."`) until the first words arrive.
 - **Attachments** upload into the workspace like the Files page (`lib/upload-file.ts`, in the chat's project). The chat request sends `fileIds`; their text (6,000 characters in total) goes into the prompt, and a reference to each file is saved in the user message's `citations` (marker `attachment-N`), so the message shows them after a reload. No schema change.
 - **Answers**: code blocks with a copy button and highlighting (`highlight.js`, loaded only when code appears), scrolling tables, and a Sources row for web citations.
+- **Smooth streaming**: Groq sends text in bursts of a few hundred characters. `lib/stream-pacer.ts` reveals it a few characters per frame instead, never slower than about 60 characters a second and never more than about 0.4 seconds behind what has arrived. Stop saves exactly what was revealed.
 - **Scrolling** follows new words only while you are at the bottom; scrolling up shows a jump-to-latest button.
 
 ## Groq models
@@ -211,12 +212,12 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 
 - `e2e/public.spec.ts`: private access. Closed marketing, signup, and shared-deck pages; open legal pages; robots and `noindex`; an allowed account getting in and a non-allowed one being refused and signed out (the fake Supabase can report another email through `GET http://localhost:54321/__user?email=...`).
 - `e2e/chat.spec.ts`: streaming without flashes, unfinished Markdown, empty replies, rate limits and model fallback, memory work staying off the critical path, prompt size, tool lead-ins, leaving mid-answer, double Enter, and the daily limit. These only run against the local setup, not a deployed site.
-- `e2e/chat-experience.spec.ts`: Stop (button and Esc) saves only what was shown, tool status, the sidebar (new chat appears, rename, reopen, delete), attachments reaching the model and showing on the message, code blocks and tables, jump to latest, and the phone menu.
+- `e2e/chat-experience.spec.ts`: bursts are revealed smoothly (no frame jumps more than 80 characters), Stop (button and Esc) saves only what was shown, tool status, the sidebar (new chat appears, rename, reopen, delete), attachments reaching the model and showing on the message, code blocks and tables, jump to latest, and the phone menu.
 - `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
 
 If the machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
 
-To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
+To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), send bursts (`chunkChars`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
 
 ## Validation and release
 
