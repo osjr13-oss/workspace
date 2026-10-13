@@ -11,6 +11,7 @@ Last updated: **October 13, 2026**
 - AI provider: **Groq only**. Chat model `GROQ_MODEL` (default `openai/gpt-oss-120b`), fallback `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`), background work `GROQ_BACKGROUND_MODEL` (default: the fallback model), image reading `GROQ_VISION_MODEL` (default `qwen/qwen3.8-27b`). Anthropic was removed on 2026-10-08 and `ANTHROPIC_*` variables are no longer read. See "Groq models".
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
+- Access: **private**. Only emails in `ALLOWED_EMAILS` can sign in; the landing page, pricing, guides, signup, and shared decks send visitors to sign in, and search engines are turned away. See "Private access".
 - Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
@@ -53,6 +54,17 @@ Last updated: **October 13, 2026**
 - Vercel does not create a **production** deployment for a commit SHA it has already built as a preview. With no previews every push to `main` builds as production; if one is ever missing, push a new commit.
 - Check a deploy with the GitHub commit status named "Vercel" or `gh api repos/osjr13-oss/workspace/deployments`, then open the live site.
 - CI (GitHub Actions, Node 20) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
+
+## Private access
+
+The owner decided on 2026-10-13 to keep Selrano private while the product is reworked.
+
+- `lib/access.ts` reads `ALLOWED_EMAILS` (comma-separated, case-insensitive). Empty or missing lets **nobody** in, so set it in Vercel (Production) before deploying.
+- `middleware.ts`: a session for an account that is not on the list is signed out and sent to `/signin?private=1`. Without an allowed account, only `/signin`, `/reset-password`, `/auth/*`, `/privacy`, `/terms`, `/security`, and `/robots.txt` open; everything else, including `/`, redirects to sign in. A signed-in visit to `/` goes to the app.
+- `getAuthenticatedUser` (`lib/supabase/server.ts`) treats a non-allowed account as signed out, so every API route refuses it with 401. Stripe and cron webhooks do not use it and are unaffected.
+- `robots.txt` disallows everything and every page carries `noindex`. The sign-in page has no "Create account" link.
+- **Limit:** pages read and write Supabase directly from the browser under row-level security. Someone who creates an account through the Supabase Auth API could still store rows in their own empty workspace (never anyone else's). To close that, turn off **Allow new users to sign up** in Supabase Dashboard > Authentication > Sign In / Providers. Re-enable it before reopening.
+- **Reopening:** drop the allowlist check in `middleware.ts` and `getAuthenticatedUser`, restore `app/robots.ts` and the `robots` metadata in `app/layout.tsx`, put the "Create account" link back on the sign-in page, and restore the public-page tests in `e2e/public.spec.ts` (all in the commit that introduced `lib/access.ts`).
 
 ## Support and contact
 
@@ -182,9 +194,11 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 
 `npm run test:e2e` builds the app into `.next-e2e`, serves it on port 3000, and starts two offline stand-ins (`e2e/support/mock-servers.mjs`): a fake Supabase on port 54321 and a fake Groq on port 54322. No accounts or network are needed. `E2E_DEV=1` uses the dev server instead of a production build.
 
-- `e2e/public.spec.ts`: landing, pricing and legal pages, the removed support pages, and the signed-out redirect.
+- `e2e/public.spec.ts`: private access. Closed marketing, signup, and shared-deck pages; open legal pages; robots and `noindex`; an allowed account getting in and a non-allowed one being refused and signed out (the fake Supabase can report another email through `GET http://localhost:54321/__user?email=...`).
 - `e2e/chat.spec.ts`: streaming without flashes, unfinished Markdown, empty replies, rate limits and model fallback, memory work staying off the critical path, prompt size, tool lead-ins, leaving mid-answer, double Enter, and the daily limit. These only run against the local setup, not a deployed site.
 - `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
+
+If the machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
 
 To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
 

@@ -44,6 +44,7 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
 | `GROQ_API_KEY` | console.groq.com (secret) |
+| `ALLOWED_EMAILS` | Comma-separated emails that may sign in. Empty lets nobody in (Selrano is private) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)

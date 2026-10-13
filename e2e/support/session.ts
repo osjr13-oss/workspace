@@ -50,6 +50,11 @@ export async function setQuota(allow: boolean) {
   await fetch(`${SUPABASE}/__quota?allow=${allow}`);
 }
 
+/** Makes the mock Supabase report the signed-in account under another email. */
+export async function setUserEmail(email: string) {
+  await fetch(`${SUPABASE}/__user?email=${encodeURIComponent(email)}`);
+}
+
 export async function tableRows(name: string): Promise<Array<Record<string, any>>> {
   return (await fetch(`${SUPABASE}/__table?name=${name}`)).json();
 }

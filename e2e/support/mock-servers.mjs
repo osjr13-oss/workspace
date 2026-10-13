@@ -27,7 +27,7 @@ export const TEST_USER = {
 // ---------------------------------------------------------------- Supabase --
 
 const tables = new Map();
-const control = { quota: true, latencyMs: Number(process.env.MOCK_LATENCY_MS || 0) };
+const control = { quota: true, latencyMs: Number(process.env.MOCK_LATENCY_MS || 0), userEmail: TEST_USER.email };
 
 function table(name) {
   if (!tables.has(name)) tables.set(name, []);
@@ -36,6 +36,7 @@ function table(name) {
 
 function reset() {
   tables.clear();
+  control.userEmail = TEST_USER.email;
   table("user_limits").push({ user_id: TEST_USER.id, tier: "free", subscription_status: null });
   table("profiles").push({ id: TEST_USER.id, full_name: "Test Student", email_opt_in: true });
 }
@@ -151,11 +152,16 @@ async function handleSupabase(req, res) {
     }
     return sendJson(res, 200, { ok: true });
   }
+  // Signs the session in as a different email, e.g. one that is not on ALLOWED_EMAILS.
+  if (path === "/__user") {
+    control.userEmail = url.searchParams.get("email") || TEST_USER.email;
+    return sendJson(res, 200, { ok: true });
+  }
   if (path === "/__table") {
     return sendJson(res, 200, table(url.searchParams.get("name") || ""));
   }
 
-  if (path === "/auth/v1/user") return sendJson(res, 200, TEST_USER);
+  if (path === "/auth/v1/user") return sendJson(res, 200, { ...TEST_USER, email: control.userEmail });
   if (path === "/auth/v1/logout") {
     res.writeHead(204);
     res.end();

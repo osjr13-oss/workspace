@@ -9,7 +9,12 @@ export default defineConfig({
   timeout: 60_000,
   retries: 0,
   workers: 1,
-  use: { baseURL, trace: "retain-on-failure" },
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+    // For machines whose preinstalled Chromium does not match this Playwright version.
+    launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {}
+  },
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : [
