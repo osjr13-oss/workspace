@@ -1,6 +1,6 @@
 # Selrano operations playbook
 
-Enterprise-grade operations checklist for email, branding, support, and trust — beyond application code.
+Operations checklist for email, branding, and trust, beyond application code. There is currently no support channel; see section 3.
 
 ## 1. Email infrastructure
 
@@ -11,8 +11,6 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 | Email | Trigger |
 |-------|---------|
 | Welcome | After signup (`/api/email/welcome`), retried on the next authenticated app load and by the daily email job |
-| Support confirmation | User submits support form |
-| Support notification | Inbox alert to `SUPPORT_INBOX` |
 | Tips & reminders | Optional lifecycle cron (`/api/cron/lifecycle-emails`) — see below |
 
 **Vercel environment variables:**
@@ -20,7 +18,6 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 ```txt
 RESEND_API_KEY=
 EMAIL_FROM=Selrano <noreply@yourdomain.com>
-SUPPORT_INBOX=support@yourdomain.com
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <CRON_SECRET>
 ```
@@ -53,7 +50,6 @@ Templates: [`lib/email/lifecycle-templates.ts`](../lib/email/lifecycle-templates
 1. Add and verify your domain in Resend.
 2. Configure SPF, DKIM, and DMARC DNS records (Resend provides values).
 3. Set `EMAIL_FROM` to an address on that domain (e.g. `noreply@yourdomain.com`).
-4. Set `SUPPORT_INBOX` to the mailbox your team monitors.
 
 ### Auth emails (Supabase)
 
@@ -95,7 +91,7 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
           </tr>
           <tr>
             <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#69707d;">
-              © Selrano. All rights reserved. · <a href="https://selrano.com/support" style="color:#15181f;">Support</a>
+              © Selrano. All rights reserved.
             </td>
           </tr>
         </table>
@@ -135,7 +131,7 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
           </tr>
           <tr>
             <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#69707d;">
-              © Selrano. All rights reserved. · <a href="https://selrano.com/support" style="color:#15181f;">Support</a>
+              © Selrano. All rights reserved.
             </td>
           </tr>
         </table>
@@ -154,38 +150,28 @@ Central config: [`lib/brand.ts`](../lib/brand.ts)
 |----------|---------|
 | `NEXT_PUBLIC_APP_URL` | Canonical site URL (OG tags, email links) |
 | `NEXT_PUBLIC_LEGAL_NAME` | Footer / legal entity name |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | Public contact (legal + support pages) |
-| `SUPPORT_INBOX` | Where Resend delivers support alerts (can be personal Gmail) |
 | `NEXT_PUBLIC_STATUS_URL` | Optional status page (e.g. Instatus, Better Stack) |
 | `NEXT_PUBLIC_DOCS_URL` | Optional external docs |
 
 Email HTML: shared layout [`lib/email/layout.ts`](../lib/email/layout.ts); transactional [`lib/email/templates.ts`](../lib/email/templates.ts); lifecycle tips [`lib/email/lifecycle-templates.ts`](../lib/email/lifecycle-templates.ts)
 
-## 3. Support operations
+## 3. Support and contact
 
-### In-app & public
+There is **no support page, contact form, or support inbox** (removed 2026-09-29, because the inbox could not be reached). Nothing in the app asks users to email anyone.
 
-- **`/support`** — public help center + contact form
-- **`/help`** — authenticated help (prefilled contact form)
-- **`support_requests`** table — ticket log (migration `004_ops_support.sql`)
+- The `support_requests` table and its history remain in the database (migration `004_ops_support.sql`); nothing writes to it now.
+- `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read. They can be deleted from Vercel.
+- The Privacy, Terms, and Security pages say that no public email address is offered and that a contact channel will be published.
 
-Ticket IDs: `SRN-YYYYMMDD-XXXXXX`
+When a contact channel exists, update `app/(legal)/privacy/page.tsx`, `terms/page.tsx`, and `security/page.tsx`. A privacy policy normally needs one for data requests. If it is a mailbox, set it up first (Cloudflare Email Routing to a personal inbox is the cheapest option), and decide whether to bring back a form.
 
-### SLA (configured in brand)
-
-Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/brand.ts` when you hire support staff.
-
-### Recommended next steps
-
-- Connect `SUPPORT_INBOX` to a shared inbox (Google Group, Zendesk, Intercom, Plain).
-- Weekly export of `support_requests` where `status = 'open'`.
-- Document internal runbooks for account recovery and data deletion (GDPR/CCPA).
+**Supabase Auth emails:** the confirm-signup and reset-password templates shown in section 1 used to end with a link to `/support`. That page no longer exists. If you pasted the older version into the Supabase dashboard, edit the live templates and remove the link.
 
 ## 4. Security & trust
 
 - **`/security`** — public security overview
-- **`audit_logs`** — account delete, support submit, welcome email (migration 004)
-- Security contact: `security@` (see brand config)
+- **`audit_logs`** — account delete and welcome email (migration 004); older rows may include support submissions
+- Security contact: none at the moment (see section 3)
 
 ### Enterprise checklist
 
@@ -197,7 +183,7 @@ Default copy: **1 business day**, Mon–Fri 9–17 US Eastern. Adjust in `lib/br
 - [ ] `CRON_SECRET` set for lifecycle tip emails
 - [ ] Optional: public status page (`NEXT_PUBLIC_STATUS_URL`)
 - [ ] Optional: SOC 2 / penetration test vendor
-- [ ] Bug bounty or responsible disclosure policy (email `security@`)
+- [ ] Bug bounty or responsible disclosure policy (needs a contact channel first, see section 3)
 
 ## 5. Database migrations (run in order)
 
@@ -237,9 +223,9 @@ Not implemented yet — plan when you scale:
 | Billing | Stripe + Customer Portal |
 | Status page | Better Stack, Instatus |
 | Analytics | PostHog, Amplitude |
-| Error tracking | Sentry |
+| Error tracking and alerting | Sentry (today only log lines: `[server-error]`, `[client-error]`) |
 | SIEM / audit export | Datadog, Splunk |
 | SSO / SAML | Supabase Enterprise, WorkOS |
 | DPA / BAA | Legal + vendor agreements |
 
-The codebase foundation (brand config, Resend, support tickets, audit log, trust pages) is designed so these plug in without rewrites.
+The codebase foundation (brand config, Resend, audit log, trust pages) is designed so these plug in without rewrites.

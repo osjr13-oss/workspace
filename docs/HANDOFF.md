@@ -1,20 +1,65 @@
 # Selrano production handoff
 
-Last updated: **August 3, 2026**
+Last updated: **October 13, 2026**
 
 ## Current state
 
 - Production: `https://selrano.com` (redirects to `https://www.selrano.com`)
-- Repository: `osjr13-oss/workspace`
+- Repository: `osjr13-oss/workspace`. Only `main` exists on GitHub. Work is committed straight to `main`; there are no feature branches and no preview deployments (see "Hosting and deploys").
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
-- AI provider: Groq only (`GROQ_MODEL`, default `openai/gpt-oss-120b`; Groq shut down the llama-3.x models on 2026-08-16). Anthropic was removed on 2026-10-08.
+- AI provider: **Groq only**. Chat model `GROQ_MODEL` (default `openai/gpt-oss-120b`), fallback `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`), background work `GROQ_BACKGROUND_MODEL` (default: the fallback model), image reading `GROQ_VISION_MODEL` (default `qwen/qwen3.8-27b`). Anthropic was removed on 2026-10-08 and `ANTHROPIC_*` variables are no longer read. See "Groq models".
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
+- Support: there is **no support page, form, or inbox** (removed 2026-09-29). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Current main commit: `2b1a908`, merging the `landing-page-aesthetics` branch (cursor-spotlight and scroll-reveal treatment for the landing page and pricing cards) on top of the July 25 web-search/icon fixes and the July 24 adaptive AI transformation merge (`6c5d771`).
-- The July 25 commits (`79d56c3`, `de0b2c2`, `e9fd5f5`) and the August 3 landing-page merge (`2b1a908`) were all pushed to `main`, and each Vercel production deployment was confirmed via `vercel logs` / the GitHub commit status API from this environment.
+- Latest functional commit: `72776ef` (chat speed, reliability, and the offline test setup). The documentation was refreshed after it.
+- The code is the **August 13 baseline** (`36354bf`) plus the changes listed under "Changes since the August 13 baseline". The September work (security scanner pivot, "Lumen 1" prototype, mobile app) is **not** in `main`; it is preserved as tags (see "History and recovery").
+
+## History and recovery
+
+- 2026-09-25: commit `32f773d` ("Shut down Selrano v1 and reset repository to zero") deleted the whole application and committed `node_modules`.
+- 2026-09-29: `main` was restored to the August 13 state (`36354bf`) in commit `cc4140a`. The tag **`v-august-stable`** marks that known-good point; `git checkout v-august-stable` returns to it.
+- Work from the other branches is preserved as tags, which never trigger deployments. Do not delete them:
+  - `archive-selrano-v1` (`b6d6fc6`): the Lumen 1 thinking-partner prototype, the Selrano mobile app, and the roadmap.
+  - `archive-cursor-groq-chat` (`96b6c6e`): the tip of the deleted `cursor/groq-chat-9090` branch (commit message "Build the Groq chat product"). Its contents were not reviewed; it is kept only so nothing is lost.
+- 2026-10-08: the leftover remote branches (`archive/selrano-v1`, `codex/selrano-1-prototype`, `cursor/groq-chat-9090`) were deleted after the tags above were pushed.
+
+## Changes since the August 13 baseline
+
+- **Security:** `npm audit fix` patched the critical and high advisories (Next.js, sharp, `@xmldom/xmldom`, qs). Three moderate advisories remain (`mammoth` through `argparse` to `sprintf-js`); the only fix is a forced downgrade of `mammoth`, so they are accepted for now. CI's `--audit-level=high` passes.
+- **Support removed (2026-09-29):** see "Support and contact".
+- **Image uploads:** PNG, JPG, WebP, and GIF files are read by a Groq vision model (`lib/ocr.ts`, up to about 2.8 MB each). Scanned PDFs are **not** supported: Groq cannot read PDFs directly, and a PDF with no text layer is rejected with a clear message. See `app/api/files/upload/route.ts`.
+- **Error reporting:** `instrumentation.ts` logs failed server requests as one `[server-error]` JSON line; `/api/client-error` receives browser crashes (rate limited) and logs `[client-error]`; `app/error.tsx` and `app/global-error.tsx` show a friendly page instead of a blank one. Search these tags in Vercel logs. There is no alerting.
+- **AI:** Groq-only, with a streaming, rate-limit-aware request path. See "AI request lifecycle". Chat time to first word, the "no responses after a few messages" failures, and the flashing reply were all fixed on 2026-10-08.
+- **Chat page:** compact orbiting-ring waiting indicator; only one reply can be in flight (Enter is ignored while busy); half-streamed Markdown is tidied; the streamed bubble hands over to the saved message without remounting.
+- **Tailwind config:** `tailwind.config.ts` imports `@tailwindcss/typography` instead of calling `require`, because newer Node versions load TypeScript configs natively and `require` crashed the dev server.
+- **Tooling:** Playwright tests with offline stand-ins for Supabase and Groq. See "Tests".
+- **Hosting:** only `main` deploys. See "Hosting and deploys".
+
+## Groq models
+
+- Checked against Groq's deprecation page on 2026-10-08: `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` (shut down 2026-08-16), `meta-llama/llama-4-scout-17b-16e-instruct` and `qwen/qwen3-32b` (2026-07-17), and `qwen/qwen3.6-27b` (2026-09-14) no longer work for non-enterprise accounts. `SHUT_DOWN_MODELS` in `lib/groq.ts` makes a stale environment value fall back to the default instead of failing. Add to that list when Groq announces more: https://console.groq.com/docs/deprecations
+- `qwen/qwen3.8-27b` (vision) is listed as a preview model and may change. `openai/gpt-oss-120b` and `openai/gpt-oss-20b` are listed as production models.
+- Groq enforces request and token limits **per model**. That is why the fallback and background models differ from the main one, why prompts are kept small, and why a rate-limited main model hands over to the fallback at once.
+- gpt-oss models are sent `reasoning_effort: "low"` and `include_reasoning: false` to cut time to first word. They do not support parallel tool calls.
+- `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in Vercel.
+
+## Hosting and deploys
+
+- Vercel project `workspace`, deployed from `main`.
+- `vercel.json` sets `git.deploymentEnabled` to `{"**": false, "main": true}` so only `main` builds. A push to `main` deploying to production was confirmed; the "other branches are skipped" half was not tested on purpose, to avoid creating a preview.
+- Vercel does not create a **production** deployment for a commit SHA it has already built as a preview. With no previews every push to `main` builds as production; if one is ever missing, push a new commit.
+- Check a deploy with the GitHub commit status named "Vercel" or `gh api repos/osjr13-oss/workspace/deployments`, then open the live site.
+- CI (GitHub Actions, Node 20) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
+
+## Support and contact
+
+- Removed on 2026-09-29: `/support`, `/help`, the support contact form, `/api/support/contact`, the support email in footers and email footers, the Settings "Help & support" panel, and the welcome email's "reply to us" line. `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read and can be deleted from Vercel.
+- Still in the database: the `support_requests` table and its history. Migrations were left unchanged.
+- The Privacy, Terms, and Security pages state that Selrano does not currently offer a public email address and that a contact channel will be published. A privacy policy normally needs a contact method: when one exists, update `app/(legal)/privacy/page.tsx`, `terms/page.tsx`, and `security/page.tsx`, and reword the "Respond to your support requests" line in the Privacy page's data-use list.
+- Check once: the Supabase Auth email templates (pasted into the Supabase dashboard from `docs/OPERATIONS.md`) used to link to `/support`, which is now a 404. Make sure the live templates no longer contain that link.
 
 ## Product positioning and UI direction
 
@@ -24,7 +69,7 @@ Last updated: **August 3, 2026**
 - Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
 - Keep the Selrano name across the product, domain, and email. Do not revive the imported product's previous brand.
 - Public pricing and acquisition pages should sell capability and outcomes without advertising exact AI message allowances. Authenticated billing may still show current usage and limits.
-- Chat presentation should feel calm and premium: soft user prompt cards, borderless editorial assistant prose, visible response actions, and the Selrano thinking trace while waiting.
+- Chat presentation should feel calm and premium: soft user prompt cards, borderless editorial assistant prose, visible response actions, and the compact orbiting-ring indicator while waiting.
 - Never use the Unicode em dash character in user-visible copy, stored chat content, citations, lifecycle email content, or AI output.
 
 ## Confirmed production journeys
@@ -45,6 +90,8 @@ The July 10 authenticated production audit confirmed:
 - logout and protected-route redirect
 
 Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and **`E2E AI Action Check — Jul 10`**. Do not remove it without owner approval.
+
+On 2026-10-13 the owner confirmed by hand on the live site that chat is faster and more reliable after the October 8 changes, and that a web-search answer came back correct. That was a manual check; the automated tests run against offline stand-ins, not production.
 
 ## Launch-hardening work deployed
 
@@ -69,17 +116,17 @@ Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and
 - CI blocks on typecheck, lint, production dependency audit, and build.
 - Groq is the only AI provider.
 - Selrano learns a style directive from conversation history and uses durable content memories when relevant.
-- Established accounts with no memories can bootstrap up to 12 durable facts from as many as 80 earlier user messages on the next chat request.
+- Established accounts with no memories can bootstrap up to 12 durable facts from as many as 80 earlier user messages. This runs **after** a reply is sent, at most once a day per account (`maybeBootstrapMemories`). It used to run in front of the answer on every message and was a major cause of slow and failing chat.
 - Explicit recall prompts such as "what do you remember about me?" return the strongest stored memories without requiring lexical overlap.
 - User messages use soft prompt cards; assistant responses use a readable editorial layout with copy, read-aloud, and regenerate actions.
-- The waiting state uses a three-stage Selrano thinking trace instead of a generic spinner.
+- The waiting state is a compact orbiting ring (`components/thinking-trace.tsx`), shown only until the first words of a reply appear.
 - Conversations can be deleted directly from the chat list, including on touch layouts.
 - The Study navigation icon now uses a modern brain-circuit mark.
 - Public pricing and guide copy no longer advertise exact AI message allowances.
 - Opted-in accounts at least seven days old are eligible for a weekly workspace check-in, subject to a seven-day minimum between lifecycle emails.
 - Lifecycle sends are claimed in the log before delivery to prevent duplicates. A failed send removes its claim so it can be retried.
-- The chat AI tool-decision pass now runs on every message instead of only messages matching a keyword gate, and offers `web_search` alongside the existing workspace tools so the model itself judges when it needs current information.
-- Malformed Groq tool-call output (`llama-3.3-70b-versatile` occasionally emits `<function=...>` as plain text instead of structured JSON) is parsed and recovered from the rejected error body instead of being silently discarded.
+- Every chat message is one streaming Groq request that also offers `web_search` and the workspace tools, so the model itself judges when it needs current information. There is no separate tool-decision round trip.
+- Malformed Groq tool-call output (a tool call written as text and rejected by Groq as `tool_use_failed`) is parsed from the rejected error and recovered (`recoverMalformedToolCall` in `lib/groq.ts`; it handles the `<function=name {...}>` form and a JSON object with a name and arguments). The llama model that produced it is shut down, so this is now a safety net.
 - The Settings billing panel no longer shows the redundant AI today/Projects/Decks usage counters.
 - Generic sparkle iconography was replaced with context-specific icons: a crown for Pro/premium actions, the Selrano brand mark for "Made with Selrano" attribution, and the existing wand icon unified across all AI-transform actions (flashcard generation, note transforms, quick actions).
 - The landing page and pricing cards use a cursor-tracking spotlight/glow border (`components/spotlight-card.tsx`, `components/use-spotlight.ts`) and scroll-in reveal animation (`components/reveal.tsx`), built on a new `framer-motion` dependency. See `DESIGN_SYSTEM.md`'s Motion section for the reusable pattern.
@@ -107,17 +154,19 @@ Key live contracts verified after reconciliation:
 - trigger-only privileged functions are not executable through the public API
 - `service_role` has all required public-table and sequence privileges, including default privileges for future objects
 
-The July 11 email incident was caused by production migration drift: the server role had schema access but was missing table privileges. The live grant repair fixed the Email preferences error immediately. The signed-in production check confirmed **Send tips & feature reminders** now persists successfully. `RESEND_API_KEY`, `EMAIL_FROM`, `SUPPORT_INBOX`, and `CRON_SECRET` are present in Vercel production/preview configuration. The July 10 account affected by the incident was recovered through the deployed welcome-email batch at `2026-07-11 00:31:51 UTC`; the database shows one welcome audit event, confirming one delivery without duplication.
+AI quota: `reserve_ai_usage` in `20260813120000_founding_pricing_limits.sql` allows Free 20 requests per UTC day and Pro or an active referral bonus 1500 per UTC month, matching `lib/plans.ts`. That migration is not in the July list above, so confirm it is applied in production. When a chat turn produces no answer, `refundAiRequest` (`lib/ai-usage.ts`, service role) deletes the newest `ai_usage_events` row for that user and route so a failure does not cost a message. Edits and regenerations still count.
+
+The July 11 email incident was caused by production migration drift: the server role had schema access but was missing table privileges. The live grant repair fixed the Email preferences error immediately. The signed-in production check confirmed **Send tips & feature reminders** now persists successfully. `RESEND_API_KEY`, `EMAIL_FROM`, and `CRON_SECRET` are present in Vercel production/preview configuration (`SUPPORT_INBOX` is also set but no longer used). The July 10 account affected by the incident was recovered through the deployed welcome-email batch at `2026-07-11 00:31:51 UTC`; the database shows one welcome audit event, confirming one delivery without duplication.
 
 The July 24 lifecycle investigation found that preferences were saving correctly, but active established users could age out of every narrow tip campaign. The live database had no lifecycle-email log rows for the opted-in active account. The new weekly check-in closes that eligibility gap. A real external lifecycle email was not triggered manually during local verification, so confirm the next scheduled production run and its log entry before treating delivery as fully observed.
 
-The July 24 memory investigation found historical user messages but no content-memory rows for the established active account. The application now backfills durable memories from earlier conversation history when the memory table is empty, then treats direct recall questions as a request for the strongest stored facts.
+The July 24 memory investigation found historical user messages but no content-memory rows for the established active account. The application backfills durable memories from earlier conversation history when the memory table is empty (now in the background, see above), then treats direct recall questions as a request for the strongest stored facts.
 
 ## AI request lifecycle
 
 1. Authenticate the user (API routes skip the middleware session check, so there is one auth round trip, not two).
 2. In parallel: verify thread/project ownership and reserve daily AI usage atomically.
-3. In parallel: load recent history (trimmed to a character budget), project context, style profile, and relevant durable memories, while saving the user message.
+3. In parallel: load recent history, project context, style profile, and relevant durable memories, while saving the user message. History is the last 12 messages within 8,000 characters (each clipped to 2,000); project context is capped at 9,000 characters; replies are capped at 3,072 tokens. These limits keep every request small enough for Groq's per-model token limits.
 4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer.
 5. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen. The response headers are sent only once the first words exist, so a failure is a clean JSON error, not a broken stream.
 6. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
@@ -127,9 +176,17 @@ The July 24 memory investigation found historical user messages but no content-m
 10. After the response (`after()`): update the thread timestamp, extract new durable memories (only when the message is personal; background model `GROQ_BACKGROUND_MODEL`), and bootstrap memories from history at most once a day. None of this is ever in front of an answer.
 11. The page keeps one reply in flight (Enter is ignored while busy), tidies half-streamed Markdown (`lib/stream-markdown.ts`), and hands the streamed bubble over to the saved row without remounting it.
 
+Each finished reply logs one `[chat] reply` line with time to first word, total time, length, tool count, and whether the browser left, which is the quickest way to check speed in Vercel logs.
+
 ## Tests
 
-`npm run test:e2e` builds the app and runs it against offline stand-ins for Supabase and Groq (`e2e/support/mock-servers.mjs`), so it needs no accounts. It covers streaming smoothness, rate limits, empty replies, memory work staying off the critical path, prompt size, and the double-Enter bug. Set `E2E_EMAIL` and `E2E_PASSWORD` (your own test account) to also run the signed-in tests.
+`npm run test:e2e` builds the app into `.next-e2e`, serves it on port 3000, and starts two offline stand-ins (`e2e/support/mock-servers.mjs`): a fake Supabase on port 54321 and a fake Groq on port 54322. No accounts or network are needed. `E2E_DEV=1` uses the dev server instead of a production build.
+
+- `e2e/public.spec.ts`: landing, pricing and legal pages, the removed support pages, and the signed-out redirect.
+- `e2e/chat.spec.ts`: streaming without flashes, unfinished Markdown, empty replies, rate limits and model fallback, memory work staying off the critical path, prompt size, tool lead-ins, leaving mid-answer, double Enter, and the daily limit. These only run against the local setup, not a deployed site.
+- `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
+
+To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
 
 ## Validation and release
 
@@ -140,26 +197,41 @@ npm run typecheck
 npm run lint
 npm audit --omit=dev --audit-level=high
 npm run build
+npm run test:e2e
 rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, and verify the real production flow. A passing Next.js build does not validate Supabase migrations, Storage, Stripe webhooks, Groq streaming, or Resend delivery.
+Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, and verify the real production flow. A passing Next.js build or the offline tests do not validate Supabase migrations, Storage, Stripe webhooks, real Groq behavior, or Resend delivery.
 
 ## Known limitations and next priorities
 
-1. Smoke-test premium chat rendering, direct list deletion, and explicit memory recall on the real account — not yet independently confirmed since the July 24 adaptive-AI merge.
-2. The Groq malformed-tool-call recovery in `lib/groq.ts` parses one known failure shape from `llama-3.3-70b-versatile`; it is a targeted workaround, not a guaranteed fix if Groq's output format drifts further. Watch production logs for `[chat] tool call failed` entries that are not recovered.
-3. Supabase `HEAD .../select=id` count queries (`projects`, `notes`, `files`, `flashcards`) were observed returning 503 in production logs during the 2026-07-25 investigation. Not yet root-caused; investigate before it affects visible dashboard counts.
+1. Premium chat rendering, direct list deletion, and explicit memory recall were not independently confirmed on the real account after the July 24 merge. The owner confirmed on 2026-10-13 that chat itself works well.
+2. Watch production logs for `[chat] tool-enabled stream failed` entries (a tool-enabled request that failed and was retried without tools) and for `[groq] ... unavailable` lines, which show how often the fallback model is used.
+3. Supabase `HEAD .../select=id` count queries (`projects`, `notes`, `files`, `flashcards`) were observed returning 503 in production logs during the 2026-07-25 investigation. Not root-caused. The August 8 migrations (hot-path indexes, scalar-subquery RLS policies) are in the repo, but their application to production has not been verified. The owner chose not to pursue this on 2026-10-08.
 4. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
 5. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
-6. Address Supabase performance-advisor warnings: missing foreign-key indexes and RLS policies that call `auth.uid()` without a scalar subquery.
+6. The Supabase performance-advisor warnings (missing foreign-key indexes, RLS policies calling `auth.uid()` without a scalar subquery) are addressed by the August 8 migrations in the repo. Confirm they are applied and re-run the advisor.
 7. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
-8. Add production error tracking and product analytics before scaling paid acquisition.
-9. Add automated browser regression coverage for signup, notes, upload, chat streaming, memory backfill, flashcard generation, study, billing state, and logout.
+8. Monitoring is logs only: `[server-error]`, `[client-error]`, and the `[chat] reply` timing line. There is no alerting, error grouping, or product analytics beyond Vercel Web Analytics. Add them before scaling paid acquisition.
+9. Browser tests cover public pages and chat. Signup, notes, upload, flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
+10. There is no public contact channel (see "Support and contact").
+11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
+12. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
 
 ## Recent release commits
 
+- `72776ef` — fix slow, failing, and flickering chat; add offline end-to-end tests
+- `4d5d7a2` — only deploy `main` on Vercel
+- `ad78c9a` — switch Groq defaults to models that still exist
+- `63422a9` — make Groq the only AI provider and stream chat without a blocking tool pass
+- `a8ec000` — Playwright tests and Tailwind config fix for newer Node
+- `a45f713` — server and browser error reporting
+- `faeb1c3` — read text in uploaded images (later limited to images, see "Changes since the August 13 baseline")
+- `7f8406e` — remove the support page, form, API, help center, and support email
+- `3dd94ef` — patch critical and high production dependency advisories
+- `cc4140a` — restore the August 13 state (`36354bf`) after the repository reset
+- `36354bf` — update founding Pro pricing and plan limits (the baseline)
 - `2b1a908` — merge `landing-page-aesthetics`: spotlight/reveal treatment for the landing page and pricing cards
 - `e9fd5f5` — remove usage stat cards from Settings and use more specific icons
 - `de0b2c2` — recover malformed Groq function calls instead of dropping them

@@ -58,6 +58,9 @@ const LONG_MARKDOWN = [
 ].join("\n");
 
 test.describe("chat", () => {
+  // These tests steer a fake Groq and Supabase, so they only run against the local app that starts them.
+  test.skip(Boolean(process.env.E2E_BASE_URL), "Chat tests need the local mock servers.");
+
   test.beforeEach(async ({ page, context }) => {
     await resetMocks();
     await signIn(context);

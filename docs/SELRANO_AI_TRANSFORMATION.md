@@ -1,12 +1,13 @@
 # Selrano AI transformation
 
+> Status note (2026-10-13): this was written for the July 24 transformation. The AI provider has since changed: **Groq is now the only provider** and Anthropic was removed on 2026-10-08. Current behavior is described in `docs/HANDOFF.md`; the Anthropic details below are kept only as history.
+
 This branch transforms the existing Selrano application into an adaptive, chat-first AI workspace while preserving the Selrano brand and the working account, database, billing, file, note, and study infrastructure.
 
 ## Product changes
 
 - Chat is the primary signed-in destination.
-- Claude Sonnet 4.6 is the primary AI model.
-- Groq remains the automatic fallback.
+- Groq is the AI provider. (Originally Claude Sonnet 4.6 was primary with Groq as fallback; if the main Groq model is rate limited, a second Groq model now answers.)
 - Tavily provides current web sources through a `web_search` tool the model calls when it judges a question needs them (see `docs/HANDOFF.md` for the July 25 reliability fixes).
 - Style learning and durable content memory are stored separately.
 - Users can edit a message and regenerate an assistant response.
@@ -16,12 +17,11 @@ This branch transforms the existing Selrano application into an adaptive, chat-f
 ## New environment variables
 
 ```txt
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
+GROQ_API_KEY=
 TAVILY_API_KEY=
 ```
 
-`GROQ_API_KEY` and `GROQ_MODEL` remain required for fallback coverage.
+`GROQ_API_KEY` is required. The Groq model variables are optional; see `docs/SETUP.md`.
 
 ## Database
 

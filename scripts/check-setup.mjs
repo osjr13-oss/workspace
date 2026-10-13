@@ -54,7 +54,7 @@ for (const key of required) {
   console.log(`  ${status(key) === "ok" ? "✓" : "✗"} ${key}`);
 }
 
-console.log("\nBranding (support pages, email links):");
+console.log("\nBranding (site URL used in email links):");
 for (const key of branding) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }

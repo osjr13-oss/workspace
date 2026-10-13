@@ -4,7 +4,7 @@ Production: **https://selrano.com**
 
 ---
 
-## Step 1 — Database (Supabase)
+## Step 1 - Database (Supabase)
 
 For an existing environment, apply new migrations through a tracked migration workflow. Do not paste only the combined early migration into production; later migrations contain required billing, security, quota, and data-integrity fixes.
 
@@ -13,17 +13,17 @@ For a brand-new database:
 1. Run `001_initial_schema.sql`.
 2. Run either `002_through_004_combined.sql` **or** the separate `002_ai_embeddings.sql`, `003_usage_limits.sql`, and `004_ops_support.sql` files. Do not run both paths.
 3. Run every later migration in version order, including the timestamped reconciliation migrations.
-4. If `vector` fails: **Database → Extensions** → enable **vector** → run the migration again.
+4. If `vector` fails: **Database -> Extensions** -> enable **vector** -> run the migration again.
 
 Before every deployment, confirm the production migration history matches the repository. A successful Next.js build does not verify the live database schema.
 
-New tables include **`support_requests`** (every support form submission is stored here).
+The `support_requests` table still exists from earlier versions, but nothing writes to it any more: the support form was removed on 2026-09-29.
 
 ---
 
-## Step 2 — Auth redirect URLs (Supabase)
+## Step 2 - Auth redirect URLs (Supabase)
 
-**Authentication → URL Configuration**
+**Authentication -> URL Configuration**
 
 - **Site URL:** `https://selrano.com`
 - **Redirect URLs:**
@@ -32,113 +32,57 @@ New tables include **`support_requests`** (every support form submission is stor
 
 ---
 
-## Step 3 — Vercel environment variables
+## Step 3 - Vercel environment variables
 
-**Settings → Environment Variables → Production**
+**Settings -> Environment Variables -> Production**
 
-### Core (you should already have these)
+### Core
 
 | Name | Where to get it |
 |------|-----------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase -> Settings -> API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
-| `GROQ_API_KEY` | console.groq.com |
-| `GROQ_MODEL` | e.g. `llama-3.3-70b-versatile` |
-
-### Add these
-
-| Name | Value |
-|------|--------|
+| `GROQ_API_KEY` | console.groq.com (secret) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | `support@selrano.com` (shown on site; optional if you use default) |
 
-Save → **Redeploy**.
+### AI models (all optional)
+
+Groq is the only AI provider. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
+
+| Name | Default | Used for |
+|------|---------|----------|
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
+| `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
+| `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
+| `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
+| `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
+| `EMBEDDING_API_KEY` | none | Smarter file search in project chat |
+
+`ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are no longer used and can be deleted. `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
+
+Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
 
 ---
 
-## Step 4 — Resend (sending email) + where YOU read messages
+## Step 4 - Resend (sending email)
 
-You finished Resend through **4.3** (API key). Finish with the env vars below, then pick how you want to **read** support mail.
-
-### 4.4 — Vercel (only 3 email variables)
+Resend sends the welcome email and the optional tips and weekly check-ins. There is no support inbox.
 
 | Name | What to put |
 |------|-------------|
 | `RESEND_API_KEY` | Your `re_...` key from Resend |
-| `EMAIL_FROM` | `Selrano <noreply@selrano.com>` (domain must be verified in Resend) |
-| `SUPPORT_INBOX` | **Your real inbox** — see below |
+| `EMAIL_FROM` | `Selrano <noreply@selrano.com>` (the domain must be verified in Resend) |
+| `CRON_SECRET` | A long random string; the daily lifecycle email job checks it |
 
-**Important:** `SUPPORT_INBOX` does **not** have to be `support@selrano.com`. It is only “where Resend forwards the alert when someone submits the form.” While you are setting up, use **your normal email** (e.g. `you@gmail.com`). You can switch to `support@selrano.com` later.
-
-Redeploy after adding these.
+Redeploy after adding these, then check it works: sign up with a new account and look for the welcome email from `noreply@selrano.com`.
 
 ---
 
-### Where support messages show up (two places)
+## Step 5 - Optional later
 
-#### A) Supabase — always works, no inbox setup
-
-Every submission is saved even if email fails.
-
-1. [Supabase Dashboard](https://supabase.com/dashboard) → your project  
-2. **Table Editor** → **`support_requests`**  
-3. Each row has: `ticket_id`, `name`, `email`, `subject`, `message`, `created_at`
-
-**Use this as your inbox today** if you have not configured `support@` yet. Sort by `created_at` descending.
-
-#### B) Email — optional alert to your phone/desktop
-
-When someone submits `/support`, Resend sends **you** one email (to `SUPPORT_INBOX`) with the full message. The user gets a confirmation email too.
-
-To actually **read** those emails, `SUPPORT_INBOX` must be an address you already open (Gmail, Outlook, etc.) **or** you set up forwarding below.
-
----
-
-### How to set up `support@selrano.com` (only if you want that address)
-
-You only need this if you want a branded address instead of your personal Gmail in `SUPPORT_INBOX`.
-
-**Option 1 — Free forwarding (domain on Cloudflare)**  
-Best if `selrano.com` DNS is on Cloudflare:
-
-1. Cloudflare → your domain → **Email** → **Email Routing**  
-2. Create address `support@selrano.com` → forward to **your Gmail**  
-3. Cloudflare will show DNS records to add (MX, etc.)  
-4. In Vercel set `SUPPORT_INBOX=support@selrano.com` (mail arrives in Gmail via forward)
-
-**Option 2 — Google Workspace (~$7/mo)**  
-Real mailbox at Google:
-
-1. [workspace.google.com](https://workspace.google.com) → add domain `selrano.com`  
-2. Verify domain (TXT record at registrar)  
-3. Create user **support@selrano.com**  
-4. Log in at gmail.com with that account (or add to Gmail “Send mail as”)  
-5. `SUPPORT_INBOX=support@selrano.com`
-
-**Option 3 — Skip custom support@ for now (recommended)**  
-
-- `SUPPORT_INBOX=your.personal@gmail.com`  
-- `NEXT_PUBLIC_SUPPORT_EMAIL=support@selrano.com` (what users see on the site is fine; mail still goes to Gmail)  
-- Read tickets in **Supabase** + Gmail alerts  
-
-You do **not** need `hello@`, `security@`, or `privacy@` mailboxes. Legal pages all point to the same support address.
-
----
-
-### 4.5 — Verify
-
-1. Open `https://selrano.com/support` → submit a test message.  
-2. **Supabase** → `support_requests` → new row.  
-3. **Gmail** (or whatever you put in `SUPPORT_INBOX`) → email subject like `[Support] ...`.  
-4. Optional: sign up → welcome email from `noreply@selrano.com`.
-
----
-
-## Step 5 — Optional later
-
-- **Supabase custom SMTP** — branded password-reset emails (Resend SMTP in Supabase auth settings).  
-- **`EMBEDDING_API_KEY`** — smarter file search in project chat.  
+- **Supabase custom SMTP** - branded password-reset emails (Resend SMTP in Supabase auth settings). See `docs/OPERATIONS.md`.
+- **A public contact channel** - the Privacy, Terms, and Security pages currently say none is offered. See `docs/HANDOFF.md`, "Support and contact".
 
 ---
 
@@ -146,10 +90,14 @@ You do **not** need `hello@`, `security@`, or `privacy@` mailboxes. Legal pages 
 
 | Problem | Fix |
 |---------|-----|
-| Form works but no email | Check `RESEND_API_KEY`, `EMAIL_FROM` domain verified, redeploy; still read Supabase table |
-| No row in `support_requests` | Run Step 1 SQL |
-| Emails go to wrong place | Change `SUPPORT_INBOX` in Vercel → redeploy |
+| No welcome email | Check `RESEND_API_KEY`, that the `EMAIL_FROM` domain is verified in Resend, and redeploy |
+| Chat says the AI is handling a lot of requests | Groq is rate limiting both the main and fallback model. Wait a few seconds and send again; failed turns are not counted against the daily limit |
+| Chat fails for every message | Check `GROQ_API_KEY`, and that `GROQ_MODEL` (if set) is a model Groq still offers |
+| The assistant never uses the web | `TAVILY_API_KEY` is missing |
+| An uploaded image is rejected | Images must be under about 2.8 MB, in PNG, JPG, WebP, or GIF format |
 
 ```bash
 npm run setup:check
 ```
+
+To run the app against fake services instead (no accounts needed), see "Tests" in `docs/HANDOFF.md`.

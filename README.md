@@ -22,8 +22,8 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 GROQ_API_KEY=
-GROQ_MODEL=openai/gpt-oss-120b
-TAVILY_API_KEY=
+GROQ_MODEL=openai/gpt-oss-120b      # optional; also GROQ_FALLBACK_MODEL, GROQ_BACKGROUND_MODEL, GROQ_VISION_MODEL
+TAVILY_API_KEY=                     # live web search in chat
 NEXT_PUBLIC_APP_URL=
 RESEND_API_KEY=
 EMAIL_FROM=
@@ -35,7 +35,6 @@ EMAIL_FROM=
 |-------|---------|
 | `/security` | Security practices & disclosure |
 | `/terms`, `/privacy` | Legal |
-| `/help` | In-app support (authenticated) |
 | `/pricing` | Free vs Pro plans |
 
 ## Billing
@@ -52,7 +51,7 @@ npm run setup:check
 
 ## Operations
 
-Enterprise email, branding, support SLAs, and Fortune-500-style checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**
+Email, branding, and trust checklist: **[docs/OPERATIONS.md](docs/OPERATIONS.md)**. There is currently no support channel.
 
 ## Contributor handoff
 
@@ -70,6 +69,7 @@ npm run typecheck
 npm run lint
 npm audit --omit=dev --audit-level=high
 npm run build
+npm run test:e2e   # builds the app and runs it against fake Supabase and Groq; needs no accounts
 rg -n '\x{2014}' app components lib
 git diff --check
 ```
