@@ -67,6 +67,7 @@ function ChatsContent() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [modelMetadata, setModelMetadata] = useState<{ provider: string; model: string; fallbackReason?: string } | null>(null);
   const [threadId, setThreadIdState] = useState<string | null>(urlThread);
   // The conversation id is also kept in a ref that is updated the instant it is known, so the next
   // message can never be sent with a stale id while React is still applying the state update.
@@ -219,6 +220,7 @@ function ChatsContent() {
     sentAttachments: ComposerAttachment[]
   ) {
     setLoading(true);
+    setModelMetadata(null);
     setReplyStarted(false);
     setStatus(null);
     stickRef.current = true;
@@ -301,6 +303,8 @@ function ChatsContent() {
             ]);
           }
           pacer.push(event.text);
+        } else if (event.type === "model") {
+          setModelMetadata(event);
         } else if (event.type === "error") {
           fail(event.error, event.restore);
         }
@@ -468,7 +472,7 @@ function ChatsContent() {
   const empty = !messages.length && !loadingThread;
 
   return (
-    <section className="chat-page" aria-busy={loading}>
+    <section className="chat-page" aria-busy={loading} data-ai-provider={modelMetadata?.provider} data-ai-model={modelMetadata?.model} data-ai-fallback={modelMetadata?.fallbackReason}>
       <ChatHeader
         title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
         canManage={Boolean(threadId && activeThread)}

@@ -302,6 +302,8 @@ export async function POST(request: Request) {
       };
       let first: Awaited<ReturnType<typeof streamChatWithTools>> | null = null;
       let answerProvider: "anthropic" | "groq" | undefined;
+      let answerModel: string | undefined;
+      let fallbackReason: string | undefined;
       const streamPlain = async (msgs: GroqChatMessage[]) => {
         const result = await streamAi(msgs, {
           temperature: 0.6,
@@ -311,6 +313,8 @@ export async function POST(request: Request) {
           onToken: (token) => push(removeEmDashes(token))
         });
         answerProvider = result.provider;
+        answerModel = result.model;
+        fallbackReason = result.fallbackReason || fallbackReason;
         return result;
       };
 
@@ -322,6 +326,8 @@ export async function POST(request: Request) {
             onToolCallStart
           });
           answerProvider = first.provider;
+          answerModel = first.model;
+          fallbackReason = first.fallbackReason;
         } catch (error) {
           // A malformed tool request should never prevent a normal answer, as
           // long as nothing has been shown yet. Capacity problems are different:
@@ -376,6 +382,8 @@ export async function POST(request: Request) {
         failure = error;
         console.error("[chat] stream failed", serializeError(error), error);
       }
+
+      if (answerProvider && answerModel) send({ type: "model", provider: answerProvider, model: answerModel, fallbackReason });
 
       // Stop saves the words the user saw as the newest message
       // (/api/ai/chat/stop). If that happened, nothing more is saved or undone.
@@ -438,8 +446,9 @@ export async function POST(request: Request) {
           console.info(
             "[chat] reply",
             JSON.stringify({
-              model: answerProvider === "groq" ? configuredAiModel() : configuredAiModel(true),
+              model: answerModel || configuredAiModel(true),
               provider: answerProvider || "unknown",
+              fallbackReason,
               ttftMs: firstVisibleAt ? firstVisibleAt - startedAt : null,
               totalMs: Date.now() - startedAt,
               chars: answer.length,

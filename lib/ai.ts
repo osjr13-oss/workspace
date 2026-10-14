@@ -9,7 +9,7 @@ import {
   type GroqChatMessage
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
-import { anthropicModel, anthropicReady, streamAnthropic, type ClaudeBlock } from "@/lib/anthropic";
+import { anthropicModel, anthropicReady, ClaudeRequestError, streamAnthropic, type ClaudeBlock } from "@/lib/anthropic";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
@@ -30,6 +30,8 @@ type CompletionResult = {
   text: string;
   provider: AiProvider;
   usage: TokenUsage;
+  model?: string;
+  fallbackReason?: string;
 };
 
 /**
@@ -73,6 +75,7 @@ export async function streamChatWithTools(
   tools: Parameters<typeof streamAnthropic>[1],
   options: StreamOptions
 ) {
+  let fallbackReason: string | undefined;
   if (anthropicReady() && options.provider !== "groq") {
     let started = false;
     try {
@@ -80,17 +83,19 @@ export async function streamChatWithTools(
         ...options,
         onToken: (token) => { if (token) started = true; options.onToken(token); }
       });
-      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "anthropic" as const };
+      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "anthropic" as const, fallbackReason: undefined };
+      fallbackReason = "empty";
     } catch (error) {
       if (started) throw error;
-      console.warn("[ai] Claude unavailable before output; trying Groq");
+      fallbackReason = error instanceof ClaudeRequestError ? `${error.status}:${error.reason}` : "stream_or_network";
+      console.warn("[ai] Claude unavailable before output; trying Groq", { reason: fallbackReason });
     }
   }
   if (!groqReady()) throw new Error("No available AI provider is configured.");
   const result = tools.length && options.allowTools !== false
     ? await streamGroqWithTools(messages, tools, options)
     : { text: await streamGroq(messages, options), toolCalls: [] };
-  return { ...result, provider: "groq" as const, assistantContent: undefined };
+  return { ...result, provider: "groq" as const, assistantContent: undefined, model: groqModel(), fallbackReason };
 }
 
 /**
@@ -173,6 +178,8 @@ export async function streamAi(
   return {
     text: removeEmDashes(result.text),
     provider: result.provider,
+    model: result.model,
+    fallbackReason: result.fallbackReason,
     // Groq's streaming endpoint is not asked for usage, so nothing to report.
     usage: { ...NO_USAGE }
   };

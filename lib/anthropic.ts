@@ -6,6 +6,13 @@ export type ClaudeBlock = Record<string, unknown> & { type: string };
 type ClaudeMessage = { role: "user" | "assistant"; content: ClaudeBlock[] };
 type Tool = { type: string; function: { name: string; description: string; parameters: Record<string, unknown> } };
 
+export class ClaudeRequestError extends Error {
+  constructor(readonly status: number, readonly reason: string) {
+    super(`Claude request failed (${status}, ${reason})`);
+    this.name = "ClaudeRequestError";
+  }
+}
+
 export function anthropicReady() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
 }
@@ -51,7 +58,7 @@ export async function streamAnthropic(
   messages: GroqChatMessage[],
   tools: Tool[],
   options: { maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: ClaudeBlock[]; allowTools?: boolean }
-): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: ClaudeBlock[] }> {
+): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: ClaudeBlock[]; model: string }> {
   const controller = new AbortController();
   const firstOutputTimeout = setTimeout(() => controller.abort(), 25_000);
   const totalTimeout = setTimeout(() => controller.abort(), 120_000);
@@ -81,8 +88,10 @@ export async function streamAnthropic(
     });
     // Never log a provider response body: it can echo private prompts.
     if (!response.ok) {
-      await response.body?.cancel();
-      throw new Error(`Claude request failed (${response.status})`);
+      const payload = await response.json().catch(() => null);
+      const message = String(payload?.error?.message || "");
+      const reason = /workspace/i.test(message) ? "workspace" : /credit|billing/i.test(message) ? "billing" : /model/i.test(message) ? "model" : /api.key|authentication/i.test(message) ? "authentication" : "provider";
+      throw new ClaudeRequestError(response.status, reason);
     }
     if (!response.body) throw new Error("Claude returned no stream");
     reader = response.body.getReader();
@@ -92,9 +101,11 @@ export async function streamAnthropic(
     let buffer = "";
     let text = "";
     let stopped = false;
+    let model = anthropicModel();
     const handle = (line: string) => {
       if (!line.startsWith("data:")) return;
       const event = JSON.parse(line.slice(5).trim());
+      if (event.type === "message_start" && typeof event.message?.model === "string") model = event.message.model;
       if (event.type === "error") throw new Error("Claude stream failed");
       if (event.type === "message_stop") stopped = true;
       if (event.type === "content_block_start") {
@@ -143,7 +154,7 @@ export async function streamAnthropic(
       }
       return block;
     });
-    return { text, toolCalls, assistantContent };
+    return { text, toolCalls, assistantContent, model };
   } finally {
     clearTimeout(firstOutputTimeout);
     clearTimeout(totalTimeout);

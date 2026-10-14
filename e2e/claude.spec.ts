@@ -21,6 +21,7 @@ test.describe("Claude chat", () => {
     expect((await groqRequests()).filter((request) => request.stream)).toHaveLength(0);
     const requests = await (await fetch("http://localhost:54322/__claude_requests")).json();
     expect(requests[0].workspaceId).toBe("wrkspc_test");
+    await expect(page.locator("section.chat-page")).toHaveAttribute("data-ai-provider", "anthropic");
     await page.reload();
     await expect(bubble).toContainText("together.");
   });
@@ -49,6 +50,8 @@ test.describe("Claude chat", () => {
     const requests = (await groqRequests()).filter((request) => request.stream);
     expect(requests).toHaveLength(2);
     expect(requests[0].tools).toBe(true);
+    await expect(page.locator("section.chat-page")).toHaveAttribute("data-ai-provider", "groq");
+    await expect(page.locator("section.chat-page")).toHaveAttribute("data-ai-fallback", "503:provider");
     expect(await (await fetch("http://localhost:54322/__claude_requests")).json()).toHaveLength(1);
   });
 

@@ -4,12 +4,14 @@
  *   start   the conversation id (new conversations get one here)
  *   status  what Selrano is doing while a tool runs; null clears it
  *   text    the next words of the answer
+ *   model   provider metadata for diagnostics; never contains prompts or keys
  *   error   nothing could be produced; restore puts the user's text back
  */
 export type ChatStreamEvent =
   | { type: "start"; threadId: string }
   | { type: "status"; label: string | null }
   | { type: "text"; text: string }
+  | { type: "model"; provider: "anthropic" | "groq"; model: string; fallbackReason?: string }
   | { type: "error"; error: string; restore: boolean };
 
 /** Reads a chat reply stream and hands each event to onEvent as soon as its line is complete. */
