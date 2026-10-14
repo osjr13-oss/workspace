@@ -2,20 +2,33 @@
 
 Last updated: **October 14, 2026**
 
+## Claude-first chat (October 14)
+
+The owner approved Claude Haiku as the primary chat model, with Groq as fallback, and asked for better answers and a less distant conversational voice. This supersedes the earlier Groq-only decision for chat. The implementation has passed typecheck, lint, production audit, build, and all 34 enabled offline browser tests (three credential-dependent tests skipped). The owner reports the production API key is configured. Deployment and real-provider confirmation are the remaining release steps.
+
+- `lib/anthropic.ts` uses the Messages API with `claude-haiku-5-5` by default (`ANTHROPIC_MODEL` overrides it), incremental SSE text, workspace/web tools, and signed thinking preserved only for tool continuations. Thinking is never shown or stored in chat history.
+- `ANTHROPIC_API_KEY` is a server-only secret. The owner reports it has been added in Production. Without it, chat continues on Groq. `ANTHROPIC_BASE_URL` exists only for offline tests and must not be set in Vercel.
+- Claude errors, empty replies, or a 25-second wait for first output fall back to Groq before text starts. Once text starts, a failure saves the partial reply instead of splicing in another provider's answer. Continuations keep their starting provider, with Groq fallback still available if Claude cannot begin the continuation.
+- Background memory extraction, structured flashcards, transformations, and image OCR remain on Groq.
+- Chat instructions emphasize substance, conversation continuity, candid judgment, warm natural prose, and formatting only when useful. Short user messages no longer teach the style profile to give shallow replies or imitate lowercase typing.
+- The offline rig includes Claude scenarios for primary streaming, hidden thinking, signed tool continuation, pre-output fallback, partial failure, and persistence. Existing Groq scenarios default Claude to unavailable to retain fallback coverage.
+- Legal provider disclosures now include Anthropic. No database migration or UI layout change.
+- Release verification: confirm CI/deployment and the real Claude response after pushing main. Automated stand-ins verify transport, not answer quality; the owner should compare the conversational voice on real questions.
+
 ## Current state
 
 - Production: `https://selrano.com` (redirects to `https://www.selrano.com`)
 - Repository: `osjr13-oss/workspace`. Only `main` exists on GitHub. Work is committed straight to `main`; there are no feature branches and no preview deployments (see "Hosting and deploys").
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
-- AI provider: **Groq only**. Chat model `GROQ_MODEL` (default `openai/gpt-oss-120b`), fallback `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`), background work `GROQ_BACKGROUND_MODEL` (default: the fallback model), image reading `GROQ_VISION_MODEL` (default `qwen/qwen3.8-27b`). Anthropic was removed on 2026-10-08 and `ANTHROPIC_*` variables are no longer read. See "Groq models".
+- AI providers: **Claude Haiku primary chat, Groq fallback** (owner approved 2026-10-14). `ANTHROPIC_MODEL` defaults to `claude-haiku-5-5`. Groq defaults remain `openai/gpt-oss-120b` and `openai/gpt-oss-20b`, with background work, structured flashcards, transformations, and OCR still on Groq. See "Claude-first chat" and "Groq models".
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Access: **private**. Only emails in `ALLOWED_EMAILS` can sign in; the landing page, pricing, guides, signup, and shared decks send visitors to sign in, and search engines are turned away. See "Private access".
 - Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Latest product commit: the iPhone app's removal (2026-10-14, see "iPhone app (deleted)"). On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
+- Latest product change: Claude-first chat and conversational instructions. Earlier today: the iPhone app's removal (2026-10-14, see "iPhone app (deleted)"). On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
 - The code is the **August 13 baseline** (`36354bf`) plus the changes listed under "Changes since the August 13 baseline". The September work (security scanner pivot, "Lumen 1" prototype, mobile app) is **not** in `main`; it is preserved as tags (see "History and recovery").
 
 ## History and recovery
@@ -69,7 +82,7 @@ The owner stopped the iPhone app on 2026-10-14 and asked for it to be deleted: t
 - `qwen/qwen3.8-27b` (vision) is listed as a preview model and may change. `openai/gpt-oss-120b` and `openai/gpt-oss-20b` are listed as production models.
 - Groq enforces request and token limits **per model**. That is why the fallback and background models differ from the main one, why prompts are kept small, and why a rate-limited main model hands over to the fallback at once.
 - Chat answers on gpt-oss models are sent `reasoning_effort: "medium"` (owner decision, 2026-10-13, for smarter answers; set `GROQ_REASONING_EFFORT` to `low` or `high` to change it) with room for 4,096 completion tokens, since hidden reasoning counts toward that limit. Background work (memory extraction, structured output) stays at `low`. Reasoning is never shown (`include_reasoning: false`). gpt-oss models do not support parallel tool calls.
-- Next model step (owner, 2026-10-14): likely **Claude Haiku**, kept behind Groq as the fallback, when the owner says go. Gemini models (including Gemini 4 Argon) are ruled out as not good enough for the owner. Do not switch providers without the owner's go-ahead (Groq-only rule until then).
+- Model decision (owner, 2026-10-14): **Claude Haiku primary, Groq fallback**, now approved. Gemini models remain ruled out. Do not add another provider without the owner asking.
 - `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in Vercel.
 
 ## Hosting and deploys
@@ -151,7 +164,7 @@ On 2026-10-13 the owner confirmed by hand on the live site that chat is faster a
 - All product feature flags and their environment variables were removed.
 - Desktop/mobile logout is accessible and uses local-session scope.
 - CI blocks on typecheck, lint, production dependency audit, and build.
-- Groq is the only AI provider.
+- Claude Haiku is primary for chat, with Groq fallback; other AI work remains on Groq.
 - Selrano learns a style directive from conversation history and uses durable content memories when relevant.
 - Established accounts with no memories can bootstrap up to 12 durable facts from as many as 80 earlier user messages. This runs **after** a reply is sent, at most once a day per account (`maybeBootstrapMemories`). It used to run in front of the answer on every message and was a major cause of slow and failing chat.
 - Explicit recall prompts such as "what do you remember about me?" return the strongest stored memories without requiring lexical overlap.
@@ -204,9 +217,9 @@ The July 24 memory investigation found historical user messages but no content-m
 1. Authenticate the user (API routes skip the middleware session check, so there is one auth round trip, not two).
 2. In parallel: verify thread/project ownership and reserve daily AI usage atomically.
 3. In parallel: load recent history, project context, style profile, and relevant durable memories, while saving the user message. History is the last 12 messages within 8,000 characters (each clipped to 2,000); project context is capped at 9,000 characters; answers are capped at 4,096 completion tokens, which include the hidden reasoning (see "Groq models"). These limits keep every request small enough for Groq's per-model token limits.
-4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer. Attached files (`fileIds`) are added to the prompt as the user's own material.
+4. Send one streaming Claude request (Groq if Claude is not configured or cannot begin output) that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer. Attached files (`fileIds`) are added to the prompt as the user's own material.
 5. The reply is a stream of JSON lines (`lib/chat-stream.ts`): `start` (the conversation id, sent at once), `status` (what a tool is doing), `text` (the next words), and `error` (nothing could be produced; the page restores the user's text). Checks that fail before generation starts (sign in, ownership, the daily limit) are still plain JSON errors. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen.
-6. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
+6. Claude falls back to Groq before output, never midway through visible text. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
 7. An empty reply is retried once without tools. If nothing can be produced, the just-saved user message (and a thread created by this request) is removed, the reserved usage is refunded, and the page puts the text back in the box.
 8. Remove em dashes at every model-output boundary.
 9. Persist the assistant response before closing the stream, unless Stop already saved a reply (the newest message in the thread is then an assistant message). Generation runs to completion even if the browser leaves.
@@ -257,7 +270,7 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 9. Browser tests cover private access and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
 10. There is no public contact channel (see "Support and contact").
 11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
-12. Next model step: likely Claude Haiku behind Groq when the owner says go (see "Groq models").
+12. Compare the new Claude-first conversational voice on real questions with the owner (see "Claude-first chat").
 13. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
 
 ## Recent release commits

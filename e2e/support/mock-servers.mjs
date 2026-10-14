@@ -262,10 +262,14 @@ async function handleSupabase(req, res) {
 
 // -------------------------------------------------------------------- Groq --
 
-const groqState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
+const groqState = { requests: [], claudeRequests: [], claude: false, claudeTool: false, claudePartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
   groqState.requests = [];
+  groqState.claudeRequests = [];
+  groqState.claude = false;
+  groqState.claudeTool = false;
+  groqState.claudePartial = false;
   groqState.failNext = [];
   groqState.toolNext = false;
   groqState.firstTokenDelayMs = 0;
@@ -308,12 +312,48 @@ async function handleGroq(req, res) {
     return sendJson(res, 200, { ok: true });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
+  if (url.pathname === "/__claude_requests") return sendJson(res, 200, groqState.claudeRequests);
   if (url.pathname === "/__control") {
     const body = JSON.parse((await readBody(req)) || "{}");
     Object.assign(groqState, body);
     return sendJson(res, 200, { ok: true });
   }
 
+  if (url.pathname === "/anthropic/v1/messages") {
+    const body = JSON.parse(await readBody(req));
+    groqState.claudeRequests.push(body);
+    if (!groqState.claude) return sendJson(res, 503, { error: { type: "overloaded_error" } });
+    res.writeHead(200, { "Content-Type": "text/event-stream" });
+    // Split data frames across writes to exercise the incremental SSE parser.
+    const send = (event) => {
+      const frame = `event: ${event.type}\r\ndata: ${JSON.stringify(event)}\r\n\r\n`;
+      res.write(frame.slice(0, 19));
+      res.write(frame.slice(19));
+    };
+    send({ type: "message_start", message: { usage: { input_tokens: 30 } } });
+    send({ type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } });
+    send({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "PRIVATE_REASONING" } });
+    send({ type: "content_block_delta", index: 0, delta: { type: "signature_delta", signature: "test-signature" } });
+    send({ type: "content_block_stop", index: 0 });
+    if (groqState.claudeTool && body.tools?.length && body.tool_choice?.type !== "none") {
+      groqState.claudeTool = false;
+      send({ type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "toolu_1", name: "search_workspace", input: {} } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '{"query":' } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '"biology"}' } });
+      send({ type: "content_block_stop", index: 1 });
+    } else {
+      send({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+      for (const token of ["Let's work through it", "\u2014together."]) {
+        send({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text: token } });
+        await sleep(200);
+      }
+      if (groqState.claudePartial) { res.end(); return; }
+      send({ type: "content_block_stop", index: 1 });
+    }
+    send({ type: "message_stop" });
+    res.end();
+    return;
+  }
   if (!url.pathname.endsWith("/chat/completions")) return sendJson(res, 404, { error: "not found" });
 
   const body = JSON.parse(await readBody(req));

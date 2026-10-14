@@ -5,16 +5,18 @@ import {
   groqFallbackModel,
   groqModel,
   streamGroq,
+  streamGroqWithTools,
   type GroqChatMessage
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
+import { anthropicModel, anthropicReady, streamAnthropic, type ClaudeBlock } from "@/lib/anthropic";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
-type AiProvider = "groq";
+type AiProvider = "groq" | "anthropic";
 
 /** Tokens billed for one model call. Zero means the provider did not return usage. */
 export type TokenUsage = {
@@ -50,8 +52,45 @@ function groqReady() {
   return Boolean(process.env.GROQ_API_KEY?.trim());
 }
 
-export function configuredAiModel() {
-  return groqModel();
+export function configuredAiModel(chat = false) {
+  return chat && anthropicReady() ? anthropicModel() : groqModel();
+}
+
+type StreamOptions = {
+  temperature?: number;
+  maxTokens?: number;
+  onToken: (token: string) => void;
+  onToolCallStart?: () => void;
+  provider?: AiProvider;
+  assistantContent?: ClaudeBlock[];
+  tools?: Parameters<typeof streamAnthropic>[1];
+  allowTools?: boolean;
+};
+
+/** Fall back only before text starts, so two providers never splice answers together. */
+export async function streamChatWithTools(
+  messages: GroqChatMessage[],
+  tools: Parameters<typeof streamAnthropic>[1],
+  options: StreamOptions
+) {
+  if (anthropicReady() && options.provider !== "groq") {
+    let started = false;
+    try {
+      const result = await streamAnthropic(messages, tools, {
+        ...options,
+        onToken: (token) => { if (token) started = true; options.onToken(token); }
+      });
+      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "anthropic" as const };
+    } catch (error) {
+      if (started) throw error;
+      console.warn("[ai] Claude unavailable before output; trying Groq");
+    }
+  }
+  if (!groqReady()) throw new Error("No available AI provider is configured.");
+  const result = tools.length && options.allowTools !== false
+    ? await streamGroqWithTools(messages, tools, options)
+    : { text: await streamGroq(messages, options), toolCalls: [] };
+  return { ...result, provider: "groq" as const, assistantContent: undefined };
 }
 
 /**
@@ -128,17 +167,12 @@ export async function completeAi(
 
 export async function streamAi(
   messages: GroqChatMessage[],
-  options: { temperature?: number; maxTokens?: number; onToken: (token: string) => void }
+  options: StreamOptions
 ): Promise<CompletionResult> {
-  if (!groqReady()) throw new Error("No AI provider is configured.");
+  const result = await streamChatWithTools(messages, options.tools || [], { ...options, allowTools: false });
   return {
-    text: removeEmDashes(
-      await streamGroq(messages, {
-        ...options,
-        onToken: (token) => options.onToken(removeEmDashes(token))
-      })
-    ),
-    provider: "groq",
+    text: removeEmDashes(result.text),
+    provider: result.provider,
     // Groq's streaming endpoint is not asked for usage, so nothing to report.
     usage: { ...NO_USAGE }
   };

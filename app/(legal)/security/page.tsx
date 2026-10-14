@@ -29,7 +29,7 @@ export default function SecurityPage() {
       <Section title="Infrastructure">
         <p>
           Application hosting runs on Vercel. Data, authentication, and file storage use Supabase (PostgreSQL with
-          row-level security). AI inference uses Groq; prompts are not used to train third-party models per provider policy.
+          row-level security). AI inference uses Anthropic and Groq; prompts are not used to train third-party models per provider policy.
         </p>
       </Section>
 

@@ -13,7 +13,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, create notes, or create flashcard decks, then stream the final response.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Groq keys, Resend keys, customer content, or browser-session data.
-- Groq is the only AI provider (owner decision, 2026-10-08). Do not add Anthropic or another provider without asking.
+- Claude Haiku is the primary chat model and Groq is the fallback (owner approved 2026-10-14). Background work, transformations, flashcards, and OCR remain on Groq. Do not add another provider without asking.
 - Selrano is private (owner decision, 2026-10-13): only `ALLOWED_EMAILS` accounts get in, and nothing is offered to search engines. Keep new pages and API routes behind `lib/access.ts` (middleware plus `getAuthenticatedUser`). See `docs/HANDOFF.md`, "Private access".
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
@@ -42,7 +42,7 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
 - `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
-- `lib/ai.ts` — Groq-only completion, structured output, and streaming. Groq is the single AI provider.
+- `lib/ai.ts` and `lib/anthropic.ts` — Claude-first chat streaming with Groq fallback; Groq completion and structured output for other AI work.
 - `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).
 - `lib/ocr.ts` — reads text in uploaded images with a Groq vision model. Scanned PDFs are not supported.
 - `lib/stream-markdown.ts` — tidies half-streamed Markdown so replies never flash raw symbols.

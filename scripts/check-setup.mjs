@@ -38,6 +38,8 @@ const required = [
   "ALLOWED_EMAILS"
 ];
 
+console.log(`Primary chat: ${status("ANTHROPIC_API_KEY") === "ok" ? "Claude Haiku" : "Groq (ANTHROPIC_API_KEY missing)"}`);
+
 const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM"];
@@ -75,7 +77,7 @@ const missingRequired = required.filter((k) => status(k) === "missing");
 if (missingRequired.length) {
   console.log("\n→ Fix required vars in Vercel (Production) or copy .env.example → .env.local\n");
 } else {
-  console.log("\n→ Core env looks set. Run DB migration 002_through_004_combined.sql in Supabase if not done.\n");
+  console.log("\n→ Core env looks set. Compare production migration history and schema before applying SQL.\n");
 }
 
 console.log("Full guide: docs/SETUP.md\n");

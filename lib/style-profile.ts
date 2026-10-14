@@ -56,7 +56,7 @@ function mergeDimensions(current: StyleDimensions, next: ReturnType<typeof signa
 function directiveFromDimensions(dimensions: StyleDimensions) {
   const length =
     dimensions.averageWords < 9
-      ? "Keep sentences short and compact."
+      ? "Use clear, conversational sentences. Keep casual exchanges compact, but give substantive questions the detail they need."
       : dimensions.averageWords > 24
         ? "Use developed sentences and preserve nuance."
         : "Use concise, conversational sentences.";
@@ -70,7 +70,7 @@ function directiveFromDimensions(dimensions: StyleDimensions) {
       : "Keep the tone calm and avoid forced enthusiasm.";
   const casing =
     dimensions.lowercaseRate > 0.94
-      ? "Match the user's relaxed casing when it remains readable."
+      ? "Use a relaxed, natural tone with readable sentence casing; do not imitate typos."
       : "Use standard sentence casing.";
 
   return `${length} ${structure} ${energy} ${casing} Never use an em dash.`;

@@ -43,16 +43,18 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase -> Settings -> API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
-| `GROQ_API_KEY` | console.groq.com (secret) |
+| `GROQ_API_KEY` | console.groq.com (secret; fallback and non-chat work) |
+| `ANTHROPIC_API_KEY` | https://platform.claude.com/settings/keys (server-only Secret; primary chat) |
 | `ALLOWED_EMAILS` | Comma-separated emails that may sign in. Empty lets nobody in (Selrano is private) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)
 
-Groq is the only AI provider. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
+Claude Haiku is primary for chat when `ANTHROPIC_API_KEY` is set; Groq takes over if Claude is unavailable before output. Without that key, chat continues on Groq. All other AI work remains on Groq. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
 
 | Name | Default | Used for |
 |------|---------|----------|
+| `ANTHROPIC_MODEL` | `claude-haiku-5-5` | Primary chat model |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
 | `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
 | `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
@@ -61,9 +63,9 @@ Groq is the only AI provider. The defaults below work; set a variable only to ch
 | `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
 | `EMBEDDING_API_KEY` | none | Smarter file search in project chat |
 
-`ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` are no longer used and can be deleted. `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
+`SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+`ANTHROPIC_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
 
 ---
 

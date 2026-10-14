@@ -37,6 +37,9 @@ export default defineConfig({
             SUPABASE_SERVICE_ROLE_KEY: "test-service-key",
             NEXT_PUBLIC_APP_URL: "http://localhost:3000",
             GROQ_API_KEY: "test-groq-key",
+            // Never let offline tests send customer context to a real Claude endpoint.
+            ANTHROPIC_API_KEY: "test-claude-key",
+            ANTHROPIC_BASE_URL: "http://localhost:54322/anthropic",
             ALLOWED_EMAILS: "student@example.test",
             GROQ_BASE_URL: "http://localhost:54322/openai/v1"
           }
