@@ -19,6 +19,8 @@ test.describe("Claude chat", () => {
     await expect(bubble).not.toContainText("PRIVATE_REASONING");
     expect((await tableRows("chat_messages")).find((row) => row.role === "assistant")?.content).not.toContain("\u2014");
     expect((await groqRequests()).filter((request) => request.stream)).toHaveLength(0);
+    const requests = await (await fetch("http://localhost:54322/__claude_requests")).json();
+    expect(requests[0].workspaceId).toBe("wrkspc_test");
     await page.reload();
     await expect(bubble).toContainText("together.");
   });

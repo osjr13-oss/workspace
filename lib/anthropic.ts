@@ -62,7 +62,10 @@ export async function streamAnthropic(
       headers: {
         "content-type": "application/json",
         "x-api-key": requireEnv("ANTHROPIC_API_KEY"),
-        "anthropic-version": "2023-06-01"
+        "anthropic-version": "2023-06-01",
+        ...(process.env.ANTHROPIC_WORKSPACE_ID?.trim()
+          ? { "anthropic-workspace-id": process.env.ANTHROPIC_WORKSPACE_ID.trim() }
+          : {})
       },
       signal: controller.signal,
       body: JSON.stringify({

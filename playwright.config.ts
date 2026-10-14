@@ -40,6 +40,7 @@ export default defineConfig({
             // Never let offline tests send customer context to a real Claude endpoint.
             ANTHROPIC_API_KEY: "test-claude-key",
             ANTHROPIC_BASE_URL: "http://localhost:54322/anthropic",
+            ANTHROPIC_WORKSPACE_ID: "wrkspc_test",
             ALLOWED_EMAILS: "student@example.test",
             GROQ_BASE_URL: "http://localhost:54322/openai/v1"
           }

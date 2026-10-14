@@ -321,7 +321,7 @@ async function handleGroq(req, res) {
 
   if (url.pathname === "/anthropic/v1/messages") {
     const body = JSON.parse(await readBody(req));
-    groqState.claudeRequests.push(body);
+    groqState.claudeRequests.push({ ...body, workspaceId: req.headers["anthropic-workspace-id"] });
     if (!groqState.claude) return sendJson(res, 503, { error: { type: "overloaded_error" } });
     res.writeHead(200, { "Content-Type": "text/event-stream" });
     // Split data frames across writes to exercise the incremental SSE parser.

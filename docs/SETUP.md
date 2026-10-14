@@ -55,6 +55,7 @@ Claude Haiku is primary for chat when `ANTHROPIC_API_KEY` is set; Groq takes ove
 | Name | Default | Used for |
 |------|---------|----------|
 | `ANTHROPIC_MODEL` | `claude-haiku-5-5` | Primary chat model |
+| `ANTHROPIC_WORKSPACE_ID` | none | Required for a key not scoped to one workspace; find the ID in Anthropic Settings > Workspaces |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
 | `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
 | `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
