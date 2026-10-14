@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Selrano",
+    "slug": "selrano",
+    "scheme": "selrano",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "platforms": [
+      "ios",
+      "web"
+    ],
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f7f5f0",
+      "dark": {
+        "backgroundColor": "#121316"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.selrano.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Selrano opens your photos so you can attach them to a message.",
+          "cameraPermission": "Selrano uses the camera so you can photograph pages and attach them to a message."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

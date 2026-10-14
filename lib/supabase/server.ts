@@ -1,5 +1,6 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { isAllowedEmail } from "@/lib/access";
 import { requireEnv } from "@/lib/env";
 
@@ -28,7 +29,36 @@ export async function createSupabaseServerClient() {
   );
 }
 
+type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+/**
+ * The iPhone app signs in with Supabase directly and sends its access token as
+ * "Authorization: Bearer <token>". Queries then run as that user, under the
+ * same row-level security as the website's cookie session.
+ */
+async function bearerClient(): Promise<{ supabase: ServerClient; token: string } | null> {
+  const authorization = (await headers()).get("authorization") || "";
+  const token = /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim();
+  if (!token) return null;
+  const supabase = createClient(requireEnv("NEXT_PUBLIC_SUPABASE_URL"), requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"), {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  });
+  return { supabase: supabase as unknown as ServerClient, token };
+}
+
 export async function getAuthenticatedUser() {
+  const bearer = await bearerClient();
+  if (bearer) {
+    const {
+      data: { user },
+      error
+    } = await bearer.supabase.auth.getUser(bearer.token);
+    // Selrano is private: an account that is not on the allowlist is treated as signed out.
+    if (error || !user || !isAllowedEmail(user.email)) return { supabase: bearer.supabase, user: null };
+    return { supabase: bearer.supabase, user };
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

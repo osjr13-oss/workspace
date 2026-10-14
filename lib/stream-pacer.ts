@@ -6,6 +6,8 @@
  * pacer instead shows a few more characters every frame: never slower than a
  * comfortable reading speed, and fast enough to stay at most CATCH_UP_MS behind
  * what has arrived.
+ *
+ * Shared with the iPhone app (mobile/), so it uses no browser-only APIs.
  */
 
 const MIN_CHARS_PER_MS = 0.06; // about 60 characters a second
@@ -28,11 +30,11 @@ export function createStreamPacer(onShow: (text: string) => void): StreamPacer {
   let frame = 0;
   let lastAt = 0;
   let drained: (() => void) | null = null;
-  let timeout = 0;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   const settle = () => {
-    if (timeout) window.clearTimeout(timeout);
-    timeout = 0;
+    if (timeout) clearTimeout(timeout);
+    timeout = null;
     drained?.();
     drained = null;
   };
@@ -66,7 +68,7 @@ export function createStreamPacer(onShow: (text: string) => void): StreamPacer {
       if (shownLength >= received.length) return Promise.resolve();
       return new Promise<void>((resolve) => {
         drained = resolve;
-        timeout = window.setTimeout(() => {
+        timeout = setTimeout(() => {
           if (frame) cancelAnimationFrame(frame);
           frame = 0;
           shownLength = received.length;

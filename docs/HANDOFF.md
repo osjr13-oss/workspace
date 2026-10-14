@@ -55,6 +55,15 @@ Rebuilt on 2026-10-13. Chat is the signed-in home: `/`, sign-in, the auth callba
 - **Smooth streaming**: Groq sends text in bursts of a few hundred characters. `lib/stream-pacer.ts` reveals it a few characters per frame instead, never slower than about 60 characters a second and never more than about 0.4 seconds behind what has arrived. Stop saves exactly what was revealed.
 - **Scrolling** follows new words only while you are at the bottom; scrolling up shows a jump-to-latest button.
 
+## iPhone app (work in progress)
+
+Started 2026-10-14 in `mobile/` (Expo SDK 57, expo-router, iPhone only, fresh design; do not reuse old prototypes). See `mobile/AGENTS.md`.
+
+- **Done:** sign in (private-access check through `/api/me`), chats list grouped by day with search, rename, and delete, and a conversation screen with paced streaming, Stop, tool status, Markdown (code with copy, tables, sources), copy and regenerate, edit and resend, a project picker, and attachments from the camera, photos, or files. `npx tsc --noEmit` passes and `npx expo export -p ios` bundles.
+- **Not yet verified:** nothing has run on an iPhone or in the iOS simulator (cloud sessions have neither). A browser preview showed the chats list and conversation rendering; whether tool status appears during a live reply in the preview was still being checked when work paused.
+- **Website side:** API routes accept `Authorization: Bearer <Supabase access token>` as well as the cookie session (`getAuthenticatedUser` in `lib/supabase/server.ts`), with the same allowlist. `/api/me` returns the account or 401. `mobile/` is excluded from the website's TypeScript, ESLint, and Vercel uploads (`.vercelignore`).
+- **To run it on your iPhone:** `cd mobile && npm install`, copy `.env.example` to `.env` and fill in the Supabase anon key, then `npx expo start` and open it in Expo Go. Installable builds need an Expo account and, for TestFlight, an Apple Developer account.
+
 ## Groq models
 
 - Checked against Groq's deprecation page on 2026-10-08: `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` (shut down 2026-08-16), `meta-llama/llama-4-scout-17b-16e-instruct` and `qwen/qwen3-32b` (2026-07-17), and `qwen/qwen3.6-27b` (2026-09-14) no longer work for non-enterprise accounts. `SHUT_DOWN_MODELS` in `lib/groq.ts` makes a stale environment value fall back to the default instead of failing. Add to that list when Groq announces more: https://console.groq.com/docs/deprecations

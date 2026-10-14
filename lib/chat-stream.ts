@@ -5,6 +5,9 @@
  *   status  what Selrano is doing while a tool runs; null clears it
  *   text    the next words of the answer
  *   error   nothing could be produced; restore puts the user's text back
+
+ *
+ * Shared with the iPhone app (mobile/): keep it free of imports and browser-only APIs.
  */
 export type ChatStreamEvent =
   | { type: "start"; threadId: string }

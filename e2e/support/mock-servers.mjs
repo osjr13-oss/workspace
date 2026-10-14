@@ -12,7 +12,8 @@ import crypto from "node:crypto";
 
 const SUPABASE_PORT = 54321;
 const GROQ_PORT = 54322;
-const ORIGINS = new Set(["http://localhost:3000", "http://127.0.0.1:3000"]);
+// 8081 is the iPhone app's browser preview (mobile/).
+const ORIGINS = new Set(["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8081"]);
 
 export const TEST_USER = {
   id: "00000000-0000-4000-8000-000000000001",

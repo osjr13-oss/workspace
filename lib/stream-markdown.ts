@@ -23,8 +23,11 @@ export function healStreamingMarkdown(input: string): string {
   const block = lines.slice(end);
   if (block.length) {
     if (!block[block.length - 1].trim().endsWith("|")) block.pop();
-    // A header row alone is not a table yet, so it stays hidden until the divider arrives.
-    lines = block.length < 2 ? lines.slice(0, end) : [...lines.slice(0, end), ...block];
+    // A header row alone is not a table yet, and neither is a divider row that is still
+    // being written (fewer columns than the header): both stay hidden until complete.
+    const cells = (row: string) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").length;
+    const dividerDone = block.length >= 2 && /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-*:?\s*$/.test(block[1]) && cells(block[1]) >= cells(block[0]);
+    lines = dividerDone ? [...lines.slice(0, end), ...block] : lines.slice(0, end);
   }
 
   // A heading or list marker with nothing after it yet would render as an empty line or bullet.

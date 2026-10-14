@@ -58,6 +58,19 @@ test.describe("accounts", () => {
     await expect(page).not.toHaveURL(/signin/);
   });
 
+  test("the iPhone app's bearer token is accepted only for allowed accounts", async ({ playwright }) => {
+    const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const token = `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub: "00000000-0000-4000-8000-000000000001", role: "authenticated", exp: 4_102_444_800 })}.sig`;
+    // A separate request context: no browser cookies, only the token.
+    const api = await playwright.request.newContext({ baseURL: "http://localhost:3000", extraHTTPHeaders: { Authorization: `Bearer ${token}` } });
+    const allowed = await api.get("/api/me");
+    expect(allowed.status()).toBe(200);
+    expect((await allowed.json()).email).toBe("student@example.test");
+    await setUserEmail("stranger@example.test");
+    expect((await api.get("/api/me")).status()).toBe(401);
+    await api.dispose();
+  });
+
   test("an account that is not on the allowlist is refused and signed out", async ({ page }) => {
     await setUserEmail("stranger@example.test");
     // The API refuses it while the session cookie still exists...
