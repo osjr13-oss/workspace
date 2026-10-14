@@ -61,7 +61,7 @@ Rebuilt on 2026-10-13. Chat is the signed-in home: `/`, sign-in, the auth callba
 - `qwen/qwen3.8-27b` (vision) is listed as a preview model and may change. `openai/gpt-oss-120b` and `openai/gpt-oss-20b` are listed as production models.
 - Groq enforces request and token limits **per model**. That is why the fallback and background models differ from the main one, why prompts are kept small, and why a rate-limited main model hands over to the fallback at once.
 - Chat answers on gpt-oss models are sent `reasoning_effort: "medium"` (owner decision, 2026-10-13, for smarter answers; set `GROQ_REASONING_EFFORT` to `low` or `high` to change it) with room for 4,096 completion tokens, since hidden reasoning counts toward that limit. Background work (memory extraction, structured output) stays at `low`. Reasoning is never shown (`include_reasoning: false`). gpt-oss models do not support parallel tool calls.
-- If answers are still not smart enough, the owner has priced paid alternatives (2026-10-13): Gemini Flash paid tier (a few dollars a month; avoid the free tier, which Google may train on), DeepSeek (cheapest), or Claude Haiku (about $10 a month). Any of them would need the owner's go-ahead (Groq-only rule) and should keep Groq as the fallback.
+- Next model step (owner, 2026-10-14): likely **Claude Haiku**, kept behind Groq as the fallback, when the owner says go. Gemini models (including Gemini 4 Argon) are ruled out as not good enough for the owner. Do not switch providers without the owner's go-ahead (Groq-only rule until then).
 - `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in Vercel.
 
 ## Hosting and deploys
