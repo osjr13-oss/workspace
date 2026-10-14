@@ -1,6 +1,6 @@
 # Selrano production handoff
 
-Last updated: **October 13, 2026**
+Last updated: **October 14, 2026**
 
 ## Current state
 
@@ -15,7 +15,7 @@ Last updated: **October 13, 2026**
 - Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Latest functional commit: `72776ef` (chat speed, reliability, and the offline test setup). The documentation was refreshed after it.
+- Latest product commit: `cce338d` (iPhone app started, API accepts its token); later commits are documentation. The owner's Mac was synced on 2026-10-14 and work continues locally from there.
 - The code is the **August 13 baseline** (`36354bf`) plus the changes listed under "Changes since the August 13 baseline". The September work (security scanner pivot, "Lumen 1" prototype, mobile app) is **not** in `main`; it is preserved as tags (see "History and recovery").
 
 ## History and recovery
@@ -85,7 +85,7 @@ Started 2026-10-14 in `mobile/` (Expo SDK 57, expo-router, iPhone only, fresh de
 
 The owner decided on 2026-10-13 to keep Selrano private while the product is reworked.
 
-- `lib/access.ts` reads `ALLOWED_EMAILS` (comma-separated, case-insensitive). Empty or missing lets **nobody** in, so set it in Vercel (Production) before deploying.
+- `lib/access.ts` reads `ALLOWED_EMAILS` (comma-separated, case-insensitive). Empty or missing lets **nobody** in. The owner set it in Vercel Production and turned off Supabase signups on 2026-10-13.
 - `middleware.ts`: a session for an account that is not on the list is signed out and sent to `/signin?private=1`. Without an allowed account, only `/signin`, `/reset-password`, `/auth/*`, `/privacy`, `/terms`, `/security`, and `/robots.txt` open; everything else, including `/`, redirects to sign in. A signed-in visit to `/` goes to the app.
 - `getAuthenticatedUser` (`lib/supabase/server.ts`) treats a non-allowed account as signed out, so every API route refuses it with 401. Stripe and cron webhooks do not use it and are unaffected.
 - `robots.txt` disallows everything and every page carries `noindex`. The sign-in page has no "Create account" link.
@@ -129,7 +129,7 @@ The July 10 authenticated production audit confirmed:
 
 Test content remains clearly labeled under **`E2E Launch Check — Jul 10`** and **`E2E AI Action Check — Jul 10`**. Do not remove it without owner approval.
 
-On 2026-10-13 the owner confirmed by hand on the live site that chat is faster and more reliable after the October 8 changes, and that a web-search answer came back correct. That was a manual check; the automated tests run against offline stand-ins, not production.
+On 2026-10-13 the owner confirmed by hand on the live site that chat is faster and more reliable after the October 8 changes, and that a web-search answer came back correct. Later that day the owner used the redesigned chat live ("it's better") and asked for smoother streaming and a smarter model; both shipped (`686a433`, `b964040`) but have not been confirmed by the owner on the live site yet. That was a manual check; the automated tests run against offline stand-ins, not production.
 
 ## Launch-hardening work deployed
 
@@ -204,7 +204,7 @@ The July 24 memory investigation found historical user messages but no content-m
 
 1. Authenticate the user (API routes skip the middleware session check, so there is one auth round trip, not two).
 2. In parallel: verify thread/project ownership and reserve daily AI usage atomically.
-3. In parallel: load recent history, project context, style profile, and relevant durable memories, while saving the user message. History is the last 12 messages within 8,000 characters (each clipped to 2,000); project context is capped at 9,000 characters; replies are capped at 3,072 tokens. These limits keep every request small enough for Groq's per-model token limits.
+3. In parallel: load recent history, project context, style profile, and relevant durable memories, while saving the user message. History is the last 12 messages within 8,000 characters (each clipped to 2,000); project context is capped at 9,000 characters; answers are capped at 4,096 completion tokens, which include the hidden reasoning (see "Groq models"). These limits keep every request small enough for Groq's per-model token limits.
 4. Send one streaming Groq request that offers workspace search, live web search, note creation, and flashcard creation. A normal answer streams immediately; a tool call runs the tool and then streams the final answer. Attached files (`fileIds`) are added to the prompt as the user's own material.
 5. The reply is a stream of JSON lines (`lib/chat-stream.ts`): `start` (the conversation id, sent at once), `status` (what a tool is doing), `text` (the next words), and `error` (nothing could be produced; the page restores the user's text). Checks that fail before generation starts (sign in, ownership, the daily limit) are still plain JSON errors. The opening words are held for a moment so a "let me look that up" lead-in before a tool call never flashes on screen.
 6. Groq limits are per model. If the main model (`GROQ_MODEL`, default `openai/gpt-oss-120b`) is rate limited or gone, `GROQ_FALLBACK_MODEL` (default `openai/gpt-oss-20b`) is tried at once; if both are limited, the shortest requested wait (up to 9 seconds) is honored once.
@@ -225,7 +225,7 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 - `e2e/chat-experience.spec.ts`: bursts are revealed smoothly (no frame jumps more than 80 characters), Stop (button and Esc) saves only what was shown, tool status, the sidebar (new chat appears, rename, reopen, delete), attachments reaching the model and showing on the message, code blocks and tables, jump to latest, and the phone menu.
 - `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
 
-If the machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
+On a Mac, install the browser once with `npx playwright install chromium`, then `npm run test:e2e`. If a machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
 
 To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), send bursts (`chunkChars`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
 
@@ -253,15 +253,25 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 4. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
 5. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
 6. The Supabase performance-advisor warnings (missing foreign-key indexes, RLS policies calling `auth.uid()` without a scalar subquery) are addressed by the August 8 migrations in the repo. Confirm they are applied and re-run the advisor.
-7. Supabase leaked-password protection is unavailable on the current plan. Email confirmation is currently disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
+7. Supabase leaked-password protection is unavailable on the current plan. Signups are turned off while Selrano is private (see "Private access"); when they reopen, email confirmation is disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
 8. Monitoring is logs only: `[server-error]`, `[client-error]`, and the `[chat] reply` timing line. There is no alerting, error grouping, or product analytics beyond Vercel Web Analytics. Add them before scaling paid acquisition.
 9. Browser tests cover private access and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
 10. There is no public contact channel (see "Support and contact").
 11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
-12. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
+12. **iPhone app next steps** (continue locally on the owner's Mac, which has Xcode): run it in the iOS Simulator and on the iPhone (`cd mobile && npm install`, copy `.env.example` to `.env` with the Supabase anon key, `npx expo start`); check every flow on a real device (sign in, chats, streaming, Stop, tool status, attachments from camera/photos/files, rename and delete, dark mode, keyboard); answer the open question of whether the tool status ("Searching the web for ...") shows during a live reply (it did not appear in a browser preview, where the cause was not found); then the owner decides on design direction (fresh, not earlier prototypes) and on installs (Expo Go, TestFlight with an Apple Developer account, or EAS builds).
+13. Next model step: likely Claude Haiku behind Groq when the owner says go (see "Groq models").
+14. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
 
 ## Recent release commits
 
+- `cce338d`: start the iPhone app (work in progress); API accepts its bearer token; `/api/me`; table dividers no longer flash while streaming
+- `1f4300b`: record the model direction (Haiku next, Gemini ruled out)
+- `b964040`: chat answers think harder on Groq (medium reasoning by default)
+- `686a433`: smooth streaming (steady reveal instead of bursts)
+- `a133058`: chat redesign (one sidebar, Stop, live tool status, attachments, richer answers)
+- `ce68b6f`, `9a2cc8c`: Selrano made private to an email allowlist
+- `7454166`: correct the support removal date
+- `473fa4a`: refresh the handoff for the Groq-only, main-only, support-free state
 - `72776ef` — fix slow, failing, and flickering chat; add offline end-to-end tests
 - `4d5d7a2` — only deploy `main` on Vercel
 - `ad78c9a` — switch Groq defaults to models that still exist

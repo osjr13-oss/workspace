@@ -22,5 +22,7 @@ Expo ships breaking changes every SDK release. Before writing code that touches 
 npm install
 npx expo install <package>   # always, so versions match SDK 57
 npm run typecheck
-npx expo start               # then open in Expo Go or a development build on the iPhone
+npx expo start               # press i for the iOS Simulator, or scan the QR code with Expo Go on the iPhone
 ```
+
+On the owner's Mac (Xcode installed): open Xcode once to accept its license and install the iOS Simulator runtime, then `npx expo start` and press `i`. Expo Go covers everything in this app today; a development build (`npx expo run:ios`) is only needed once native modules outside Expo Go are added. Installs for daily use need an Expo account (EAS Build) and, for TestFlight, an Apple Developer account; ask the owner before setting either up.
