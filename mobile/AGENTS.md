@@ -25,4 +25,4 @@ npm run typecheck
 npx expo start               # press i for the iOS Simulator, or scan the QR code with Expo Go on the iPhone
 ```
 
-On the owner's Mac (Xcode installed): open Xcode once to accept its license and install the iOS Simulator runtime, then `npx expo start` and press `i`. Expo Go covers everything in this app today; a development build (`npx expo run:ios`) is only needed once native modules outside Expo Go are added. Installs for daily use need an Expo account (EAS Build) and, for TestFlight, an Apple Developer account; ask the owner before setting either up.
+The owner develops on a **Windows** laptop, so the iOS Simulator and Xcode are not available. Test on the owner's iPhone with **Expo Go**: `npx expo start`, then scan the QR code with the iPhone camera. The phone and laptop must be on the same Wi-Fi, and Windows Firewall must allow Node; if the phone still cannot connect, use `npx expo start --tunnel`. Expo Go covers everything in this app today. Installable builds (EAS Build in Expo's cloud, which works from Windows) need an Expo account and, for TestFlight, an Apple Developer account; ask the owner before setting either up.
