@@ -36,7 +36,6 @@
     ".next-e2e/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "mobile"
+    "node_modules"
   ]
 }

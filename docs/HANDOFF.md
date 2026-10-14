@@ -15,7 +15,7 @@ Last updated: **October 14, 2026**
 - Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Latest product commit: `cce338d` (iPhone app started, API accepts its token); later commits are documentation. On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
+- Latest product commit: the iPhone app's removal (2026-10-14, see "iPhone app (deleted)"). On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
 - The code is the **August 13 baseline** (`36354bf`) plus the changes listed under "Changes since the August 13 baseline". The September work (security scanner pivot, "Lumen 1" prototype, mobile app) is **not** in `main`; it is preserved as tags (see "History and recovery").
 
 ## History and recovery
@@ -55,14 +55,13 @@ Rebuilt on 2026-10-13. Chat is the signed-in home: `/`, sign-in, the auth callba
 - **Smooth streaming**: Groq sends text in bursts of a few hundred characters. `lib/stream-pacer.ts` reveals it a few characters per frame instead, never slower than about 60 characters a second and never more than about 0.4 seconds behind what has arrived. Stop saves exactly what was revealed.
 - **Scrolling** follows new words only while you are at the bottom; scrolling up shows a jump-to-latest button.
 
-## iPhone app (work in progress)
+## iPhone app (deleted)
 
-Started 2026-10-14 in `mobile/` (Expo SDK 57, expo-router, iPhone only, fresh design; do not reuse old prototypes). See `mobile/AGENTS.md`.
+The owner stopped the iPhone app on 2026-10-14 and asked for it to be deleted: there is no more work on it. It never ran on a simulator or a device (installing Expo Go into the iOS 27 simulator on the owner's Mac hung).
 
-- **Done:** sign in (private-access check through `/api/me`), chats list grouped by day with search, rename, and delete, and a conversation screen with paced streaming, Stop, tool status, Markdown (code with copy, tables, sources), copy and regenerate, edit and resend, a project picker, and attachments from the camera, photos, or files. `npx tsc --noEmit` passes and `npx expo export -p ios` bundles.
-- **Not yet verified:** nothing has run on an iPhone or in the iOS simulator (cloud sessions have neither). A browser preview showed the chats list and conversation rendering; whether tool status appears during a live reply in the preview was still being checked when work paused.
-- **Website side:** API routes accept `Authorization: Bearer <Supabase access token>` as well as the cookie session (`getAuthenticatedUser` in `lib/supabase/server.ts`), with the same allowlist. `/api/me` returns the account or 401. `mobile/` is excluded from the website's TypeScript, ESLint, and Vercel uploads (`.vercelignore`).
-- **To run it on your iPhone:** `cd mobile && npm install`, copy `.env.example` to `.env` and fill in the Supabase anon key, then `npx expo start` and open it in Expo Go. Installable builds need an Expo account and, for TestFlight, an Apple Developer account.
+- Removed: `mobile/`, the API's `Authorization: Bearer` sign-in path in `getAuthenticatedUser`, `/api/me`, their test, and the `mobile/` exclusions in TypeScript, ESLint, and `.vercelignore`. API routes again accept only the website's cookie session.
+- Kept, because the website benefits: the Markdown tidier hides a table until its divider row is complete, and the streaming pacer uses plain `setTimeout`.
+- The code remains in history at `cce338d` only for reference. Do not restart a native app without the owner asking.
 
 ## Groq models
 
@@ -258,13 +257,13 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 9. Browser tests cover private access and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
 10. There is no public contact channel (see "Support and contact").
 11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
-12. **iPhone app next steps** (the owner now works on a Windows Dell laptop, so there is no iOS Simulator or Xcode; test on the owner's iPhone with Expo Go): `cd mobile && npm install`, copy `.env.example` to `.env` with the Supabase anon key, `npx expo start`, scan the QR code with the iPhone camera (same Wi-Fi as the laptop; if it cannot connect, `npx expo start --tunnel`); check every flow on a real device (sign in, chats, streaming, Stop, tool status, attachments from camera/photos/files, rename and delete, dark mode, keyboard); answer the open question of whether the tool status ("Searching the web for ...") shows during a live reply (it did not appear in a browser preview, where the cause was not found); then the owner decides on design direction (fresh, not earlier prototypes) and on installs (Expo Go, TestFlight with an Apple Developer account, or EAS builds).
-13. Next model step: likely Claude Haiku behind Groq when the owner says go (see "Groq models").
-14. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
+12. Next model step: likely Claude Haiku behind Groq when the owner says go (see "Groq models").
+13. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
 
 ## Recent release commits
 
-- `cce338d`: start the iPhone app (work in progress); API accepts its bearer token; `/api/me`; table dividers no longer flash while streaming
+- (2026-10-14): delete the iPhone app and the API's bearer-token sign-in
+- `cce338d`: start the iPhone app (since deleted); table dividers no longer flash while streaming
 - `1f4300b`: record the model direction (Haiku next, Gemini ruled out)
 - `b964040`: chat answers think harder on Groq (medium reasoning by default)
 - `686a433`: smooth streaming (steady reveal instead of bursts)

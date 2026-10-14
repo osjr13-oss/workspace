@@ -15,6 +15,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Groq keys, Resend keys, customer content, or browser-session data.
 - Groq is the only AI provider (owner decision, 2026-10-08). Do not add Anthropic or another provider without asking.
 - Selrano is private (owner decision, 2026-10-13): only `ALLOWED_EMAILS` accounts get in, and nothing is offered to search engines. Keep new pages and API routes behind `lib/access.ts` (middleware plus `getAuthenticatedUser`). See `docs/HANDOFF.md`, "Private access".
+- There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
 - Work on `main` only. There are no feature branches and no preview deployments (`vercel.json` deploys only `main`).
 - Chat requests must stay small: Groq limits tokens per minute per model. Keep prompts, history, and tool descriptions lean, and keep model work that is not the answer (memory extraction) off the critical path.
@@ -40,7 +41,6 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
-- `mobile/` — the iPhone app (Expo, work in progress). Read `mobile/AGENTS.md`. It shares `lib/chat-stream.ts`, `lib/stream-pacer.ts`, `lib/stream-markdown.ts`, `lib/text.ts`, and `lib/types.ts`, so keep those free of imports and browser-only APIs. API routes accept its `Authorization: Bearer` token through `getAuthenticatedUser`.
 - `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
 - `lib/ai.ts` — Groq-only completion, structured output, and streaming. Groq is the single AI provider.
 - `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).

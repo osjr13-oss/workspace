@@ -6,8 +6,6 @@
  * pacer instead shows a few more characters every frame: never slower than a
  * comfortable reading speed, and fast enough to stay at most CATCH_UP_MS behind
  * what has arrived.
- *
- * Shared with the iPhone app (mobile/), so it uses no browser-only APIs.
  */
 
 const MIN_CHARS_PER_MS = 0.06; // about 60 characters a second
