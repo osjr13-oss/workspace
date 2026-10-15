@@ -55,9 +55,22 @@ export type WebCitation = {
   title: string;
   url: string;
   snippet: string;
+  evidence?: string;
+  evidenceKind?: "page" | "search_excerpt";
+  publishedAt?: string | null;
+  retrievedAt?: string;
+  publisher?: string;
 };
 
 export type Citation = FileCitation | WebCitation;
+
+export type ResearchMetadata = {
+  status: "complete" | "limited" | "unavailable" | "timeout" | "no_results" | "inaccessible" | "insufficient_evidence" | "clarification" | "routing_failed";
+  sources: WebCitation[];
+  limitations: string[];
+  searches: number;
+  extractedPages: number;
+};
 
 export type ChatMessage = {
   id: string;
@@ -66,6 +79,7 @@ export type ChatMessage = {
   role: "user" | "assistant" | "system";
   content: string;
   citations?: Citation[];
+  research?: ResearchMetadata | null;
   created_at: string;
 };
 

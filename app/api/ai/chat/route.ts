@@ -1,3 +1,5 @@
+import { assessResearch, runResearch, researchFailure } from "@/lib/research";
+import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
 import { refundAiRequest, reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
@@ -145,6 +147,7 @@ export async function POST(request: Request) {
     const finalThreadId = threadId;
     const isNewMessage = !editTarget && !regenerateTarget;
     let savedUserMessageId: string | null = null;
+    let replyBoundaryAt = editTarget?.created_at || regenerateTarget?.created_at || "";
 
     // Everything the prompt needs is loaded at the same time, including saving
     // the new message. History may or may not already contain that message
@@ -163,11 +166,12 @@ export async function POST(request: Request) {
         ? supabase
             .from("chat_messages")
             .insert({ user_id: user.id, thread_id: finalThreadId, role: "user", content: userContent, citations: attachments.citations })
-            .select("id")
+            .select("id, created_at")
             .single()
             .then(({ data, error }) => {
               if (error) throw error;
               savedUserMessageId = data.id;
+              replyBoundaryAt = data.created_at;
             })
         : Promise.resolve()
     ]).then(([history, ctx, style, mem]) => [history, ctx, style, mem] as const);
@@ -260,6 +264,7 @@ export async function POST(request: Request) {
       let firstVisibleAt = 0;
       let failure: unknown = null;
       let toolsUsed = 0;
+      let research: ResearchMetadata | null = null;
 
       const send = (event: ChatStreamEvent) => {
         if (clientGone) return;
@@ -278,6 +283,15 @@ export async function POST(request: Request) {
       };
 
       send({ type: "start", threadId: finalThreadId });
+      // Find this turn's stopped reply even when a later user turn has already started.
+      const savedReply = async () => {
+        const { data, error } = await supabase.from("chat_messages").select("id, content")
+          .eq("thread_id", finalThreadId).eq("user_id", user!.id).eq("role", "assistant")
+          .gt("created_at", replyBoundaryAt).order("created_at", { ascending: true }).limit(1).maybeSingle();
+        if (error) throw error;
+        return data;
+      };
+
 
       // Models often write a short lead-in ("Let me look that up") before a tool
       // call. Hold back the opening words until it is clear whether a tool call
@@ -319,64 +333,100 @@ export async function POST(request: Request) {
       };
 
       try {
+        const researchSignal = AbortSignal.timeout(45_000);
+        let route: Awaited<ReturnType<typeof assessResearch>> | null = null;
         try {
-          first = await streamChatWithTools(toolMessages, toolDefinitions, {
-            temperature: 0.6,
-            onToken,
-            onToolCallStart
-          });
-          answerProvider = first.provider;
-          answerModel = first.model;
-          fallbackReason = first.fallbackReason;
-        } catch (error) {
-          // A malformed tool request should never prevent a normal answer, as
-          // long as nothing has been shown yet. Capacity problems are different:
-          // every model and wait has already been tried, so retrying only delays the error.
-          if (held.trim()) release();
-          if (answer) throw error;
-          if (error instanceof GroqHttpError && (error.rateLimited || error.status >= 500)) throw error;
-          held = "";
-          holding = false;
-          console.error("[chat] tool-enabled stream failed, retrying without tools", serializeError(error));
+          route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]));
+        } catch {
+          const result = researchFailure(researchSignal.aborted ? "timeout" : "routing_failed");
+          research = result.research;
+          send({ type: "research", research });
+          push(result.text);
+          console.info("[research]", JSON.stringify({ outcome: research.status, searches: 0, sourceCount: 0, durationMs: Date.now() - startedAt, fallbackCategory: "assessment" }));
         }
-        if (holding) release();
-
-        if (first && first.toolCalls.length) {
-          toolsUsed = first.toolCalls.length;
-          toolMessages.push({ role: "assistant", content: first.text || null, tool_calls: first.toolCalls });
-          const results: string[] = [];
-          for (const call of first.toolCalls) {
-            let result: string;
-            try {
-              const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
-              send({ type: "status", label: describeToolCall(call.function.name, args) });
-              result = await executeTool(call.function.name, args, toolCtx);
-            } catch (error) {
-              result = `Error running ${call.function.name}: ${serializeError(error)}`;
+        if (route?.data.decision === "clarify") {
+          research = { status: "clarification", sources: [], limitations: [], searches: 0, extractedPages: 0 };
+          send({ type: "research", research });
+          push(removeEmDashes(route.data.clarification));
+        } else if (route?.data.decision === "search") {
+          const result = await runResearch({ assessment: route.data, history: messages, signal: researchSignal,
+            offset: Object.keys(context.citations).length, progress: (label) => send({ type: "status", label }) });
+          research = result.research;
+          for (const source of research.sources) webCitations[source.marker] = source;
+          answerProvider = result.model?.provider;
+          answerModel = result.model?.model;
+          fallbackReason = result.model?.fallbackReason;
+          send({ type: "research", research });
+          // Reveal only the exact reviewed answer, in small chunks through the existing stream.
+          for (const chunk of result.text.match(/[\s\S]{1,96}/g) || []) push(chunk);
+          if (result.action && !researchSignal.aborted) {
+            const { data: latest } = await supabase.from("chat_messages").select("role").eq("thread_id", finalThreadId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+            if (latest?.role === "user" && !(await savedReply())) {
+              const actionResult = await executeTool(result.action.name, result.action.args, toolCtx);
+              push("\n\n" + removeEmDashes(actionResult));
+              toolsUsed++;
             }
-            results.push(result);
-            toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
           }
-          // The status stays up while the answer is written; the page clears it at the first words.
-          if (answer) push("\n\n");
-          const before = answer.length;
+        } else if (route) {
           try {
-            await streamPlain(toolMessages);
+            first = await streamChatWithTools(toolMessages, toolDefinitions, {
+              temperature: 0.6,
+              onToken,
+              onToolCallStart
+            });
+            answerProvider = first.provider;
+            answerModel = first.model;
+            fallbackReason = first.fallbackReason;
           } catch (error) {
-            console.error("[chat] answer after tools failed", serializeError(error));
+            // A malformed tool request should never prevent a normal answer, as
+            // long as nothing has been shown yet. Capacity problems are different:
+            // every model and wait has already been tried, so retrying only delays the error.
+            if (held.trim()) release();
+            if (answer) throw error;
+            if (error instanceof GroqHttpError && (error.rateLimited || error.status >= 500)) throw error;
+            held = "";
+            holding = false;
+            console.error("[chat] tool-enabled stream failed, retrying without tools", serializeError(error));
           }
-          if (answer.length === before) {
-            // Never leave a finished action without a reply.
-            push(
-              results.length && results.every((result) => /^(Created|Could not)/.test(result))
-                ? results.join("\n")
-                : "I looked into that but could not put together an answer. Please try again."
-            );
+          if (holding) release();
+
+          if (first && first.toolCalls.length) {
+            toolsUsed = first.toolCalls.length;
+            toolMessages.push({ role: "assistant", content: first.text || null, tool_calls: first.toolCalls });
+            const results: string[] = [];
+            for (const call of first.toolCalls) {
+              let result: string;
+              try {
+                const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
+                send({ type: "status", label: describeToolCall(call.function.name, args) });
+                result = await executeTool(call.function.name, args, toolCtx);
+              } catch (error) {
+                result = `Error running ${call.function.name}: ${serializeError(error)}`;
+              }
+              results.push(result);
+              toolMessages.push({ role: "tool", tool_call_id: call.id, content: result });
+            }
+            // The status stays up while the answer is written; the page clears it at the first words.
+            if (answer) push("\n\n");
+            const before = answer.length;
+            try {
+              await streamPlain(toolMessages);
+            } catch (error) {
+              console.error("[chat] answer after tools failed", serializeError(error));
+            }
+            if (answer.length === before) {
+              // Never leave a finished action without a reply.
+              push(
+                results.length && results.every((result) => /^(Created|Could not)/.test(result))
+                  ? results.join("\n")
+                  : "I looked into that but could not put together an answer. Please try again."
+              );
+            }
+          } else if (!answer.trim()) {
+            // The model said nothing. Ask once more without tools before giving up.
+            console.warn("[chat] empty model reply, retrying without tools");
+            await streamPlain(messages);
           }
-        } else if (!answer.trim()) {
-          // The model said nothing. Ask once more without tools before giving up.
-          console.warn("[chat] empty model reply, retrying without tools");
-          await streamPlain(messages);
         }
       } catch (error) {
         failure = error;
@@ -390,14 +440,12 @@ export async function POST(request: Request) {
       let stopped = false;
       {
         try {
-          const { data: newest } = await supabase
-            .from("chat_messages")
-            .select("role")
-            .eq("thread_id", finalThreadId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          stopped = newest?.role === "assistant";
+          const saved = await savedReply();
+          stopped = Boolean(saved);
+          if (saved && research) {
+            const markers = new Set(Array.from(String(saved.content).matchAll(/\[(\d+)\]/g), (m) => m[1]));
+            await supabase.from("chat_messages").update({ research, citations: research.sources.filter((source) => markers.has(source.marker)) }).eq("id", saved.id).eq("user_id", user!.id);
+          }
         } catch (stopCheckError) {
           console.error("[chat] stop check failed", serializeError(stopCheckError));
         }
@@ -438,7 +486,8 @@ export async function POST(request: Request) {
             thread_id: finalThreadId,
             role: "assistant",
             content: removeEmDashes(answer.trim()),
-            citations
+            citations,
+            research
           });
           if (assistantMessageError) console.error("[chat] persist assistant message failed", assistantMessageError);
         }
@@ -503,7 +552,7 @@ export async function POST(request: Request) {
 const ACTION_GUIDE = {
   role: "system" as const,
   content:
-    "Tools: search the user's notes and files, search the live web, create a note, create a flashcard deck. Use web_search when the answer may have changed since your training (news, prices, releases). Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
+    "Tools: search the user's notes and files, create a note, create a flashcard deck. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
 // Groq limits tokens per minute, so every request is kept lean.
@@ -587,15 +636,13 @@ function describeFailure(error: unknown) {
   return "The AI returned an empty reply. Please try again. This did not count against your limit.";
 }
 
-/** What the page shows while a tool runs, e.g. Searching the web for "mars rover news". */
+/** What the page shows while a workspace tool runs. */
 function describeToolCall(name: string, args: Record<string, unknown>) {
   const quoted = (value: unknown) => {
     const text = removeEmDashes(String(value ?? "")).trim();
     return text ? ` for "${clip(text, 60)}"` : "";
   };
   switch (name) {
-    case "web_search":
-      return `Searching the web${quoted(args.query)}`;
     case "search_workspace":
       return `Searching your materials${quoted(args.query)}`;
     case "create_note":

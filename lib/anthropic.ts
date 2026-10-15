@@ -57,7 +57,7 @@ function convertMessages(messages: GroqChatMessage[], assistantContent?: ClaudeB
 export async function streamAnthropic(
   messages: GroqChatMessage[],
   tools: Tool[],
-  options: { maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: ClaudeBlock[]; allowTools?: boolean }
+  options: { signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: ClaudeBlock[]; allowTools?: boolean }
 ): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: ClaudeBlock[]; model: string }> {
   const controller = new AbortController();
   const firstOutputTimeout = setTimeout(() => controller.abort(), 25_000);
@@ -74,7 +74,7 @@ export async function streamAnthropic(
           ? { "anthropic-workspace-id": process.env.ANTHROPIC_WORKSPACE_ID.trim() }
           : {})
       },
-      signal: controller.signal,
+      signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal,
       body: JSON.stringify({
         model: anthropicModel(),
         ...convertMessages(messages, options.assistantContent),

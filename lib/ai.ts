@@ -59,6 +59,7 @@ export function configuredAiModel(chat = false) {
 }
 
 type StreamOptions = {
+  signal?: AbortSignal;
   temperature?: number;
   maxTokens?: number;
   onToken: (token: string) => void;
@@ -86,11 +87,12 @@ export async function streamChatWithTools(
       if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "anthropic" as const, fallbackReason: undefined };
       fallbackReason = "empty";
     } catch (error) {
-      if (started) throw error;
+      if (started || options.signal?.aborted) throw error;
       fallbackReason = error instanceof ClaudeRequestError ? `${error.status}:${error.reason}` : "stream_or_network";
       console.warn("[ai] Claude unavailable before output; trying Groq", { reason: fallbackReason });
     }
   }
+  options.signal?.throwIfAborted();
   if (!groqReady()) throw new Error("No available AI provider is configured.");
   const result = tools.length && options.allowTools !== false
     ? await streamGroqWithTools(messages, tools, options)

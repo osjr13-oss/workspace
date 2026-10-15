@@ -27,7 +27,7 @@ export const TEST_USER = {
 // ---------------------------------------------------------------- Supabase --
 
 const tables = new Map();
-const control = { quota: true, latencyMs: Number(process.env.MOCK_LATENCY_MS || 0), userEmail: TEST_USER.email };
+const control = { quota: true, latencyMs: Number(process.env.MOCK_LATENCY_MS || 0), userEmail: TEST_USER.email, quotaReservations: 0 };
 
 function table(name) {
   if (!tables.has(name)) tables.set(name, []);
@@ -133,6 +133,7 @@ async function handleSupabase(req, res) {
   if (path === "/__reset") {
     reset();
     control.quota = true;
+    control.quotaReservations = 0;
     control.latencyMs = Number(process.env.MOCK_LATENCY_MS || 0);
     return sendJson(res, 200, { ok: true });
   }
@@ -140,6 +141,7 @@ async function handleSupabase(req, res) {
     control.latencyMs = Number(url.searchParams.get("ms") || 0);
     return sendJson(res, 200, { ok: true });
   }
+  if (path === "/__quota-reservations") return sendJson(res, 200, { count: control.quotaReservations });
   if (path === "/__quota") {
     control.quota = url.searchParams.get("allow") !== "false";
     return sendJson(res, 200, { ok: true });
@@ -172,7 +174,7 @@ async function handleSupabase(req, res) {
   const rpc = path.match(/^\/rest\/v1\/rpc\/(\w+)/);
   if (rpc) {
     await readBody(req);
-    if (rpc[1] === "reserve_ai_usage") return sendJson(res, 200, control.quota);
+    if (rpc[1] === "reserve_ai_usage") { control.quotaReservations++; return sendJson(res, 200, control.quota); }
     if (rpc[1] === "check_rate_limit") return sendJson(res, 200, true);
     if (rpc[1] === "search_chunks_fts") return sendJson(res, 200, []);
     return sendJson(res, 200, null);
@@ -265,6 +267,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], claudeRequests: [], claude: false, claudeTool: false, claudePartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "webDelayMs", "reviewDelayMs", "researchUnavailable", "claudeResearchUnavailable"]) delete groqState[key];
   groqState.requests = [];
   groqState.claudeRequests = [];
   groqState.claude = false;
@@ -298,6 +301,49 @@ function defaultReply(lastUser) {
   );
 }
 
+// Fixed public evidence fixtures. Keep research calls separate from ordinary transport controls.
+const SOURCE_URL = "https://agency.gov/program";
+const SOURCE_PASSAGE = "Applications close on 30 November 2026. Eligibility requires residence in New York.";
+let researchRequests = [];
+let webRequests = [];
+function researchInput(body) {
+  const user = [...(body.messages || [])].reverse().find((m) => m.role === "user");
+  const content = typeof user?.content === "string" ? user.content : user?.content?.find((b) => b.type === "text")?.text;
+  try { const v = JSON.parse(content); return v.stage?.startsWith("research_") ? v : null; } catch { return null; }
+}
+async function researchReply(req, res, body, claude) {
+  const v = researchInput(body);
+  if (!v) return false;
+  researchRequests.push({ ...v, provider: claude ? "anthropic" : "groq" });
+  if (groqState.researchUnavailable || (claude && groqState.claudeResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
+  if (v.stage === "research_review" && groqState.reviewDelayMs) await sleep(groqState.reviewDelayMs);
+  let answer;
+  const text = JSON.stringify(v.input);
+  if (v.stage === "research_assessment") {
+    const need = /latest|current|today|research|verify|look.*up|search the web|applications close|eligibility|what about/i.test(text);
+    answer = groqState.assessment ?? { decision: need ? "search" : "ordinary", query: need ? "agency program deadline New York official" : "", clarification: "", consequential: need };
+  } else if (v.stage === "research_selection") {
+    answer = groqState.selection ?? { urls: v.input.candidates.slice(0, 3).map((s) => s.url), gapQuery: groqState.gapQuery || "" };
+  } else if (v.stage === "research_draft") {
+    answer = { answer: "UNREVIEWED_DRAFT Applications close on 30 November 2026 [1]. Everyone qualifies. The grant pays $9000." };
+  } else if (v.stage === "research_action") {
+    answer = v.input.action === "create_flashcards" ? { deck_name: "Agency program", cards: [{ front: "When do applications close?", back: "30 November 2026" }] } : { title: "Agency program research" };
+  } else {
+    const source = v.input.evidence.find((s) => s.evidenceKind === "page");
+    const marker = source?.marker || "1";
+    answer = groqState.review ?? { answer: `Applications close on 30 November 2026 [${marker}]. I could not substantiate the grant amount or universal eligibility.`, limitations: ["The grant amount and universal eligibility were not supported."], claims: [{ text: "Applications close on 30 November 2026", evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }] };
+  }
+  const content = JSON.stringify(answer);
+  res.writeHead(200, { "Content-Type": "text/event-stream" });
+  if (claude) {
+    for (const event of [{ type: "message_start", message: { model: "claude-haiku-5-5" } }, { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }, { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: content } }, { type: "message_stop" }]) res.write(`data: ${JSON.stringify(event)}\n\n`);
+  } else {
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`);
+  }
+  res.end();
+  return true;
+}
+
 async function handleGroq(req, res) {
   cors(req, res);
   if (req.method === "OPTIONS") {
@@ -309,7 +355,17 @@ async function handleGroq(req, res) {
 
   if (url.pathname === "/__reset") {
     groqReset();
+    researchRequests = []; webRequests = [];
     return sendJson(res, 200, { ok: true });
+  }
+  if (url.pathname === "/__research_requests") return sendJson(res, 200, researchRequests);
+  if (url.pathname === "/__web_requests") return sendJson(res, 200, webRequests);
+  if (url.pathname.startsWith("/tavily/")) {
+    const body = JSON.parse(await readBody(req)); webRequests.push({ path: url.pathname, body });
+    if (groqState.webDelayMs) await sleep(groqState.webDelayMs);
+    if (groqState.webFailure) return sendJson(res, 503, {});
+    if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }] });
+    return sendJson(res, 200, { results: groqState.extractFailure ? [] : body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
   if (url.pathname === "/__claude_requests") return sendJson(res, 200, groqState.claudeRequests);
@@ -321,6 +377,7 @@ async function handleGroq(req, res) {
 
   if (url.pathname === "/anthropic/v1/messages") {
     const body = JSON.parse(await readBody(req));
+    if (await researchReply(req, res, body, true)) return;
     groqState.claudeRequests.push({ ...body, workspaceId: req.headers["anthropic-workspace-id"] });
     if (!groqState.claude) return sendJson(res, 503, { error: { type: "overloaded_error" } });
     res.writeHead(200, { "Content-Type": "text/event-stream" });
@@ -357,6 +414,7 @@ async function handleGroq(req, res) {
   if (!url.pathname.endsWith("/chat/completions")) return sendJson(res, 404, { error: "not found" });
 
   const body = JSON.parse(await readBody(req));
+  if (await researchReply(req, res, body, false)) return;
   const messages = body.messages || [];
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const lastUserText = typeof lastUser?.content === "string" ? lastUser.content : "";
@@ -416,8 +474,8 @@ async function handleGroq(req, res) {
   if (groqState.toolNext && body.tools?.length) {
     groqState.toolNext = false;
     if (groqState.toolPreface) send({ role: "assistant", content: groqState.toolPreface });
-    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "web_search", arguments: "" } }] });
-    send({ tool_calls: [{ index: 0, function: { arguments: '{"query":"latest news"}' } }] });
+    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "search_workspace", arguments: "" } }] });
+    send({ tool_calls: [{ index: 0, function: { arguments: '{"query":"biology"}' } }] });
     send({}, "tool_calls");
     res.write("data: [DONE]\n\n");
     res.end();

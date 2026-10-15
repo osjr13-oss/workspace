@@ -172,7 +172,7 @@ test.describe("chat", () => {
   test("a lead-in written before a tool call is not shown", async ({ page }) => {
     await sendAndSettle(page, "warm up");
     await control({ toolNext: true, toolPreface: "Let me look that up for you." });
-    await sendAndSettle(page, "What is the latest news about space missions today?");
+    await sendAndSettle(page, "Find my notes about space missions");
     await expect(page.locator(bubbles).last()).not.toContainText("Let me look that up");
     await expect(page.locator(bubbles).last()).toContainText("Here is a clear answer");
   });

@@ -33,7 +33,7 @@ test.describe("Claude chat", () => {
     await expect(page.locator('article[aria-label="Selrano response"]')).toContainText("together.", { timeout: 25000 });
     const requests = await (await fetch("http://localhost:54322/__claude_requests")).json();
     expect(requests).toHaveLength(2);
-    expect(requests[1].tools).toHaveLength(4);
+    expect(requests[1].tools).toHaveLength(3);
     expect(requests[1].tool_choice).toEqual({ type: "none" });
     const continuation = requests[1].messages;
     expect(continuation.find((message: { role: string }) => message.role === "assistant").content).toContainEqual({ type: "thinking", thinking: "PRIVATE_REASONING", signature: "test-signature" });
@@ -43,7 +43,7 @@ test.describe("Claude chat", () => {
 
   test("unavailable Claude falls back to Groq with tools intact", async ({ page }) => {
     await control({ toolNext: true });
-    await page.getByLabel("Chat message").fill("Search the web for news");
+    await page.getByLabel("Chat message").fill("Find my notes about biology");
     await page.getByLabel("Chat message").press("Enter");
     await expect(page.locator('article[aria-label="Selrano response"]')).toBeVisible({ timeout: 25000 });
     await expect(page.locator('section[aria-busy="false"]')).toBeVisible({ timeout: 25000 });

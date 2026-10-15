@@ -1,3 +1,5 @@
+import type { ResearchMetadata } from "@/lib/types";
+
 /**
  * The chat reply protocol: /api/ai/chat answers with one JSON object per line.
  *
@@ -11,6 +13,7 @@ export type ChatStreamEvent =
   | { type: "start"; threadId: string }
   | { type: "status"; label: string | null }
   | { type: "text"; text: string }
+  | { type: "research"; research: ResearchMetadata }
   | { type: "model"; provider: "anthropic" | "groq"; model: string; fallbackReason?: string }
   | { type: "error"; error: string; restore: boolean };
 

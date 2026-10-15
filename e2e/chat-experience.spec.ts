@@ -95,8 +95,8 @@ test.describe("chat experience", () => {
   test("while a tool runs, the page says what Selrano is doing", async ({ page }) => {
     await sendAndSettle(page, "warm up");
     await control({ toolNext: true, firstTokenDelayMs: 1_500 });
-    await send(page, "What is new with Mars missions?");
-    await expect(page.locator(".tool-status")).toContainText('Searching the web for "latest news"', { timeout: 15_000 });
+    await send(page, "Find my notes about Mars missions");
+    await expect(page.locator(".tool-status")).toContainText('Searching your materials for "biology"', { timeout: 15_000 });
     await settled(page);
     await expect(page.locator(".tool-status")).toHaveCount(0);
     await expect(page.locator(bubbles).last()).toContainText("Here is a clear answer");

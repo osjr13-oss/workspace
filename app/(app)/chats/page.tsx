@@ -1,5 +1,7 @@
 "use client";
 
+import type { ResearchMetadata } from "@/lib/types";
+
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
@@ -242,6 +244,7 @@ function ChatsContent() {
     const canRestoreText = !options.editMessageId && !options.regenerateMessageId;
     const startingThreadId = threadIdRef.current;
     let streamThreadId: string | null = startingThreadId;
+    let researchMetadata: ResearchMetadata | null = null;
     let bubbleAdded = false;
     let failed = false;
 
@@ -292,6 +295,9 @@ function ChatsContent() {
           }
         } else if (event.type === "status") {
           setStatus(event.label);
+        } else if (event.type === "research") {
+          researchMetadata = event.research;
+          setMessages((existing) => existing.map((item) => item.id === "streaming" ? { ...item, research: researchMetadata, citations: researchMetadata?.sources } : item));
         } else if (event.type === "text") {
           if (!bubbleAdded) {
             bubbleAdded = true;
@@ -299,7 +305,7 @@ function ChatsContent() {
             // Reply fills into an assistant bubble as words arrive.
             setMessages((existing) => [
               ...existing,
-              { id: "streaming", clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
+              { id: "streaming", research: researchMetadata, citations: researchMetadata?.sources, clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
             ]);
           }
           pacer.push(event.text);

@@ -94,7 +94,9 @@ export class GroqHttpError extends Error {
     readonly body: string,
     readonly retryAfterMs: number | null
   ) {
-    super(`Groq request failed (${status}): ${body.slice(0, 400)}`);
+    super(`Groq request failed (${status})`);
+    // Retain the body for tool-call recovery without exposing it in console inspection.
+    Object.defineProperty(this, "body", { value: body, enumerable: false });
     this.name = "GroqHttpError";
   }
 
@@ -104,7 +106,13 @@ export class GroqHttpError extends Error {
 }
 
 const MAX_RETRY_WAIT_MS = 9000;
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, reject) => {
+  signal?.throwIfAborted();
+  const cleanup = () => signal?.removeEventListener("abort", abort);
+  const timer = setTimeout(() => { cleanup(); resolve(); }, ms);
+  const abort = () => { clearTimeout(timer); cleanup(); reject(signal?.reason); };
+  signal?.addEventListener("abort", abort, { once: true });
+});
 
 /** Reads the wait Groq asks for, from the retry-after header or the "try again in 6.1s" message. */
 function parseRetryAfter(response: Response, body: string): number | null {
@@ -131,7 +139,7 @@ function modelUnavailable(status: number, body: string) {
  */
 async function groqRequest(
   buildBody: (model: string) => Record<string, unknown>,
-  options: { models?: string[] } = {}
+  options: { models?: string[]; signal?: AbortSignal } = {}
 ): Promise<Response> {
   const models = Array.from(new Set(options.models ?? [groqModel(), groqFallbackModel()]));
   let lastError: unknown = null;
@@ -145,9 +153,11 @@ async function groqRequest(
         response = await fetch(groqUrl(), {
           method: "POST",
           headers: { Authorization: `Bearer ${requireEnv("GROQ_API_KEY")}`, "Content-Type": "application/json" },
+          signal: options.signal,
           body: JSON.stringify({ ...modelParams(model), ...buildBody(model) })
         });
       } catch (error) {
+        options.signal?.throwIfAborted();
         lastError = error; // network blip: move on to the next model or round
         continue;
       }
@@ -173,7 +183,8 @@ async function groqRequest(
     }
 
     if (round === 0 && shortestWait !== null && shortestWait <= MAX_RETRY_WAIT_MS) {
-      await sleep(shortestWait + 150);
+      await sleep(shortestWait + 150, options.signal);
+      options.signal?.throwIfAborted();
       continue;
     }
     break;
@@ -274,7 +285,7 @@ async function readSse(body: ReadableStream<Uint8Array>, onData: (data: string) 
 export async function streamGroqWithTools(
   messages: GroqChatMessage[],
   tools: unknown[],
-  options: { temperature?: number; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void }
+  options: { signal?: AbortSignal; temperature?: number; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void }
 ): Promise<{ text: string; toolCalls: GroqToolCall[] }> {
   let response: Response;
   try {
@@ -286,7 +297,7 @@ export async function streamGroqWithTools(
       temperature: options.temperature ?? 0.5,
       max_completion_tokens: options.maxTokens ?? ANSWER_MAX_TOKENS,
       stream: true
-    }));
+    }), { signal: options.signal });
   } catch (error) {
     const recovered = error instanceof GroqHttpError ? recoverMalformedToolCall(error.body) : null;
     if (recovered?.tool_calls) {
@@ -369,7 +380,7 @@ export async function streamGroqWithTools(
  */
 export async function streamGroq(
   messages: GroqChatMessage[],
-  options: { temperature?: number; maxTokens?: number; onToken: (token: string) => void }
+  options: { signal?: AbortSignal; temperature?: number; maxTokens?: number; onToken: (token: string) => void }
 ): Promise<string> {
   const response = await groqRequest((model) => ({
     ...answerParams(model),
@@ -377,7 +388,7 @@ export async function streamGroq(
     temperature: options.temperature ?? 0.4,
     max_completion_tokens: options.maxTokens ?? ANSWER_MAX_TOKENS,
     stream: true
-  }));
+  }), { signal: options.signal });
 
   let full = "";
   await readSse(response.body!, (data) => {

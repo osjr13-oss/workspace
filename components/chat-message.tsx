@@ -58,7 +58,8 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
   const copiedTimerRef = useRef<number | null>(null);
   const citations = message.citations || [];
   const attachments = citations.filter(isAttachment);
-  const webSources = citations.filter((citation): citation is WebCitation => citation.kind === "web");
+  const webSources = message.research?.sources || citations.filter((citation): citation is WebCitation => citation.kind === "web");
+  const limitations = (message.research?.limitations || []).filter((text) => !content.includes(text));
 
   useEffect(() => {
     return () => {
@@ -233,16 +234,33 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
       {!streaming && webSources.length ? (
         <div className="mt-4">
           <p className="text-xs font-bold text-[var(--muted)]">Sources</p>
-          <ol className="mt-1.5 flex flex-wrap gap-1.5">
+          <ol className={message.research ? "mt-1.5 space-y-2" : "mt-1.5 flex flex-wrap gap-1.5"}>
             {webSources.map((source) => (
-              <li key={source.marker}>
-                <a href={source.url} target="_blank" rel="noreferrer" className="source-chip" title={source.title}>
-                  <span className="source-chip-marker">{source.marker}</span>
-                  <span className="max-w-[14rem] truncate">{hostname(source.url)}</span>
-                </a>
+              <li key={source.marker} className="min-w-0 break-words">
+                {message.research || source.evidenceKind ? <details className="rounded-lg border border-[var(--border)] p-2 text-xs">
+                  <summary className="cursor-pointer">[{source.marker}] {source.title} · {source.publisher || hostname(source.url)}</summary>
+                  <div className="mt-2 space-y-2 max-w-xl">
+                    <p>{source.evidenceKind === "page" ? "Page content" : "Search excerpt"}</p>
+                    <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{source.evidence || source.snippet}</blockquote>
+                    <p>Publication/update date (provider estimate) {source.publishedAt ? new Date(source.publishedAt).toLocaleDateString() : "date unknown"}</p>
+                    {source.retrievedAt ? <p>Retrieved {new Date(source.retrievedAt).toLocaleString()}</p> : null}
+                    <a href={source.url} target="_blank" rel="noreferrer" className="underline">Open source</a>
+                  </div>
+                </details> : (
+                  <a href={source.url} target="_blank" rel="noreferrer" className="source-chip" title={source.title}>
+                    <span className="source-chip-marker">{source.marker}</span>
+                    <span className="max-w-[14rem] truncate">{hostname(source.url)}</span>
+                  </a>
+                )}
               </li>
             ))}
           </ol>
+        </div>
+      ) : null}
+
+      {!streaming && limitations.length ? (
+        <div className="mt-3 text-sm text-[var(--muted)]" aria-label="Research limitations">
+          {limitations.map((limitation, index) => <p key={index}>{limitation}</p>)}
         </div>
       ) : null}
 
