@@ -63,6 +63,13 @@ test.describe("research evidence contract", () => {
     expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
   });
 
+  test("a supported claim ledger may paraphrase the reviewed answer without a formatting false refusal", async () => {
+    await control({ review: { answer: "**Applications close on 30 November 2026** [1].", limitations: [], claims: [{ text: "The application deadline is November 30, 2026.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }] } });
+    const result = await run();
+    expect(result.research.status).toBe("complete");
+    expect(result.text).toContain("30 November 2026");
+  });
+
   test("missing credentials, no results and inaccessible pages remain distinct", async () => {
     delete process.env.TAVILY_API_KEY;
     expect((await run()).research.status).toBe("unavailable");
@@ -133,6 +140,7 @@ test.describe("research evidence contract", () => {
   test("unsafe URLs and sensitive queries are rejected before retrieval", async () => {
     for (const url of ["http://agency.gov", "https://127.0.0.1/", "https://[::1]/", "https://metadata.internal/", "https://user:password@agency.gov/"]) expect(publicSourceUrl(url)).toBeNull();
     expect(publicSearchQuery("student@example.com private application")).toBeNull();
+    expect(publicSearchQuery("gsk_not-a-real-key")).toBeNull();
     expect((await webSearch("Bearer secret")).outcome).toBe("unavailable");
     expect(await requests()).toHaveLength(0);
   });

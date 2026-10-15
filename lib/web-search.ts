@@ -21,7 +21,7 @@ export function publicSourceUrl(value: string): string | null {
 /** Queries contain public subject terms, never conversation dumps or credentials. */
 export function publicSearchQuery(query: string): string | null {
   const text = removeEmDashes(query).trim();
-  if (!text || text.length > 300 || /[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:sk-|tvly-|Bearer\s)|\b\d{3}-\d{2}-\d{4}\b/i.test(text)) return null;
+  if (!text || text.length > 300 || /[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:sk-|gsk_|tvly-|sb_secret_|gh[pousr]_|Bearer\s)|\b\d{3}-\d{2}-\d{4}\b/i.test(text)) return null;
   return text;
 }
 
