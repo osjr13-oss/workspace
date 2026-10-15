@@ -331,7 +331,7 @@ async function researchReply(req, res, body, claude) {
   } else {
     const source = v.input.evidence.find((s) => s.evidenceKind === "page");
     const marker = source?.marker || "1";
-    answer = groqState.review ?? { answer: `Applications close on 30 November 2026 [${marker}]. I could not substantiate the grant amount or universal eligibility.`, limitations: ["The grant amount and universal eligibility were not supported."], claims: [{ text: "Applications close on 30 November 2026", evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }] };
+    answer = groqState.review ?? { answer: [{ text: `Applications close on 30 November 2026 [${marker}].`, evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }], limitations: ["The grant amount and universal eligibility were not supported."] };
   }
   const content = JSON.stringify(answer);
   res.writeHead(200, { "Content-Type": "text/event-stream" });

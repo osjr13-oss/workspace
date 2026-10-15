@@ -34,9 +34,9 @@ test.describe("research evidence contract", () => {
   });
 
   for (const [name, review] of [
-    ["missing claim evidence", { answer: "The grant pays $9000.", limitations: ["Eligibility unconfirmed."], claims: [] }],
-    ["fabricated citation", { answer: "Applications close on 30 November 2026 [99].", limitations: [], claims: [{ text: "Applications close on 30 November 2026", evidence: [{ marker: "99", quote: "Applications close on 30 November 2026." }] }] }],
-    ["invented supporting quote", { answer: "Everyone qualifies [1].", limitations: [], claims: [{ text: "Everyone qualifies", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] }] }]
+    ["missing claim evidence", { answer: [{ text: "The grant pays $9000.", evidence: [] }], limitations: ["Eligibility unconfirmed."] }],
+    ["fabricated citation", { answer: [{ text: "Applications close on 30 November 2026 [99].", evidence: [{ marker: "99", quote: "Applications close on 30 November 2026." }] }], limitations: [] }],
+    ["invented supporting quote", { answer: [{ text: "Everyone qualifies [1].", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] }], limitations: [] }]
   ] as const) test(`rejects ${name}`, async () => {
     await control({ review });
     const result = await run();
@@ -63,11 +63,25 @@ test.describe("research evidence contract", () => {
     expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
   });
 
-  test("a supported claim ledger may paraphrase the reviewed answer without a formatting false refusal", async () => {
-    await control({ review: { answer: "**Applications close on 30 November 2026** [1].", limitations: [], claims: [{ text: "The application deadline is November 30, 2026.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }] } });
+  test("a reviewed part may paraphrase the source and use formatting without a false refusal", async () => {
+    await control({ review: { answer: [{ text: "**The application deadline is November 30, 2026** [1].", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }], limitations: [] } });
     const result = await run();
     expect(result.research.status).toBe("complete");
-    expect(result.text).toContain("30 November 2026");
+    expect(result.text).toContain("November 30, 2026");
+  });
+
+  test("unsupported parts are withheld while the exact supported reviewed text is retained", async () => {
+    const supported = "Applications close on 30 November 2026 [1].";
+    await control({ review: { answer: [
+      { text: supported, evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
+      { text: "Everyone qualifies [1].", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] },
+      { text: "The grant pays $9000 [99].", evidence: [{ marker: "99", quote: "A fabricated source passage." }] }
+    ], limitations: [] } });
+    const result = await run();
+    expect(result.text).toBe(supported);
+    expect(result.research.status).toBe("limited");
+    expect(result.research.limitations.join(" ")).toContain("withheld");
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review")).toHaveLength(1);
   });
 
   test("missing credentials, no results and inaccessible pages remain distinct", async () => {
@@ -113,7 +127,7 @@ test.describe("research evidence contract", () => {
 
   test("old and conflicting sources yield a bounded qualified answer, unknown dates stay unknown", async () => {
     await control({ searchResults: [{ ...source, published_date: "2019-01-01" }, { ...source, url: "https://another.gov/program", published_date: null, content: "The program deadline has not been announced." }],
-      review: { answer: "The 2019 source gives 30 November 2026 [1], but I cannot establish the current deadline from these conflicting sources.", limitations: ["Outdated source and unresolved disagreement. The second source has no known publication date."], claims: [{ text: "30 November 2026", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }] } });
+      review: { answer: [{ text: "The 2019 source gives 30 November 2026 [1], but I cannot establish the current deadline from these conflicting sources.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }], limitations: ["Outdated source and unresolved disagreement. The second source has no known publication date."] } });
     const result = await run();
     expect(result.research.status).toBe("limited");
     expect(result.research.limitations.join(" ")).toContain("unresolved disagreement");
