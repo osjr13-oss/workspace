@@ -242,7 +242,7 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
                   <div className="mt-2 space-y-2 max-w-xl">
                     <p>{source.evidenceKind === "page" ? "Page content" : "Search excerpt"}</p>
                     <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{source.evidence || source.snippet}</blockquote>
-                    <p>Publication/update date (provider estimate) {source.publishedAt ? new Date(source.publishedAt).toLocaleDateString() : "date unknown"}</p>
+                    <p>Publication/update date (provider estimate) {source.publishedAt ? new Date(source.publishedAt).toLocaleDateString(undefined, { timeZone: "UTC" }) : "date unknown"}</p>
                     {source.retrievedAt ? <p>Retrieved {new Date(source.retrievedAt).toLocaleString()}</p> : null}
                     <a href={source.url} target="_blank" rel="noreferrer" className="underline">Open source</a>
                   </div>

@@ -161,6 +161,7 @@ test.describe("research evidence contract", () => {
 });
 
 test.describe("research chat experience", () => {
+  test.use({ timezoneId: "America/New_York" });
   test.skip(Boolean(process.env.E2E_BASE_URL), "Requires offline fixtures");
   test.beforeEach(async ({ context, page }) => { await resetMocks(); await signIn(context); await page.goto("/chats"); });
 
@@ -177,6 +178,7 @@ test.describe("research chat experience", () => {
     await response.locator("summary").click();
     await expect(response).toContainText("Page content");
     await expect(response).toContainText("Retrieved");
+    await expect(response).toContainText("10/1/2026");
     const saved = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
     expect(saved?.research.status).toBe("limited");
     expect((await (await fetch("http://localhost:54321/__quota-reservations")).json()).count).toBe(1);
