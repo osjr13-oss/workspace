@@ -2,16 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAllowedEmail, isOpenPath } from "@/lib/access";
 
-const protectedPrefixes = [
-  "/dashboard",
-  "/chats",
-  "/projects",
-  "/notes",
-  "/files",
-  "/flashcards",
-  "/study",
-  "/settings"
-];
+const protectedPrefixes = ["/chats", "/settings"];
 
 const authOnlyPaths = ["/signin", "/signup"];
 

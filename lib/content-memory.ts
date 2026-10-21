@@ -62,7 +62,7 @@ async function extractMemoryCandidates(source: string, maxCount: number) {
       {
         role: "system",
         content:
-          `Extract lasting facts about the user from the supplied conversation material. Include durable preferences, identity details, ongoing projects, recurring concerns, and continuing goals only. Do not include writing-style observations. Return a JSON array of at most ${maxCount} concise strings. Return [] when there is nothing worth remembering. Never use an em dash.`
+          `Extract lasting facts about the user from the supplied conversation material. Include durable preferences (foods they like or avoid, dietary patterns, allergies), routines, identity details, recurring struggles, and continuing goals only. Do not include writing-style observations, and do not include individual meals, weights, calorie numbers, or other daily log entries, which are stored separately. Return a JSON array of at most ${maxCount} concise strings. Return [] when there is nothing worth remembering. Never use an em dash.`
       },
       {
         role: "user",

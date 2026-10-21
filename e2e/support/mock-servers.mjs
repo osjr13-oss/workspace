@@ -283,6 +283,17 @@ function groqReset() {
   groqState.tokenDelayMs = 2;
 }
 
+/**
+ * The tool call a test asked for: `true` calls the first offered tool with
+ * empty arguments, or pass { name, arguments } to choose one.
+ */
+function mockToolCall(requested, tools) {
+  if (requested && typeof requested === "object") {
+    return { name: requested.name, arguments: typeof requested.arguments === "string" ? requested.arguments : JSON.stringify(requested.arguments || {}) };
+  }
+  return { name: tools[0]?.name || "unknown", arguments: "{}" };
+}
+
 function approxTokens(messages, tools) {
   const text = JSON.stringify(messages) + (tools ? JSON.stringify(tools) : "");
   return Math.ceil(text.length / 4);
@@ -393,10 +404,11 @@ async function handleGroq(req, res) {
     send({ type: "content_block_delta", index: 0, delta: { type: "signature_delta", signature: "test-signature" } });
     send({ type: "content_block_stop", index: 0 });
     if (groqState.claudeTool && body.tools?.length && body.tool_choice?.type !== "none") {
+      const call = mockToolCall(groqState.claudeTool, body.tools);
       groqState.claudeTool = false;
-      send({ type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "toolu_1", name: "search_workspace", input: {} } });
-      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '{"query":' } });
-      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '"biology"}' } });
+      send({ type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "toolu_1", name: call.name, input: {} } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: call.arguments.slice(0, 8) } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: call.arguments.slice(8) } });
       send({ type: "content_block_stop", index: 1 });
     } else {
       send({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
@@ -472,10 +484,11 @@ async function handleGroq(req, res) {
     res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 
   if (groqState.toolNext && body.tools?.length) {
+    const call = mockToolCall(groqState.toolNext, body.tools.map((tool) => tool.function));
     groqState.toolNext = false;
     if (groqState.toolPreface) send({ role: "assistant", content: groqState.toolPreface });
-    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "search_workspace", arguments: "" } }] });
-    send({ tool_calls: [{ index: 0, function: { arguments: '{"query":"biology"}' } }] });
+    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: call.name, arguments: "" } }] });
+    send({ tool_calls: [{ index: 0, function: { arguments: call.arguments } }] });
     send({}, "tool_calls");
     res.write("data: [DONE]\n\n");
     res.end();

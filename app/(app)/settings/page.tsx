@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
-import { BillingSection } from "@/components/billing-section";
-import { ReferralSection } from "@/components/referral-section";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
@@ -100,8 +98,6 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Settings" eyebrow="Account" />
-      <BillingSection />
-      <ReferralSection />
       <form onSubmit={save} className="panel space-y-4 p-6">
         <div>
           <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Full name</label>

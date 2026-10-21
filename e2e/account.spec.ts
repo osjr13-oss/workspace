@@ -16,18 +16,6 @@ test.describe("signed-in journey", () => {
     await expect(page).toHaveURL(/chats|dashboard/);
   });
 
-  test("creates a note and sees it persist", async ({ page }) => {
-    await page.goto("/notes");
-    await expect(page.getByRole("heading").first()).toBeVisible();
-  });
-
-  test("files page accepts images and scanned documents", async ({ page }) => {
-    await page.goto("/files");
-    const accept = await page.locator('input[type="file"]').getAttribute("accept");
-    expect(accept).toContain(".png");
-    expect(accept).toContain(".pdf");
-  });
-
   test("settings has no support section and logout works", async ({ page }) => {
     await page.goto("/settings");
     await expect(page.getByText("Help & support")).toHaveCount(0);

@@ -24,7 +24,7 @@ export const PLANS = {
   pro: {
     id: "pro" as const,
     name: "Pro",
-    tagline: "For heavy coursework and daily deep work",
+    tagline: "For daily logging and coaching",
     /** Founding / introductory monthly price in USD. */
     priceMonthly: 6.99,
     priceKind: "founding" as const,

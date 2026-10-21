@@ -14,8 +14,8 @@ export function welcomeEmail(params: { name: string }) {
   const html = emailLayout(
     `
       <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${greeting}</p>
-      <p style="margin:0 0 16px;">Welcome to ${brand.name}. Your workspace is ready for notes, files, flashcards, and project-aware AI chat.</p>
-      <p style="margin:0 0 24px;">${cta("/chats", "Talk to Selrano")}</p>
+      <p style="margin:0 0 16px;">Welcome to ${brand.name}. Set your goal, log a meal or two, and your coach will take it from there.</p>
+      <p style="margin:0 0 24px;">${cta("/chats", "Get started")}</p>
     `,
     `Welcome to ${brand.name}`
   );

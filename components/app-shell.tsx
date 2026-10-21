@@ -5,12 +5,6 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  BookOpen,
-  Brain,
-  BrainCircuit,
-  Files,
-  FolderOpen,
-  Home,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -25,14 +19,7 @@ import { ChatThreadsProvider, groupThreads, useChatThreads } from "@/components/
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 
-const nav = [
-  { href: "/dashboard", label: "Workspace", icon: Home },
-  { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/files", label: "Files", icon: Files },
-  { href: "/notes", label: "Notes", icon: BookOpen },
-  { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/study", label: "Study", icon: BrainCircuit }
-];
+const nav: Array<{ href: string; label: string; icon: typeof Settings }> = [];
 
 const COLLAPSED_KEY = "selrano.sidebar.collapsed";
 
@@ -87,7 +74,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="app-frame">
       <aside
         className={`sidebar hidden lg:flex ${collapsed ? "sidebar-collapsed" : ""}`}
-        aria-label="Workspace navigation"
+        aria-label="Navigation"
       >
         <SidebarContent collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
@@ -102,7 +89,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           />
           <aside
             className="sidebar drawer-panel relative flex h-full"
-            aria-label="Workspace navigation"
+            aria-label="Navigation"
             // Any link closes the drawer, including chats that only change ?thread=.
             onClick={(event) => {
               if ((event.target as HTMLElement).closest("a")) setDrawerOpen(false);

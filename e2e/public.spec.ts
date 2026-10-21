@@ -64,7 +64,7 @@ test.describe("accounts", () => {
     const api = await page.request.post("/api/ai/chat", { data: { message: "hello" } });
     expect(api.status()).toBe(401);
     // ...and the first page visit ends the session.
-    await page.goto("/dashboard");
+    await page.goto("/settings");
     await expect(page).toHaveURL(/signin\?private=1/);
     await expect(page.getByText(/does not have access/i)).toBeVisible();
     const cookies = await page.context().cookies();

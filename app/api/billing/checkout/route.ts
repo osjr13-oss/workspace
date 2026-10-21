@@ -56,7 +56,7 @@ export async function POST() {
         payment_method_types: ["card"],
         line_items: [{ price: getProPriceId(), quantity: 1 }],
         success_url: absoluteUrl("/settings?billing=success&session_id={CHECKOUT_SESSION_ID}"),
-        cancel_url: absoluteUrl("/pricing?canceled=1"),
+        cancel_url: absoluteUrl("/settings?canceled=1"),
         client_reference_id: user.id,
         metadata: {
           user_id: user.id,
