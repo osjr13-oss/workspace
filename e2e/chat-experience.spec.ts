@@ -30,6 +30,26 @@ test.describe("chat experience", () => {
     await page.goto("/chats");
   });
 
+  test("input-method confirmation does not send and cancellation does not stop a reply", async ({ page }) => {
+    const input = page.locator(composer);
+    await input.fill("Draft in progress");
+    for (const options of [{ isComposing: true }, { keyCode: 229 }]) {
+      await input.dispatchEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, ...options });
+      await expect(input).toHaveValue("Draft in progress");
+      await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeVisible();
+    }
+
+    await control({ reply: "Slow words. ".repeat(50), tokenDelayMs: 60 });
+    await input.press("Enter");
+    await expect(page.locator(bubbles).first()).toContainText("Slow words", { timeout: 15_000 });
+    await input.dispatchEvent("keydown", { key: "Escape", isComposing: true, bubbles: true, cancelable: true });
+    await expect(page.getByRole("button", { name: "Stop responding" })).toBeVisible();
+    // Let the server finish before the next test resets the shared mock data.
+    // Ordinary Escape-to-stop is covered separately below.
+    await settled(page);
+    await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeVisible();
+  });
+
   test("Stop keeps the words already shown and saves exactly those", async ({ page }) => {
     test.setTimeout(90_000);
     await sendAndSettle(page, "warm up");

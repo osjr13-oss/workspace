@@ -151,7 +151,10 @@ export function ChatComposer({
           value={value}
           onChange={(event) => update(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            // IME confirmation/cancellation belongs to the input method. Safari
+            // can clear isComposing before the confirming Enter (keyCode 229).
+            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+            if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
             }
