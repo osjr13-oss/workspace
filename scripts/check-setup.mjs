@@ -33,9 +33,7 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "GROQ_API_KEY",
-  // Selrano is private: only these comma-separated emails can sign in (lib/access.ts).
-  "ALLOWED_EMAILS"
+  "GROQ_API_KEY"
 ];
 
 console.log(`Primary chat: ${status("OPENAI_API_KEY") === "ok" ? "OpenAI GPT" : "Groq (OPENAI_API_KEY missing)"}`);

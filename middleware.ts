@@ -1,8 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { isAllowedEmail, isOpenPath } from "@/lib/access";
 
-const protectedPrefixes = ["/today", "/progress", "/chats", "/settings", "/onboarding"];
+const protectedPrefixes = [
+  "/dashboard",
+  "/chats",
+  "/projects",
+  "/notes",
+  "/files",
+  "/flashcards",
+  "/study",
+  "/settings"
+];
 
 const authOnlyPaths = ["/signin", "/signup"];
 
@@ -43,7 +51,7 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { user: sessionUser }
+    data: { user }
   } = await supabase.auth.getUser();
 
   // Carries any refreshed or cleared session cookies onto a redirect.
@@ -57,17 +65,8 @@ export async function middleware(request: NextRequest) {
     return redirect;
   };
 
-  // Selrano is private (lib/access.ts). A session for an account that is not on
-  // the allowlist is ended here, so it can never reach the app.
-  let user = sessionUser;
-  if (user && !isAllowedEmail(user.email)) {
-    await supabase.auth.signOut({ scope: "local" });
-    user = null;
-    if (pathname !== "/signin") return redirectTo("/signin", { private: "1" });
-  }
-
-  if (!user && !isOpenPath(pathname)) {
-    return redirectTo("/signin", isProtectedPath(pathname) ? { next: pathname } : {});
+  if (!user && isProtectedPath(pathname)) {
+    return redirectTo("/signin", { next: pathname });
   }
 
   if (user && (pathname === "/" || authOnlyPaths.includes(pathname))) {
@@ -79,12 +78,12 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    return redirectTo("/today");
+    return redirectTo("/chats");
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|fake-supabase|manifest.webmanifest|icon(?:-maskable)?|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icon(?:-maskable)?|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
 };

@@ -4,7 +4,11 @@ import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type UserStats = {
+  projects: number;
+  files: number;
   chatThreads: number;
+  decks: number;
+  studyReviews: number;
   aiEventsLast7d: number;
 };
 
@@ -16,6 +20,11 @@ type Campaign = {
 };
 
 const CAMPAIGNS: Campaign[] = [
+  { key: "tip_projects", minDays: 2, maxDays: 4, eligible: (s) => s.projects === 0 },
+  { key: "tip_chat", minDays: 3, maxDays: 6, eligible: (s) => s.chatThreads === 0 },
+  { key: "tip_upload", minDays: 4, maxDays: 8, eligible: (s) => s.files === 0 },
+  { key: "tip_flashcards", minDays: 7, maxDays: 14, eligible: (s) => s.decks === 0 },
+  { key: "tip_study", minDays: 10, maxDays: 21, eligible: (s) => s.decks > 0 && s.studyReviews === 0 },
   { key: "nudge_inactive", minDays: 14, maxDays: 90, eligible: (s) => s.aiEventsLast7d === 0 },
   { key: "weekly_digest", minDays: 7, maxDays: 36500, eligible: () => true }
 ];
@@ -36,13 +45,21 @@ function weeklyDigestLogKey(date = new Date()) {
 
 async function loadStats(admin: SupabaseClient, userId: string): Promise<UserStats> {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const [chats, ai] = await Promise.all([
+  const [projects, files, chats, decks, reviews, ai] = await Promise.all([
+    admin.from("projects").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("files").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("chat_threads").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("flashcard_decks").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("study_reviews").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", weekAgo)
   ]);
 
   return {
+    projects: projects.count || 0,
+    files: files.count || 0,
     chatThreads: chats.count || 0,
+    decks: decks.count || 0,
+    studyReviews: reviews.count || 0,
     aiEventsLast7d: ai.count || 0
   };
 }

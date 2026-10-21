@@ -5,7 +5,7 @@ import type { ResearchMetadata } from "@/lib/types";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
-import { ChatComposer } from "@/components/chat-composer";
+import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
 import { ThinkingTrace } from "@/components/thinking-trace";
@@ -13,18 +13,21 @@ import { readChatStream } from "@/lib/chat-stream";
 import { createStreamPacer, type StreamPacer } from "@/lib/stream-pacer";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
-import type { ChatMessage } from "@/lib/types";
+import { uploadWorkspaceFile } from "@/lib/upload-file";
+import type { ChatMessage, Project } from "@/lib/types";
 
 /** A message plus a React key that survives the swap from streamed text to the saved row. */
 type DisplayMessage = ChatMessage & { clientKey?: string };
 
 type Handoff = { userKey?: string | null; assistantKey?: string | null };
 
+const MAX_ATTACHMENTS = 4;
+
 const STARTERS = [
-  { title: "Plan my day of eating", prompt: "Help me plan simple meals for today that keep me full and support losing weight." },
-  { title: "High-protein ideas", prompt: "Give me a few quick high-protein breakfast and lunch ideas." },
-  { title: "Eating out", prompt: "I'm eating out tonight. How do I choose something that fits my goals without overthinking it?" },
-  { title: "Beat evening snacking", prompt: "I keep snacking at night. What can I try this week?" }
+  { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on." },
+  { title: "Quiz me", prompt: "Quiz me on what I have been studying. Ask one question at a time." },
+  { title: "Make flashcards", prompt: "Turn my latest notes into a flashcard deck." },
+  { title: "What changed today", prompt: "What are the most important news stories today?" }
 ];
 
 function withHandoffKeys(rows: ChatMessage[], handoff?: Handoff): DisplayMessage[] {
@@ -61,8 +64,10 @@ function ChatsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlThread = searchParams.get("thread");
+  const urlProject = searchParams.get("project");
   const { threads, refresh: refreshThreads, rename, remove } = useChatThreads();
 
+  const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [modelMetadata, setModelMetadata] = useState<{ provider: string; model: string; fallbackReason?: string } | null>(null);
   const [threadId, setThreadIdState] = useState<string | null>(urlThread);
@@ -73,7 +78,9 @@ function ChatsContent() {
     threadIdRef.current = id;
     setThreadIdState(id);
   }
+  const [projectId, setProjectId] = useState(urlProject || "");
   const [text, setText] = useState("");
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingThread, setLoadingThread] = useState(Boolean(urlThread));
   // True once the first words of a reply are on screen, so the thinking mark never returns after them.
@@ -114,6 +121,12 @@ function ChatsContent() {
   }, []);
 
   useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    void supabase
+      .from("projects")
+      .select("*")
+      .order("name")
+      .then(({ data }) => setProjects((data as Project[]) || []));
     if (threadIdRef.current) void loadMessages(threadIdRef.current);
   }, [loadMessages]);
 
@@ -140,9 +153,14 @@ function ChatsContent() {
       void loadMessages(urlThread);
     } else {
       setLoadingThread(false);
+      setProjectId(urlProject || "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlThread]);
+
+  useEffect(() => {
+    if (activeThread) setProjectId(activeThread.project_id || "");
+  }, [activeThread]);
 
   // Follow the newest words only while the reader is already at the bottom. The jump is
   // instant: a smooth scroll reports in-between positions, which would read as the reader
@@ -185,21 +203,23 @@ function ChatsContent() {
   }
 
   async function requestReply(
-    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
-    userKey: string | null = null
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string; fileIds?: string[] },
+    userKey: string | null = null,
+    sentAttachments: ComposerAttachment[] = []
   ) {
     if (busyRef.current) return;
     busyRef.current = true;
     try {
-      await runReply(options, userKey);
+      await runReply(options, userKey, sentAttachments);
     } finally {
       busyRef.current = false;
     }
   }
 
   async function runReply(
-    options: { message?: string; editMessageId?: string; regenerateMessageId?: string },
-    userKey: string | null
+    options: { message?: string; editMessageId?: string; regenerateMessageId?: string; fileIds?: string[] },
+    userKey: string | null,
+    sentAttachments: ComposerAttachment[]
   ) {
     setLoading(true);
     setModelMetadata(null);
@@ -239,6 +259,7 @@ function ChatsContent() {
       ]);
       if (restore && canRestoreText && options.message) {
         setText((existing) => existing || options.message || "");
+        if (sentAttachments.length) setAttachments((existing) => (existing.length ? existing : sentAttachments));
       }
       setReplyStarted(false);
       setStatus(null);
@@ -252,7 +273,8 @@ function ChatsContent() {
         signal: controller.signal,
         body: JSON.stringify({
           ...options,
-          threadId: threadIdRef.current
+          threadId: threadIdRef.current,
+          projectId: projectId || null
         })
       });
 
@@ -378,7 +400,10 @@ function ChatsContent() {
     event.preventDefault();
     const prompt = removeEmDashes(text).trim();
     if (!prompt || busyRef.current) return;
+    if (attachments.some((item) => item.status === "uploading" || item.status === "processing")) return;
+    const ready = attachments.filter((item) => item.status === "ready" && item.fileId);
     setText("");
+    setAttachments([]);
     const userKey = `pending-user-${turnRef.current + 1}`;
     setMessages((existing) => [
       ...existing.filter((item) => item.id !== "error"),
@@ -389,10 +414,19 @@ function ChatsContent() {
         user_id: "",
         role: "user",
         content: prompt,
+        citations: ready.map((item, index) => ({
+          kind: "file" as const,
+          marker: `attachment-${index + 1}`,
+          fileId: item.fileId!,
+          fileName: item.name,
+          pageNumber: null,
+          charStart: null,
+          charEnd: null
+        })),
         created_at: new Date().toISOString()
       }
     ]);
-    await requestReply({ message: prompt }, userKey);
+    await requestReply({ message: prompt, fileIds: ready.map((item) => item.fileId!) }, userKey, ready);
   }
 
   async function editAndResend(messageId: string, content: string) {
@@ -416,6 +450,24 @@ function ChatsContent() {
     await requestReply({ regenerateMessageId: messageId });
   }
 
+  function attach(files: File[]) {
+    const room = MAX_ATTACHMENTS - attachments.length;
+    for (const file of files.slice(0, Math.max(room, 0))) {
+      const key = `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 8)}`;
+      const patch = (update: Partial<ComposerAttachment>) =>
+        setAttachments((existing) => existing.map((item) => (item.key === key ? { ...item, ...update } : item)));
+      setAttachments((existing) => [...existing, { key, name: file.name, status: "uploading", progress: 0 }]);
+      // Attached files are saved to the workspace (in this chat's project), so they can be found again later.
+      uploadWorkspaceFile(file, {
+        projectId: projectId || null,
+        onProgress: (progress) => patch({ progress }),
+        onProcessing: () => patch({ status: "processing" })
+      })
+        .then((saved) => patch({ status: "ready", fileId: saved.id }))
+        .catch((error: unknown) => patch({ status: "failed", error: error instanceof Error ? error.message : "Upload failed." }));
+    }
+  }
+
   async function deleteCurrent() {
     if (!threadId) return;
     const failure = await remove(threadId);
@@ -437,9 +489,9 @@ function ChatsContent() {
       <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 py-10 sm:px-6">
-            <h1 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">What&apos;s on your plate?</h1>
+            <h1 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">What are we working on?</h1>
             <p className="mt-2 max-w-md text-[15px] leading-6 text-[var(--muted-strong)]">
-              Ask about meals, cravings, workouts, or how the week is going. Your coach keeps the context.
+              Ask anything. Pick a project or attach files when your own material should guide the answer.
             </p>
             <div className="mt-7 grid gap-2 sm:grid-cols-2">
               {STARTERS.map((starter) => (
@@ -495,6 +547,14 @@ function ChatsContent() {
             busy={loading}
             onChange={setText}
             onStop={stop}
+            attachments={attachments}
+            onAttach={attach}
+            onRemoveAttachment={(key) => setAttachments((existing) => existing.filter((item) => item.key !== key))}
+            projects={projects}
+            projectId={projectId}
+            onProjectChange={setProjectId}
+            projectLocked={Boolean(threadId)}
+            maxAttachments={MAX_ATTACHMENTS}
           />
         </form>
       </div>

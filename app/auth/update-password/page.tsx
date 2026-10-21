@@ -31,7 +31,7 @@ export default function UpdatePasswordPage() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      router.replace("/today");
+      router.replace("/chats");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update password.");
     } finally {

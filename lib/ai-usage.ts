@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getPlan } from "@/lib/plans";
+import { getPlan, PLANS } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { aiRequestLimit, effectiveTier, getUserLimits } from "@/lib/tier";
 
@@ -47,7 +47,12 @@ export async function reserveAiRequest(
   const plan = getPlan(tier);
   const limit = aiRequestLimit(limits);
   const periodLabel = plan.aiPeriod === "month" ? "month" : "day";
-  return `AI limit reached (${limit} requests per ${periodLabel}). It resets at the start of the next ${periodLabel} (UTC). Logging by hand still works.`;
+  const retryHint =
+    tier === "pro"
+      ? "Try again when your monthly allowance resets."
+      : `Upgrade to Pro for ${PLANS.pro.aiRequests}/month.`;
+
+  return `AI limit reached (${limit} requests per ${periodLabel} on ${tier === "pro" ? "Pro" : "Free"}). ${retryHint}`;
 }
 
 export async function getUsageCountSince(supabase: SupabaseClient, userId: string, sinceIso: string) {

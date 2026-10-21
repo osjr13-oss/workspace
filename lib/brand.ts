@@ -4,7 +4,7 @@
  */
 export const brand = {
   name: "Selrano",
-  tagline: "A calm, personal coach for food, weight, and everyday health.",
+  tagline: "An AI workspace that learns how you think and write.",
   legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "Selrano",
 
   emails: {
@@ -16,6 +16,7 @@ export const brand = {
     terms: "/terms",
     privacy: "/privacy",
     security: "/security",
+    changelog: "/changelog",
     status: process.env.NEXT_PUBLIC_STATUS_URL || "",
     docs: process.env.NEXT_PUBLIC_DOCS_URL || ""
   },

@@ -112,7 +112,7 @@ test.describe("chat experience", () => {
     await expect(page.getByRole("button", { name: "Send message", exact: true })).toBeVisible();
   });
 
-  test.fixme("while a tool runs, the page says what Selrano is doing", async ({ page }) => {
+  test("while a tool runs, the page says what Selrano is doing", async ({ page }) => {
     await sendAndSettle(page, "warm up");
     await control({ toolNext: true, firstTokenDelayMs: 1_500 });
     await send(page, "Find my notes about Mars missions");
@@ -125,7 +125,7 @@ test.describe("chat experience", () => {
   test("a new conversation shows in the sidebar and can be renamed, reopened, and deleted", async ({ page }) => {
     await sendAndSettle(page, "Plan my week of revision");
     await expect(page).toHaveURL(/\/chats\?thread=/);
-    const sidebar = page.getByRole("complementary", { name: "Navigation" });
+    const sidebar = page.getByRole("complementary", { name: "Workspace navigation" });
     await expect(sidebar.getByRole("link", { name: "Plan my week of revision" })).toBeVisible();
 
     await page.getByRole("button", { name: "Conversation options" }).click();
@@ -136,7 +136,7 @@ test.describe("chat experience", () => {
     expect((await tableRows("chat_threads"))[0].title).toBe("Weekly plan");
 
     await sidebar.getByRole("link", { name: "New chat" }).click();
-    await expect(page.getByText("What's on your plate?")).toBeVisible();
+    await expect(page.getByText("What are we working on?")).toBeVisible();
     await expect(page).toHaveURL(/\/chats$/);
 
     await sidebar.getByRole("link", { name: "Weekly plan" }).click();
@@ -147,6 +147,35 @@ test.describe("chat experience", () => {
     await expect(sidebar.getByRole("link", { name: "Weekly plan" })).toHaveCount(0);
     await expect(page).toHaveURL(/\/chats$/);
     expect(await tableRows("chat_threads")).toHaveLength(0);
+  });
+
+  test("attached files reach the model and show on the message", async ({ page }) => {
+    const fileId = "22222222-2222-4222-8222-222222222222";
+    await seed("files", [
+      {
+        id: fileId,
+        user_id: USER_ID,
+        project_id: null,
+        name: "lab-notes.txt",
+        storage_path: `${USER_ID}/lab-notes.txt`,
+        extraction_status: "ready",
+        extracted_text: "The enzyme catalase breaks down hydrogen peroxide into water and oxygen."
+      }
+    ]);
+    const response = await page.request.post("/api/ai/chat", {
+      data: { message: "What do my lab notes say?", fileIds: [fileId, "33333333-3333-4333-8333-333333333333"] }
+    });
+    expect(response.ok()).toBe(true);
+    const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
+    const threadId = events.find((event) => event.type === "start").threadId;
+
+    const answer = (await groqRequests()).find((request) => request.stream);
+    expect(answer?.systemText).toContain("catalase breaks down hydrogen peroxide");
+    const userRow = (await tableRows("chat_messages")).find((row) => row.role === "user");
+    expect(userRow?.citations).toEqual([expect.objectContaining({ fileId, fileName: "lab-notes.txt" })]);
+
+    await page.goto(`/chats?thread=${threadId}`);
+    await expect(page.getByRole("article", { name: "Your message" }).getByRole("link", { name: "lab-notes.txt" })).toBeVisible();
   });
 
   test("code has a copy button and highlighting, and tables scroll", async ({ page }) => {

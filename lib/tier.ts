@@ -51,3 +51,56 @@ export function effectiveTier(limits: UserLimitsRow): TierId {
 export function aiRequestLimit(limits: UserLimitsRow) {
   return getPlan(effectiveTier(limits)).aiRequests;
 }
+
+export async function assertProjectLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const limits = await getUserLimits(supabase, userId);
+  const plan = getPlan(effectiveTier(limits));
+  if (plan.maxProjects === null) return null;
+
+  const { count, error } = await supabase
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[tier] project count failed", error);
+    return null;
+  }
+
+  if ((count || 0) >= plan.maxProjects) {
+    return `Free plan allows up to ${plan.maxProjects} projects. Upgrade to Pro for unlimited projects.`;
+  }
+
+  return null;
+}
+
+export async function assertDeckLimit(supabase: SupabaseClient, userId: string): Promise<string | null> {
+  const limits = await getUserLimits(supabase, userId);
+  const plan = getPlan(effectiveTier(limits));
+  if (plan.maxDecks === null) return null;
+
+  const { count, error } = await supabase
+    .from("flashcard_decks")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[tier] deck count failed", error);
+    return null;
+  }
+
+  if ((count || 0) >= plan.maxDecks) {
+    return `Free plan allows up to ${plan.maxDecks} flashcard decks. Upgrade to Pro for unlimited decks.`;
+  }
+
+  return null;
+}
+
+export function assertFileSizeLimit(bytes: number, limits: UserLimitsRow): string | null {
+  const plan = getPlan(effectiveTier(limits));
+  const maxBytes = plan.maxFileMb * 1024 * 1024;
+  if (bytes > maxBytes) {
+    return `${plan.name} plan allows files up to ${plan.maxFileMb} MB. Upgrade to Pro for ${PLANS.pro.maxFileMb} MB uploads.`;
+  }
+  return null;
+}

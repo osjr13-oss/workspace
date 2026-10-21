@@ -12,7 +12,7 @@ import crypto from "node:crypto";
 
 const SUPABASE_PORT = 54321;
 const GROQ_PORT = 54322;
-const ORIGINS = new Set(["http://localhost:3100", "http://localhost:3000", "http://127.0.0.1:3000"]);
+const ORIGINS = new Set(["http://localhost:3000", "http://127.0.0.1:3000"]);
 
 export const TEST_USER = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -221,8 +221,7 @@ async function handleSupabase(req, res) {
       const now = new Date().toISOString();
       const row = { id: crypto.randomUUID(), created_at: now, updated_at: now, ...item };
       const upsertKey = url.searchParams.get("on_conflict") || (prefer.includes("merge-duplicates") ? (rest[1] === "style_profiles" ? "user_id" : "id") : null);
-      const keys = upsertKey ? upsertKey.split(",") : [];
-      const existing = keys.length ? rows.findIndex((r) => keys.every((key) => r[key] === row[key])) : -1;
+      const existing = upsertKey ? rows.findIndex((r) => r[upsertKey] === row[upsertKey]) : -1;
       if (existing >= 0) {
         rows[existing] = { ...rows[existing], ...item };
         created.push(rows[existing]);
@@ -268,7 +267,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "gptReviewInvalidJson", "foodDbFailure"]) delete groqState[key];
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "gptReviewInvalidJson"]) delete groqState[key];
   groqState.requests = [];
   groqState.gptRequests = [];
   groqState.gpt = false;
@@ -283,34 +282,6 @@ function groqReset() {
   groqState.emptyNext = false;
   groqState.tokenDelayMs = 2;
 }
-
-/**
- * The tool call a test asked for: `true` calls the first offered tool with
- * empty arguments, or pass { name, arguments } to choose one.
- */
-function mockToolCall(requested, tools) {
-  if (requested && typeof requested === "object") {
-    return { name: requested.name, arguments: typeof requested.arguments === "string" ? requested.arguments : JSON.stringify(requested.arguments || {}) };
-  }
-  return { name: tools[0]?.name || "unknown", arguments: "{}" };
-}
-
-const usdaNutrients = (kcal, protein, carbs, fat, fiber) => [
-  { nutrientId: 1008, unitName: "KCAL", value: kcal },
-  { nutrientId: 1003, unitName: "G", value: protein },
-  { nutrientId: 1005, unitName: "G", value: carbs },
-  { nutrientId: 1004, unitName: "G", value: fat },
-  { nutrientId: 1079, unitName: "G", value: fiber }
-];
-const USDA_FOODS = [
-  { fdcId: 2000001, description: "BANANA CHIPS", dataType: "Branded", brandOwner: "SNACK CO", servingSize: 30, servingSizeUnit: "g", householdServingFullText: "1 oz", foodNutrients: usdaNutrients(519, 2.3, 58, 34, 7.7) },
-  { fdcId: 1105314, description: "Bananas, raw", dataType: "Foundation", foodNutrients: usdaNutrients(89, 1.1, 22.8, 0.3, 2.6), foodMeasures: [{ disseminationText: "1 medium", gramWeight: 118 }, { disseminationText: "1 cup, sliced", gramWeight: 150 }] },
-  { fdcId: 748967, description: "Eggs, Grade A, Large, egg whole", dataType: "Foundation", foodNutrients: usdaNutrients(148, 12.4, 0.96, 9.96, 0), foodMeasures: [{ disseminationText: "1 large", gramWeight: 50 }] }
-];
-const OFF_PRODUCTS = {
-  "3017620422003": { product_name: "Nutella", brands: "Ferrero,Nutella", serving_size: "15 g", serving_quantity: 15, nutriments: { "energy-kcal_100g": 539, proteins_100g: 6.3, carbohydrates_100g: 57.5, fat_100g: 30.9, fiber_100g: 0 } },
-  "0000000000017": { product_name: "Mystery bar", brands: "Unknown", nutriments: {} }
-};
 
 function approxTokens(messages, tools) {
   const text = JSON.stringify(messages) + (tools ? JSON.stringify(tools) : "");
@@ -396,19 +367,6 @@ async function handleGroq(req, res) {
     if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }] });
     return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
-  // Food databases: USDA FoodData Central search and Open Food Facts barcodes.
-  if (url.pathname === "/usda/fdc/v1/foods/search") {
-    const query = (url.searchParams.get("query") || "").toLowerCase();
-    webRequests.push({ path: url.pathname, query, apiKey: url.searchParams.get("api_key") });
-    if (groqState.foodDbFailure) return sendJson(res, 503, {});
-    return sendJson(res, 200, { foods: USDA_FOODS.filter((food) => food.description.toLowerCase().includes(query.split(" ")[0])) });
-  }
-  if (url.pathname.startsWith("/off/api/v2/product/")) {
-    const code = url.pathname.split("/").pop();
-    webRequests.push({ path: url.pathname, code, userAgent: req.headers["user-agent"] });
-    const product = OFF_PRODUCTS[code];
-    return product ? sendJson(res, 200, { status: 1, code, product }) : sendJson(res, 404, { status: 0, status_verbose: "product not found" });
-  }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
   if (url.pathname === "/__gpt_requests") return sendJson(res, 200, groqState.gptRequests);
   if (url.pathname === "/__control") {
@@ -434,7 +392,7 @@ async function handleGroq(req, res) {
     send({ type: "response.output_item.added", output_index: 0, item: { type: "reasoning", id: "rs_1", summary: [] } });
     send({ type: "response.output_item.done", output_index: 0, item: reasoning });
     if (groqState.gptTool && body.tools?.length && body.tool_choice !== "none") {
-      const call = mockToolCall(groqState.gptTool, body.tools);
+      const call = { name: "search_workspace", arguments: '{"query":"biology"}' };
       groqState.gptTool = false;
       send({ type: "response.output_item.added", output_index: 1, item: { type: "function_call", id: "fc_1", call_id: "call_1", name: call.name, arguments: "" } });
       send({ type: "response.function_call_arguments.delta", output_index: 1, item_id: "fc_1", delta: call.arguments.slice(0, 8) });
@@ -514,11 +472,10 @@ async function handleGroq(req, res) {
     res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 
   if (groqState.toolNext && body.tools?.length) {
-    const call = mockToolCall(groqState.toolNext, body.tools.map((tool) => tool.function));
     groqState.toolNext = false;
     if (groqState.toolPreface) send({ role: "assistant", content: groqState.toolPreface });
-    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: call.name, arguments: "" } }] });
-    send({ tool_calls: [{ index: 0, function: { arguments: call.arguments } }] });
+    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "search_workspace", arguments: "" } }] });
+    send({ tool_calls: [{ index: 0, function: { arguments: '{"query":"biology"}' } }] });
     send({}, "tool_calls");
     res.write("data: [DONE]\n\n");
     res.end();

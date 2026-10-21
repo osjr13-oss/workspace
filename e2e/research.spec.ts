@@ -56,6 +56,14 @@ test.describe("research evidence contract", () => {
     expect((await requests()).filter((r: any) => r.path.endsWith("/extract"))).toHaveLength(1);
   });
 
+  test("research flashcard output stays on Groq and does not repeat retrieval", async () => {
+    const result = await runResearch({ assessment: { ...assessment, action: "create_flashcards" }, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {} });
+    expect(result.action?.name).toBe("create_flashcards");
+    const stages = await requests("research");
+    expect(stages.find((r: any) => r.stage === "research_action").provider).toBe("groq");
+    expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
+  });
+
   for (const supported of [true, false]) test(`incomplete review falls back once and ${supported ? "retains supported points" : "rejects unsupported points"}`, async () => {
     await control({ gptReviewInvalidJson: true, review: { answer: [{ text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: supported ? "Applications close on 30 November 2026." : "Applications close on 99 November 2026." }] }], limitations: [] } });
     const result = await run();
@@ -281,8 +289,20 @@ test.describe("research chat experience", () => {
     await expect(page.getByLabel("Research limitations")).toContainText("withheld");
   });
 
-  test("a stopped research turn cannot overwrite a reply after an immediate follow-up", async ({ page }) => {
-    await control({ reviewDelayMs: 2200 });
+  test("a requested note is saved once from reviewed text despite provider fallback", async ({ page }) => {
+    await control({ gptResearchUnavailable: true, assessment: { ...assessment, action: "create_note" } });
+    await page.getByLabel("Chat message").fill("Research the agency program and save a note");
+    await page.getByLabel("Chat message").press("Enter");
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible({ timeout: 15000 });
+    const notes = await tableRows("notes");
+    expect(notes).toHaveLength(1);
+    expect(notes[0].content).not.toMatch(/UNREVIEWED|Everyone qualifies|\$9000/);
+    expect(notes[0].content).toContain("30 November 2026");
+    expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
+  });
+
+  test("a stopped research turn cannot overwrite or repeat actions after an immediate follow-up", async ({ page }) => {
+    await control({ reviewDelayMs: 2200, assessment: { ...assessment, action: "create_note" } });
     await page.getByLabel("Chat message").fill("Research the agency program and save a note");
     await page.getByLabel("Chat message").press("Enter");
     await expect(page.getByText("Checking the answer", { exact: true })).toBeVisible();

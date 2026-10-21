@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { isValidElement, useEffect, useRef, useState } from "react";
 import {
   Check,
@@ -104,10 +105,10 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
           <ul className="mb-2 flex max-w-[88%] flex-wrap justify-end gap-1.5" aria-label="Attached files">
             {attachments.map((file) => (
               <li key={file.marker}>
-                <span className="attachment-chip">
+                <Link href={`/files/${file.fileId}`} className="attachment-chip hover:border-[var(--border-strong)]">
                   <FileText size={14} />
                   <span className="max-w-[14rem] truncate">{file.fileName}</span>
-                </span>
+                </Link>
               </li>
             ))}
           </ul>

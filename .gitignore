@@ -12,9 +12,3 @@ meridian-*-qa.png
 test-results
 playwright-report
 .next-e2e
-ios/*.xcodeproj
-ios/Config/Signing.local.xcconfig
-ios/**/xcuserdata
-ios/**/DerivedData
-ios/build
-.next-offline
