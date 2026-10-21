@@ -2,6 +2,16 @@
 
 Last updated: **October 15, 2026**
 
+## Research repair (October 21)
+
+The owner's public news question reproduced a blanket refusal despite retrieved evidence. The reviewer returned several matching supporting passages but omitted inline citation numbers from every answer part. A separate replay returned truncated JSON during Claude's review. These were formatting/transport failures, not proof that every retrieved fact lacked evidence.
+
+- `lib/research.ts` now appends missing inline citation markers from each part's validated evidence. The reviewed wording is unchanged. Existing invalid or malformed citations, invented markers, absent or non-matching quotes (including stitched quotes with ellipses), and consequential claims without page evidence are still rejected. Unsupported parts remain withheld while independently supported parts survive.
+- Invalid JSON from Claude can use the existing Groq fallback once within the original deadline, with the same inputs and without repeating search or extraction. The fallback undergoes the same schema and evidence checks. A syntactically complete review that fails evidence validation is not retried. No unreviewed draft is displayed or saved.
+- Real-provider replay on October 21 returned seven cited points and withheld four parts with unmatched supporting quotes, using one search and three extraction attempts in about 32 seconds. The replay used only the public question and sources and wrote nothing to customer accounts. This demonstrates recovery from the refusal; it does not establish comprehensive news coverage, source independence, or factual correctness of every report. The model also echoed a generic limitations placeholder, so source selection and presentation still warrant broader quality evaluation.
+- Owner approved release on October 21 after local validation. Production deployment and live smoke verification are pending at commit time. No database migration, provider change, or search-budget increase.
+- Validation: typecheck, lint, production build, production dependency audit at high, punctuation scan and diff checks passed. Full offline suite: 63 passed, three credential-dependent skips. New cases cover citation attachment, malformed/fabricated citations, non-matching quotes, excerpt-only consequential claims, incomplete-JSON fallback, unchanged deadlines and retrieval budgets, and browser persistence. The three previously accepted moderate dependency advisories remain.
+
 ## Everyday answer guidance
 
 The owner wants everyday explanations, research and decision support without assumed technical or academic knowledge. `lib/chat-guidance.ts` now supplies shared plain-language and decision guidance to ordinary replies and research drafting/review. Recommendations should state their reasons and conditions, without presenting judgment as a proven fact. Research failure messages explain what could not be checked and give a practical next step. Evidence validation and search budgets are unchanged. See `docs/CHAT_QUALITY.md` for real-provider acceptance questions and the limits of offline validation; real-provider evaluation of this guidance remains pending.

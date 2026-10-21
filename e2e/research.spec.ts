@@ -44,6 +44,7 @@ test.describe("research evidence contract", () => {
     expect(result.text).not.toContain("[99]");
     expect(result.text).not.toContain("Everyone qualifies");
     expect(result.text).not.toContain("$9000");
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review")).toHaveLength(1);
   });
 
   test("Claude research failure uses Groq within the same search budget without actions", async () => {
@@ -63,11 +64,59 @@ test.describe("research evidence contract", () => {
     expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
   });
 
+  for (const supported of [true, false]) test(`incomplete review falls back once and ${supported ? "retains supported points" : "rejects unsupported points"}`, async () => {
+    await control({ claudeReviewInvalidJson: true, review: { answer: [{ text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: supported ? "Applications close on 30 November 2026." : "Applications close on 99 November 2026." }] }], limitations: [] } });
+    const result = await run();
+    expect(result.research.status).toBe(supported ? "complete" : "insufficient_evidence");
+    if (supported) expect(result.text).toBe("Applications close on 30 November 2026. [1]");
+    else expect(result.text).not.toContain("30 November");
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["anthropic", "groq"]);
+    expect((await requests()).map((r: any) => r.path)).toEqual(["/tavily/search", "/tavily/extract"]);
+    expect(await tableRows("notes")).toHaveLength(0);
+  });
+
   test("a reviewed part may paraphrase the source and use formatting without a false refusal", async () => {
     await control({ review: { answer: [{ text: "**The application deadline is November 30, 2026** [1].", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }], limitations: [] } });
     const result = await run();
     expect(result.research.status).toBe("complete");
     expect(result.text).toContain("November 30, 2026");
+  });
+
+  test("missing inline citations are attached only to independently validated points", async () => {
+    await control({ review: { answer: [
+      { text: "The application deadline is November 30, 2026.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
+      { text: "Everyone qualifies.", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] },
+      { text: "A nonexistent source confirms eligibility.", evidence: [{ marker: "99", quote: "Eligibility requires residence in New York." }] },
+      { text: "Applications close in November [99].", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
+      { text: "Applications close in November [1, 99].", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
+      { text: "The program has a deadline and eligibility rules.", evidence: [{ marker: "1", quote: "Applications close... Eligibility requires residence in New York." }] }
+    ], limitations: [] } });
+    const result = await run();
+    expect(result.text).toBe("The application deadline is November 30, 2026. [1]");
+    expect(result.research.status).toBe("limited");
+    expect(result.research.limitations.join(" ")).toContain("withheld");
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review")).toHaveLength(1);
+  });
+
+  test("missing inline citations retain all validated sources without duplicate markers", async () => {
+    await control({ searchResults: [source, { ...source, url: "https://another.gov/program" }], review: { answer: [{
+      text: "Applications close on 30 November 2026 and applicants must reside in New York.",
+      evidence: [
+        { marker: "1", quote: "Applications close on 30 November 2026." },
+        { marker: 2, quote: "Eligibility requires residence in New York." },
+        { marker: "1", quote: "Eligibility requires residence in New York." }
+      ]
+    }], limitations: [] } });
+    const result = await run();
+    expect(result.text).toBe("Applications close on 30 November 2026 and applicants must reside in New York. [1] [2]");
+    expect(result.research.status).toBe("complete");
+  });
+
+  test("missing citations cannot make excerpts support consequential conclusions", async () => {
+    await control({ searchResults: [source, { ...source, url: "https://another.gov/program" }], extractResults: [{ url: source.url, raw_content: source.content }], review: { answer: [{
+      text: "Applications close on 30 November 2026.", evidence: [{ marker: "2", quote: "Applications close on 30 November 2026." }]
+    }], limitations: [] } });
+    expect((await run()).research.status).toBe("insufficient_evidence");
   });
 
   test("unsupported parts are withheld while the exact supported reviewed text is retained", async () => {
@@ -103,6 +152,14 @@ test.describe("research evidence contract", () => {
     const result = await run(AbortSignal.timeout(100));
     expect(result.research.status).toBe("timeout");
     expect(result.text).not.toContain("UNREVIEWED");
+  });
+
+  test("incomplete-review fallback shares the original deadline", async () => {
+    await control({ claudeReviewInvalidJson: true, reviewDelayMs: 150 });
+    const result = await run(AbortSignal.timeout(250));
+    expect(result.research.status).toBe("timeout");
+    expect(result.text).not.toContain("30 November");
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["anthropic", "groq"]);
   });
 
   test("one additional query never exceeds two searches or three extraction attempts", async () => {
@@ -211,6 +268,27 @@ test.describe("research chat experience", () => {
     await expect(page.getByLabel("Research limitations")).toContainText("not supported");
     await page.locator("summary").click();
     await expect(page.getByText("Page content", { exact: true })).toBeVisible();
+  });
+
+  test("fallback review with missing inline citations displays and persists the supported answer", async ({ page }) => {
+    await control({ claudeReviewInvalidJson: true, review: { answer: [
+      { text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
+      { text: "Everyone qualifies.", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] }
+    ], limitations: [] } });
+    await page.getByLabel("Chat message").fill("Research the agency program deadline");
+    await page.getByLabel("Chat message").press("Enter");
+    const response = page.getByRole("article", { name: "Selrano response" });
+    await expect(response).toContainText("30 November 2026", { timeout: 15000 });
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible();
+    await expect(response).not.toContainText("Everyone qualifies");
+    const saved = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
+    expect(saved?.content).toBe("Applications close on 30 November 2026. [1]");
+    expect(saved?.research.status).toBe("limited");
+    await page.reload();
+    await expect(response).toContainText("30 November 2026");
+    await response.locator("summary").click();
+    await expect(response).toContainText("Page content");
+    await expect(page.getByLabel("Research limitations")).toContainText("withheld");
   });
 
   test("a requested note is saved once from reviewed text despite provider fallback", async ({ page }) => {

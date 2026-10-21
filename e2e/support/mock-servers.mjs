@@ -267,7 +267,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], claudeRequests: [], claude: false, claudeTool: false, claudePartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "webDelayMs", "reviewDelayMs", "researchUnavailable", "claudeResearchUnavailable"]) delete groqState[key];
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "claudeResearchUnavailable", "claudeReviewInvalidJson"]) delete groqState[key];
   groqState.requests = [];
   groqState.claudeRequests = [];
   groqState.claude = false;
@@ -333,7 +333,7 @@ async function researchReply(req, res, body, claude) {
     const marker = source?.marker || "1";
     answer = groqState.review ?? { answer: [{ text: `Applications close on 30 November 2026 [${marker}].`, evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }], limitations: ["The grant amount and universal eligibility were not supported."] };
   }
-  const content = JSON.stringify(answer);
+  const content = claude && v.stage === "research_review" && groqState.claudeReviewInvalidJson ? '{"answer":[' : JSON.stringify(answer);
   res.writeHead(200, { "Content-Type": "text/event-stream" });
   if (claude) {
     for (const event of [{ type: "message_start", message: { model: "claude-haiku-5-5" } }, { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }, { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: content } }, { type: "message_stop" }]) res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -365,7 +365,7 @@ async function handleGroq(req, res) {
     if (groqState.webDelayMs) await sleep(groqState.webDelayMs);
     if (groqState.webFailure) return sendJson(res, 503, {});
     if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }] });
-    return sendJson(res, 200, { results: groqState.extractFailure ? [] : body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
+    return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
   if (url.pathname === "/__claude_requests") return sendJson(res, 200, groqState.claudeRequests);
