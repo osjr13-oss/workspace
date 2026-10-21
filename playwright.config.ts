@@ -39,10 +39,9 @@ export default defineConfig({
             TAVILY_API_KEY: "test-tavily-key",
             TAVILY_BASE_URL: "http://localhost:54322/tavily",
             GROQ_API_KEY: "test-groq-key",
-            // Never let offline tests send customer context to a real Claude endpoint.
-            ANTHROPIC_API_KEY: "test-claude-key",
-            ANTHROPIC_BASE_URL: "http://localhost:54322/anthropic",
-            ANTHROPIC_WORKSPACE_ID: "wrkspc_test",
+            // Never let offline tests send customer context to a real OpenAI endpoint.
+            OPENAI_API_KEY: "test-openai-key",
+            OPENAI_BASE_URL: "http://localhost:54322/gpt/v1",
             ALLOWED_EMAILS: "student@example.test",
             GROQ_BASE_URL: "http://localhost:54322/openai/v1"
           }

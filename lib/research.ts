@@ -7,7 +7,7 @@ import type { ResearchMetadata, WebCitation } from "@/lib/types";
 
 type Assessment = { decision: "search" | "ordinary" | "clarify"; query: string; clarification: string; consequential: boolean };
 type Review = { answer: string; limitations: string[]; claims: Array<{ text: string; evidence: Array<{ marker: string; quote: string }> }> };
-type ModelInfo = { provider: "anthropic" | "groq"; model: string; fallbackReason?: string };
+type ModelInfo = { provider: "openai" | "groq"; model: string; fallbackReason?: string };
 const object = (v: unknown): v is Record<string, unknown> => Boolean(v && typeof v === "object" && !Array.isArray(v));
 const bounded = (v: unknown, n: number): v is string => typeof v === "string" && v.length <= n;
 const recentText = (content: string | null, limit: number) => {

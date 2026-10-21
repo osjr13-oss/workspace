@@ -43,7 +43,7 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 - `app/api/ai/chat/route.ts`: authentication, quota reservation, research routing, tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `lib/coach-prompt.ts`: the coach's standing instructions.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx`: the coach chat page, composer, shared conversation list, and the sidebar.
-- `lib/ai.ts`: provider selection and fallback for streaming and structured output. `lib/groq.ts`: Groq Chat Completions: SSE parsing, tool-call transport, malformed tool-call recovery, the model list with a guard for shut-down models, and rate-limit handling.
+- `lib/ai.ts`: provider selection and fallback for streaming and structured output. `lib/openai.ts`: OpenAI Responses API streaming (`store: false`). `lib/groq.ts`: Groq Chat Completions: SSE parsing, tool-call transport, malformed tool-call recovery, the model list with a guard for shut-down models, and rate-limit handling.
 - `lib/research.ts`: bounded web research; `isOrdinaryHealthTurn` skips it for logging and coaching turns.
 - `lib/stream-markdown.ts`: tidies half-streamed Markdown so replies never flash raw symbols.
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx`: error reporting to logs (`[server-error]`, `[client-error]`).

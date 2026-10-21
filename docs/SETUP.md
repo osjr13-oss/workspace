@@ -44,29 +44,28 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
 | `GROQ_API_KEY` | console.groq.com (secret; fallback and non-chat work) |
-| `ANTHROPIC_API_KEY` | https://platform.claude.com/settings/keys (server-only Secret; primary chat) |
+| `OPENAI_API_KEY` | https://platform.openai.com/api-keys (server-only Secret; primary chat, meal estimates and food photos) |
 | `ALLOWED_EMAILS` | Comma-separated emails that may sign in. Empty lets nobody in (Selrano is private) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)
 
-Claude Haiku is primary for chat when `ANTHROPIC_API_KEY` is set; Groq takes over if Claude is unavailable before output. Without that key, chat continues on Groq. All other AI work remains on Groq. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
+OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if OpenAI is unavailable before output. Without that key, chat continues on Groq. Background work (memory extraction) remains on Groq. Requests use `store: false`, so OpenAI does not keep conversation state. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
 
 | Name | Default | Used for |
 |------|---------|----------|
-| `ANTHROPIC_MODEL` | `claude-haiku-5-5` | Primary chat model |
-| `ANTHROPIC_WORKSPACE_ID` | none | Required for a key not scoped to one workspace; find the ID in Anthropic Settings > Workspaces |
-| `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
+| `OPENAI_MODEL` | `gpt-6.1-sol` | Primary chat model. `gpt-6-luna` is far cheaper; `gpt-6-astra` is the flagship |
+| `OPENAI_REASONING_EFFORT` | model default | Optional reasoning effort, for example `low` for faster first words |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Fallback chat answers |
 | `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
 | `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
 | `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
 | `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
 | `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
-| `EMBEDDING_API_KEY` | none | Smarter file search in project chat |
 
 `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-`ANTHROPIC_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+`OPENAI_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
 
 ---
 

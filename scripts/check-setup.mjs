@@ -38,13 +38,13 @@ const required = [
   "ALLOWED_EMAILS"
 ];
 
-console.log(`Primary chat: ${status("ANTHROPIC_API_KEY") === "ok" ? "Claude Haiku" : "Groq (ANTHROPIC_API_KEY missing)"}`);
+console.log(`Primary chat: ${status("OPENAI_API_KEY") === "ok" ? "OpenAI GPT" : "Groq (OPENAI_API_KEY missing)"}`);
 
 const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM"];
 
-const optionalRag = ["EMBEDDING_API_KEY", "TAVILY_API_KEY"];
+const optionalRag = ["TAVILY_API_KEY"];
 
 function status(key) {
   const v = env[key];

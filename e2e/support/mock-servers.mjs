@@ -264,15 +264,15 @@ async function handleSupabase(req, res) {
 
 // -------------------------------------------------------------------- Groq --
 
-const groqState = { requests: [], claudeRequests: [], claude: false, claudeTool: false, claudePartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
+const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "claudeResearchUnavailable", "claudeReviewInvalidJson"]) delete groqState[key];
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "gptReviewInvalidJson"]) delete groqState[key];
   groqState.requests = [];
-  groqState.claudeRequests = [];
-  groqState.claude = false;
-  groqState.claudeTool = false;
-  groqState.claudePartial = false;
+  groqState.gptRequests = [];
+  groqState.gpt = false;
+  groqState.gptTool = false;
+  groqState.gptPartial = false;
   groqState.failNext = [];
   groqState.toolNext = false;
   groqState.firstTokenDelayMs = 0;
@@ -318,15 +318,15 @@ const SOURCE_PASSAGE = "Applications close on 30 November 2026. Eligibility requ
 let researchRequests = [];
 let webRequests = [];
 function researchInput(body) {
-  const user = [...(body.messages || [])].reverse().find((m) => m.role === "user");
+  const user = [...(body.messages || body.input || [])].reverse().find((m) => m.role === "user");
   const content = typeof user?.content === "string" ? user.content : user?.content?.find((b) => b.type === "text")?.text;
   try { const v = JSON.parse(content); return v.stage?.startsWith("research_") ? v : null; } catch { return null; }
 }
-async function researchReply(req, res, body, claude) {
+async function researchReply(req, res, body, gpt) {
   const v = researchInput(body);
   if (!v) return false;
-  researchRequests.push({ ...v, provider: claude ? "anthropic" : "groq" });
-  if (groqState.researchUnavailable || (claude && groqState.claudeResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
+  researchRequests.push({ ...v, provider: gpt ? "openai" : "groq" });
+  if (groqState.researchUnavailable || (gpt && groqState.gptResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
   if (v.stage === "research_review" && groqState.reviewDelayMs) await sleep(groqState.reviewDelayMs);
   let answer;
   const text = JSON.stringify(v.input);
@@ -344,10 +344,10 @@ async function researchReply(req, res, body, claude) {
     const marker = source?.marker || "1";
     answer = groqState.review ?? { answer: [{ text: `Applications close on 30 November 2026 [${marker}].`, evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }], limitations: ["The grant amount and universal eligibility were not supported."] };
   }
-  const content = claude && v.stage === "research_review" && groqState.claudeReviewInvalidJson ? '{"answer":[' : JSON.stringify(answer);
+  const content = gpt && v.stage === "research_review" && groqState.gptReviewInvalidJson ? '{"answer":[' : JSON.stringify(answer);
   res.writeHead(200, { "Content-Type": "text/event-stream" });
-  if (claude) {
-    for (const event of [{ type: "message_start", message: { model: "claude-haiku-5-5" } }, { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }, { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: content } }, { type: "message_stop" }]) res.write(`data: ${JSON.stringify(event)}\n\n`);
+  if (gpt) {
+    for (const event of [{ type: "response.created", response: { model: "gpt-6.1-sol" } }, { type: "response.output_item.added", output_index: 0, item: { type: "message", role: "assistant", content: [] } }, { type: "response.output_text.delta", output_index: 0, delta: content }, { type: "response.completed", response: { model: "gpt-6.1-sol" } }]) res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
   } else {
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`);
   }
@@ -379,47 +379,46 @@ async function handleGroq(req, res) {
     return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
-  if (url.pathname === "/__claude_requests") return sendJson(res, 200, groqState.claudeRequests);
+  if (url.pathname === "/__gpt_requests") return sendJson(res, 200, groqState.gptRequests);
   if (url.pathname === "/__control") {
     const body = JSON.parse((await readBody(req)) || "{}");
     Object.assign(groqState, body);
     return sendJson(res, 200, { ok: true });
   }
 
-  if (url.pathname === "/anthropic/v1/messages") {
+  if (url.pathname === "/gpt/v1/responses") {
     const body = JSON.parse(await readBody(req));
     if (await researchReply(req, res, body, true)) return;
-    groqState.claudeRequests.push({ ...body, workspaceId: req.headers["anthropic-workspace-id"] });
-    if (!groqState.claude) return sendJson(res, 503, { error: { type: "overloaded_error" } });
+    groqState.gptRequests.push({ ...body, authorization: req.headers.authorization });
+    if (!groqState.gpt) return sendJson(res, 503, { error: { type: "server_error", message: "Overloaded" } });
     res.writeHead(200, { "Content-Type": "text/event-stream" });
-    // Split data frames across writes to exercise the incremental SSE parser.
+    // Split frames across writes to exercise the incremental SSE parser.
     const send = (event) => {
       const frame = `event: ${event.type}\r\ndata: ${JSON.stringify(event)}\r\n\r\n`;
-      res.write(frame.slice(0, 19));
-      res.write(frame.slice(19));
+      res.write(frame.slice(0, 23));
+      res.write(frame.slice(23));
     };
-    send({ type: "message_start", message: { usage: { input_tokens: 30 } } });
-    send({ type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } });
-    send({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "PRIVATE_REASONING" } });
-    send({ type: "content_block_delta", index: 0, delta: { type: "signature_delta", signature: "test-signature" } });
-    send({ type: "content_block_stop", index: 0 });
-    if (groqState.claudeTool && body.tools?.length && body.tool_choice?.type !== "none") {
-      const call = mockToolCall(groqState.claudeTool, body.tools);
-      groqState.claudeTool = false;
-      send({ type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "toolu_1", name: call.name, input: {} } });
-      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: call.arguments.slice(0, 8) } });
-      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: call.arguments.slice(8) } });
-      send({ type: "content_block_stop", index: 1 });
+    const reasoning = { type: "reasoning", id: "rs_1", summary: [], encrypted_content: "PRIVATE_REASONING" };
+    send({ type: "response.created", response: { model: "gpt-6.1-sol" } });
+    send({ type: "response.output_item.added", output_index: 0, item: { type: "reasoning", id: "rs_1", summary: [] } });
+    send({ type: "response.output_item.done", output_index: 0, item: reasoning });
+    if (groqState.gptTool && body.tools?.length && body.tool_choice !== "none") {
+      const call = mockToolCall(groqState.gptTool, body.tools);
+      groqState.gptTool = false;
+      send({ type: "response.output_item.added", output_index: 1, item: { type: "function_call", id: "fc_1", call_id: "call_1", name: call.name, arguments: "" } });
+      send({ type: "response.function_call_arguments.delta", output_index: 1, item_id: "fc_1", delta: call.arguments.slice(0, 8) });
+      send({ type: "response.function_call_arguments.delta", output_index: 1, item_id: "fc_1", delta: call.arguments.slice(8) });
+      send({ type: "response.output_item.done", output_index: 1, item: { type: "function_call", id: "fc_1", call_id: "call_1", name: call.name, arguments: call.arguments } });
     } else {
-      send({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+      send({ type: "response.output_item.added", output_index: 1, item: { type: "message", id: "msg_1", role: "assistant", content: [] } });
       for (const token of ["Let's work through it", "\u2014together."]) {
-        send({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text: token } });
+        send({ type: "response.output_text.delta", output_index: 1, item_id: "msg_1", delta: token });
         await sleep(200);
       }
-      if (groqState.claudePartial) { res.end(); return; }
-      send({ type: "content_block_stop", index: 1 });
+      if (groqState.gptPartial) { res.end(); return; }
+      send({ type: "response.output_item.done", output_index: 1, item: { type: "message", id: "msg_1", role: "assistant", content: [{ type: "output_text", text: "Let's work through it\u2014together." }] } });
     }
-    send({ type: "message_stop" });
+    send({ type: "response.completed", response: { model: "gpt-6.1-sol", usage: { input_tokens: 30, output_tokens: 10 } } });
     res.end();
     return;
   }

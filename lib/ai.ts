@@ -9,14 +9,14 @@ import {
   type GroqChatMessage
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
-import { anthropicModel, anthropicReady, ClaudeRequestError, streamAnthropic, type ClaudeBlock } from "@/lib/anthropic";
+import { openaiModel, openaiReady, OpenAIRequestError, streamOpenAI, type OpenAIItem } from "@/lib/openai";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
-type AiProvider = "groq" | "anthropic";
+export type AiProvider = "groq" | "openai";
 
 /** Tokens billed for one model call. Zero means the provider did not return usage. */
 export type TokenUsage = {
@@ -55,7 +55,7 @@ function groqReady() {
 }
 
 export function configuredAiModel(chat = false) {
-  return chat && anthropicReady() ? anthropicModel() : groqModel();
+  return chat && openaiReady() ? openaiModel() : groqModel();
 }
 
 type StreamOptions = {
@@ -65,31 +65,31 @@ type StreamOptions = {
   onToken: (token: string) => void;
   onToolCallStart?: () => void;
   provider?: AiProvider;
-  assistantContent?: ClaudeBlock[];
-  tools?: Parameters<typeof streamAnthropic>[1];
+  assistantContent?: OpenAIItem[];
+  tools?: Parameters<typeof streamOpenAI>[1];
   allowTools?: boolean;
 };
 
 /** Fall back only before text starts, so two providers never splice answers together. */
 export async function streamChatWithTools(
   messages: GroqChatMessage[],
-  tools: Parameters<typeof streamAnthropic>[1],
+  tools: Parameters<typeof streamOpenAI>[1],
   options: StreamOptions
 ) {
   let fallbackReason: string | undefined;
-  if (anthropicReady() && options.provider !== "groq") {
+  if (openaiReady() && options.provider !== "groq") {
     let started = false;
     try {
-      const result = await streamAnthropic(messages, tools, {
+      const result = await streamOpenAI(messages, tools, {
         ...options,
         onToken: (token) => { if (token) started = true; options.onToken(token); }
       });
-      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "anthropic" as const, fallbackReason: undefined };
+      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "openai" as const, fallbackReason: undefined };
       fallbackReason = "empty";
     } catch (error) {
       if (started || options.signal?.aborted) throw error;
-      fallbackReason = error instanceof ClaudeRequestError ? `${error.status}:${error.reason}` : "stream_or_network";
-      console.warn("[ai] Claude unavailable before output; trying Groq", { reason: fallbackReason });
+      fallbackReason = error instanceof OpenAIRequestError ? `${error.status}:${error.reason}` : "stream_or_network";
+      console.warn("[ai] OpenAI unavailable before output; trying Groq", { reason: fallbackReason });
     }
   }
   options.signal?.throwIfAborted();

@@ -14,8 +14,8 @@ test.describe("research evidence contract", () => {
   test.skip(Boolean(process.env.E2E_BASE_URL), "Requires offline fixtures");
   test.beforeEach(async () => {
     await resetMocks();
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    process.env.ANTHROPIC_BASE_URL = `${endpoint}/anthropic`;
+    process.env.OPENAI_API_KEY = "test-key";
+    process.env.OPENAI_BASE_URL = `${endpoint}/gpt/v1`;
     process.env.GROQ_API_KEY = "test-key";
     process.env.GROQ_BASE_URL = `${endpoint}/openai/v1`;
     process.env.TAVILY_API_KEY = "test-key";
@@ -47,8 +47,8 @@ test.describe("research evidence contract", () => {
     expect((await requests("research")).filter((r: any) => r.stage === "research_review")).toHaveLength(1);
   });
 
-  test("Claude research failure uses Groq within the same search budget without actions", async () => {
-    await control({ claudeResearchUnavailable: true });
+  test("OpenAI research failure uses Groq within the same search budget without actions", async () => {
+    await control({ gptResearchUnavailable: true });
     const result = await run();
     expect(result.model?.provider).toBe("groq");
     expect(result.research.searches).toBe(1);
@@ -57,12 +57,12 @@ test.describe("research evidence contract", () => {
   });
 
   for (const supported of [true, false]) test(`incomplete review falls back once and ${supported ? "retains supported points" : "rejects unsupported points"}`, async () => {
-    await control({ claudeReviewInvalidJson: true, review: { answer: [{ text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: supported ? "Applications close on 30 November 2026." : "Applications close on 99 November 2026." }] }], limitations: [] } });
+    await control({ gptReviewInvalidJson: true, review: { answer: [{ text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: supported ? "Applications close on 30 November 2026." : "Applications close on 99 November 2026." }] }], limitations: [] } });
     const result = await run();
     expect(result.research.status).toBe(supported ? "complete" : "insufficient_evidence");
     if (supported) expect(result.text).toBe("Applications close on 30 November 2026. [1]");
     else expect(result.text).not.toContain("30 November");
-    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["anthropic", "groq"]);
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["openai", "groq"]);
     expect((await requests()).map((r: any) => r.path)).toEqual(["/tavily/search", "/tavily/extract"]);
     expect(await tableRows("notes")).toHaveLength(0);
   });
@@ -147,11 +147,11 @@ test.describe("research evidence contract", () => {
   });
 
   test("incomplete-review fallback shares the original deadline", async () => {
-    await control({ claudeReviewInvalidJson: true, reviewDelayMs: 150 });
+    await control({ gptReviewInvalidJson: true, reviewDelayMs: 150 });
     const result = await run(AbortSignal.timeout(250));
     expect(result.research.status).toBe("timeout");
     expect(result.text).not.toContain("30 November");
-    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["anthropic", "groq"]);
+    expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["openai", "groq"]);
   });
 
   test("one additional query never exceeds two searches or three extraction attempts", async () => {
@@ -261,7 +261,7 @@ test.describe("research chat experience", () => {
   });
 
   test("fallback review with missing inline citations displays and persists the supported answer", async ({ page }) => {
-    await control({ claudeReviewInvalidJson: true, review: { answer: [
+    await control({ gptReviewInvalidJson: true, review: { answer: [
       { text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] },
       { text: "Everyone qualifies.", evidence: [{ marker: "1", quote: "Everyone qualifies for this program." }] }
     ], limitations: [] } });

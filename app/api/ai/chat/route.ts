@@ -283,7 +283,7 @@ export async function POST(request: Request) {
         }
       };
       let first: Awaited<ReturnType<typeof streamChatWithTools>> | null = null;
-      let answerProvider: "anthropic" | "groq" | undefined;
+      let answerProvider: "openai" | "groq" | undefined;
       let answerModel: string | undefined;
       let fallbackReason: string | undefined;
       const streamPlain = async (msgs: GroqChatMessage[]) => {

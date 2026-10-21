@@ -66,7 +66,7 @@ export default function PrivacyPage() {
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
           <li>Previously generated Google Search-grounded replies retain Google attribution and expire within two years. Google is no longer used for new AI requests.</li>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), Anthropic and Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), OpenAI and Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
