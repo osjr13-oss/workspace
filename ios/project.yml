@@ -1,0 +1,73 @@
+name: SelranoHealth
+options:
+  bundleIdPrefix: com.selrano
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Signing.xcconfig
+  Release: Config/Signing.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # The Selrano site the app pairs with and syncs to. Signing.local.xcconfig can
+    # point a Debug build at a local server (see README).
+    SELRANO_BASE_URL: https://www.selrano.com
+targets:
+  SelranoHealth:
+    type: application
+    platform: iOS
+    sources:
+      - path: SelranoHealth
+    entitlements:
+      path: SelranoHealth/SelranoHealth.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+        com.apple.developer.healthkit.background-delivery: true
+    info:
+      path: SelranoHealth/Info.plist
+      properties:
+        CFBundleDisplayName: Selrano Health
+        SelranoBaseURL: $(SELRANO_BASE_URL)
+        NSHealthShareUsageDescription: Selrano reads your steps, active energy, exercise minutes, workouts, sleep, and resting heart rate so your coach can see how active and rested you are.
+        NSHealthUpdateUsageDescription: Debug builds can add sample health data to the simulator for testing. Release builds never write to Health.
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.selrano.health.refresh
+        UIBackgroundModes:
+          - fetch
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selrano.health
+        TARGETED_DEVICE_FAMILY: "1"
+        ENABLE_PREVIEWS: true
+        GENERATE_INFOPLIST_FILE: false
+  SelranoHealthTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SelranoHealthTests
+    dependencies:
+      - target: SelranoHealth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selrano.health.tests
+        GENERATE_INFOPLIST_FILE: true
+schemes:
+  SelranoHealth:
+    build:
+      targets:
+        SelranoHealth: all
+        SelranoHealthTests: [test]
+    test:
+      targets:
+        - SelranoHealthTests
