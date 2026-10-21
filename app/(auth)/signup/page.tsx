@@ -17,7 +17,7 @@ export default function SignUpPage() {
 }
 
 function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/chats";
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/today";
 }
 
 function SignUpForm() {
@@ -101,7 +101,7 @@ function SignUpForm() {
     }
   }
 
-  const signInHref = nextPath !== "/chats" ? `/signin?next=${encodeURIComponent(nextPath)}` : "/signin";
+  const signInHref = nextPath !== "/today" ? `/signin?next=${encodeURIComponent(nextPath)}` : "/signin";
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">

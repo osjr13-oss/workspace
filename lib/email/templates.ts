@@ -15,7 +15,7 @@ export function welcomeEmail(params: { name: string }) {
     `
       <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${greeting}</p>
       <p style="margin:0 0 16px;">Welcome to ${brand.name}. Set your goal, log a meal or two, and your coach will take it from there.</p>
-      <p style="margin:0 0 24px;">${cta("/chats", "Get started")}</p>
+      <p style="margin:0 0 24px;">${cta("/today", "Get started")}</p>
     `,
     `Welcome to ${brand.name}`
   );

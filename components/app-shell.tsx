@@ -5,7 +5,10 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
+  CalendarCheck,
+  LineChart,
   LogOut,
+  MessageCircle,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -19,7 +22,11 @@ import { ChatThreadsProvider, groupThreads, useChatThreads } from "@/components/
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 
-const nav: Array<{ href: string; label: string; icon: typeof Settings }> = [];
+const nav: Array<{ href: string; label: string; icon: typeof Settings }> = [
+  { href: "/today", label: "Today", icon: CalendarCheck },
+  { href: "/progress", label: "Progress", icon: LineChart },
+  { href: "/chats", label: "Coach", icon: MessageCircle }
+];
 
 const COLLAPSED_KEY = "selrano.sidebar.collapsed";
 
@@ -105,7 +112,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" className="icon-button" aria-label="Open menu" onClick={() => setDrawerOpen(true)}>
             <Menu size={20} />
           </button>
-          <Link href="/chats" className="text-[17px] font-extrabold tracking-[-0.02em]">
+          <Link href="/today" className="text-[17px] font-extrabold tracking-[-0.02em]">
             Selrano
           </Link>
           <Link href="/chats" className="icon-button" aria-label="New chat" title="New chat">
@@ -113,8 +120,28 @@ function Shell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
         <main className="min-w-0 flex-1">{children}</main>
+        {pathname.startsWith("/chats") ? null : <MobileTabBar pathname={pathname} />}
       </div>
     </div>
+  );
+}
+
+/** Phone navigation: the main sections one tap away. Hidden in chat, where the composer sits at the bottom. */
+function MobileTabBar({ pathname }: { pathname: string }) {
+  const items = [...nav, { href: "/settings", label: "Settings", icon: Settings }];
+  return (
+    <nav className="tab-bar lg:hidden" aria-label="Main">
+      {items.map((item) => {
+        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const Icon = item.icon;
+        return (
+          <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`tab-bar-item ${active ? "tab-bar-item-active" : ""}`}>
+            <Icon size={20} />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -153,7 +180,7 @@ function SidebarContent({
     <div className="flex min-h-0 w-full flex-col">
       <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} gap-2 px-3 pt-4`}>
         {collapsed ? null : (
-          <Link href="/chats" className="flex items-center gap-2.5 px-2">
+          <Link href="/today" className="flex items-center gap-2.5 px-2">
             <Image src="/logo.svg" alt="" width={28} height={28} priority />
             <span className="text-lg font-extrabold tracking-[-0.03em]">Selrano</span>
           </Link>

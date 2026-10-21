@@ -62,10 +62,11 @@ OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if 
 | `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
 | `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
 | `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
+| `USDA_FDC_API_KEY` | `DEMO_KEY` | Food search. Get a free key at https://api.data.gov/signup; the shared demo key allows only a few searches an hour |
 
 `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-`OPENAI_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+`OPENAI_BASE_URL`, `USDA_BASE_URL` and `OFF_BASE_URL` are only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
 
 ---
 

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAllowedEmail, isOpenPath } from "@/lib/access";
 
-const protectedPrefixes = ["/chats", "/settings"];
+const protectedPrefixes = ["/today", "/progress", "/chats", "/settings", "/onboarding"];
 
 const authOnlyPaths = ["/signin", "/signup"];
 
@@ -79,12 +79,12 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    return redirectTo("/chats");
+    return redirectTo("/today");
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icon(?:-maskable)?|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|fake-supabase|manifest.webmanifest|icon(?:-maskable)?|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
 };

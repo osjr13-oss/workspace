@@ -27,7 +27,7 @@ export function lifecycleEmail(
         <p style="margin:0 0 16px;color:${brand.colors.text};font-size:16px;font-weight:700;">${g}</p>
         <p style="margin:0 0 16px;">It has been a little while since you checked in with ${brand.name}. Progress comes from small, repeatable steps, not perfect weeks.</p>
         <p style="margin:0 0 16px;">Log one meal or ask your coach one question today.</p>
-        <p style="margin:0 0 24px;">${cta("/chats", "Open Selrano")}</p>
+        <p style="margin:0 0 24px;">${cta("/today", "Open Selrano")}</p>
         <p style="margin:0;font-size:13px;">Turn off these emails anytime in <a href="${absoluteUrl("/settings")}" style="color:${brand.colors.text};">Settings</a>.</p>
       `
     },

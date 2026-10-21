@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
+import { HealthSettings } from "@/components/health-settings";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
@@ -96,8 +97,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
+    <div className="mx-auto max-w-4xl space-y-7 px-4 pb-24 pt-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Settings" eyebrow="Account" />
+      <HealthSettings />
       <form onSubmit={save} className="panel space-y-4 p-6">
         <div>
           <label className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Full name</label>
@@ -117,7 +119,7 @@ export default function SettingsPage() {
       <section className="panel p-6">
         <h2 className="text-base font-extrabold tracking-[-0.01em]">Email preferences</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          A useful weekly workspace check-in plus occasional feature tips. The welcome email is always sent.
+          A weekly check-in email and an occasional nudge if you have been away. The welcome email is always sent.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
@@ -127,7 +129,7 @@ export default function SettingsPage() {
             disabled={savingEmailPrefs}
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
-          <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
+          <span className="text-sm font-semibold">Send weekly check-ins</span>
         </label>
       </section>
 
