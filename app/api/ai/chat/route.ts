@@ -1,5 +1,6 @@
 import { assessResearch, isOrdinaryHealthTurn, runResearch, researchFailure } from "@/lib/research";
 import { coachSystemPrompt } from "@/lib/coach-prompt";
+import { buildHealthContext } from "@/lib/health-context";
 import { EVERYDAY_ANSWER_GUIDE } from "@/lib/chat-guidance";
 import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
@@ -147,7 +148,7 @@ export async function POST(request: Request) {
     // Everything the prompt needs is loaded at the same time, including saving
     // the new message. History may or may not already contain that message
     // depending on which finishes first, so it is normalised below.
-    const [historyResult, styleProfile, memories] = await Promise.all([
+    const [historyResult, styleProfile, memories, health] = await Promise.all([
       supabase
         .from("chat_messages")
         .select("role, content, research")
@@ -156,6 +157,11 @@ export async function POST(request: Request) {
         .limit(HISTORY_ROWS),
       ingestUserStyle(supabase, user.id, userContent),
       retrieveMemories(supabase, user.id, userContent),
+      buildHealthContext(supabase, user.id).catch((error) => {
+        // The coach still answers without the user's data rather than not at all.
+        console.error("[chat] health context failed", serializeError(error));
+        return null;
+      }),
       isNewMessage
         ? supabase
             .from("chat_messages")
@@ -168,14 +174,15 @@ export async function POST(request: Request) {
               replyBoundaryAt = data.created_at;
             })
         : Promise.resolve()
-    ]).then(([history, style, mem]) => [history, style, mem] as const);
+    ]).then(([history, style, mem, healthContext]) => [history, style, mem, healthContext] as const);
 
     const messages = [
       {
         role: "system" as const,
-        content: coachSystemPrompt(new Date().toISOString().slice(0, 10))
+        content: coachSystemPrompt(health?.today || new Date().toISOString().slice(0, 10))
       },
       { role: "system" as const, content: EVERYDAY_ANSWER_GUIDE },
+      ...(health ? [{ role: "system" as const, content: health.text }] : []),
       ...(styleProfile?.styleDirective
         ? [
             {
