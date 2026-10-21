@@ -2,6 +2,12 @@
 
 Last updated: **October 15, 2026**
 
+## Everyday answer guidance
+
+The owner wants everyday explanations, research and decision support without assumed technical or academic knowledge. `lib/chat-guidance.ts` now supplies shared plain-language and decision guidance to ordinary replies and research drafting/review. Recommendations should state their reasons and conditions, without presenting judgment as a proven fact. Research failure messages explain what could not be checked and give a practical next step. Evidence validation and search budgets are unchanged. See `docs/CHAT_QUALITY.md` for real-provider acceptance questions and the limits of offline validation; real-provider evaluation of this guidance remains pending.
+
+Local validation: typecheck, lint, production build, production dependency audit at high, punctuation scan and diff checks passed. The offline suite passed 56 tests with three credential-dependent skips, including failed-search recovery and the existing evidence-rejection checks. No live provider credentials were available; these results do not validate real answer quality or deployment completion.
+
 ## Everyday web research (October 15)
 
 The owner approved automatic, bounded web research inside ordinary chat, with the existing providers and no separate mode. This supersedes the earlier snippet-only `web_search` tool behavior.

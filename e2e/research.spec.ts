@@ -165,6 +165,31 @@ test.describe("research chat experience", () => {
   test.skip(Boolean(process.env.E2E_BASE_URL), "Requires offline fixtures");
   test.beforeEach(async ({ context, page }) => { await resetMocks(); await signIn(context); await page.goto("/chats"); });
 
+  test("a failed search explains the next step and a later retry can recover", async ({ page }) => {
+    await control({ webFailure: true });
+    const input = page.getByLabel("Chat message");
+    const responses = page.locator('article[aria-label="Selrano response"]');
+    await input.fill("Research the New York agency program deadline");
+    await input.press("Enter");
+    await expect(responses.first()).toContainText("I haven't checked the facts", { timeout: 15000 });
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible();
+    await expect(responses.first()).toContainText("paste the relevant source text");
+    await expect(responses.first()).not.toContainText("30 November");
+    const failed = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
+    expect(failed?.research.status).toBe("unavailable");
+    expect(failed?.research.sources).toEqual([]);
+    await page.reload();
+    await expect(responses.first()).toContainText("I haven't checked the facts");
+
+    await control({ webFailure: false });
+    await input.fill("Please research the agency deadline again");
+    await input.press("Enter");
+    await expect(responses).toHaveCount(2);
+    await expect(responses.last()).toContainText("30 November 2026", { timeout: 15000 });
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible();
+    expect((await tableRows("chat_messages")).filter((m) => m.role === "assistant").map((m) => m.research.status)).toEqual(["unavailable", "limited"]);
+  });
+
   test("progress precedes reviewed text, sources and limitations survive reload", async ({ page }) => {
     await control({ reviewDelayMs: 1200 });
     await page.locator('[aria-label="Chat message"]').fill("Research the New York agency program deadline");
