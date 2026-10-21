@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { resetMocks, setUserEmail, signIn } from "./support/session";
 
-// Selrano is open to the public: marketing pages, sign-up and legal pages need no account.
+// Selrano's pages are public, but sign-ups are closed (owner decision, 2026-10-21).
 
 test("the landing page is public", async ({ page }) => {
   const response = await page.goto("/");
@@ -40,11 +40,14 @@ test("protected routes redirect signed-out visitors to sign in", async ({ page }
   await expect(page).toHaveURL(/signin\?next=%2Fchats/);
 });
 
-test("sign-in offers a way to create an account", async ({ page }) => {
+test("sign-ups are closed: sign-in has no create-account link and sign-up says so", async ({ page }) => {
   await page.goto("/signin");
   await expect(page.getByLabel(/email/i)).toBeVisible();
   await expect(page.getByLabel(/password/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: /create account/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /create account/i })).toHaveCount(0);
+  await page.goto("/signup");
+  await expect(page.getByRole("heading", { name: "Sign-ups are closed" })).toBeVisible();
+  await expect(page.getByLabel(/password/i)).toHaveCount(0);
 });
 
 test.describe("accounts", () => {

@@ -43,8 +43,6 @@ function SignInForm() {
     }
   }
 
-  const signUpHref = nextPath !== "/chats" ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup";
-
   return (
     <AuthFrame title="Welcome back" copy="Sign in to continue organizing your work.">
       <form onSubmit={submit} className="space-y-4">
@@ -55,8 +53,7 @@ function SignInForm() {
         </button>
         {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
       </form>
-      <div className="mt-6 flex items-center justify-between text-sm text-[var(--muted)]">
-        <Link href={signUpHref} className="font-bold text-[var(--text)]">Create account</Link>
+      <div className="mt-6 flex items-center justify-end text-sm text-[var(--muted)]">
         <Link href="/reset-password">Reset password</Link>
       </div>
     </AuthFrame>
