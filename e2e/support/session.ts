@@ -42,7 +42,7 @@ export async function control(settings: Record<string, unknown>) {
   await fetch(`${GROQ}/__control`, { method: "POST", body: JSON.stringify(settings) });
 }
 
-export async function groqRequests(): Promise<Array<Record<string, any>>> {
+export async function aiRequests(): Promise<Array<Record<string, any>>> {
   return (await fetch(`${GROQ}/__requests`)).json();
 }
 

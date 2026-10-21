@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { control, groqRequests, installRecorder, readSamples, resetMocks, seed, seedConversation, signIn, tableRows } from "./support/session";
+import { control, aiRequests, installRecorder, readSamples, resetMocks, seed, seedConversation, signIn, tableRows } from "./support/session";
 
 const composer = '[aria-label="Chat message"]';
 const bubbles = 'article[aria-label="Selrano response"]';
@@ -91,14 +91,14 @@ test.describe("chat experience", () => {
     expect(growth.length, "the reply should grow over many frames").toBeGreaterThan(40);
   });
 
-  test("answers think harder than background work", async ({ page }) => {
+  test("Gemini keeps thinking bounded in chat and background work", async ({ page }) => {
     await seedConversation(6);
     await page.goto("/chats?thread=11111111-1111-4111-8111-111111111111");
     await expect(page.locator(bubbles)).toHaveCount(6);
     await sendAndSettle(page, "Help me plan a hard week");
-    await expect.poll(async () => (await groqRequests()).filter((request) => !request.stream).length, { timeout: 15_000 }).toBeGreaterThan(0);
-    const requests = await groqRequests();
-    expect(requests.filter((request) => request.stream).map((request) => request.reasoning_effort)).toEqual(["medium"]);
+    await expect.poll(async () => (await aiRequests()).filter((request) => !request.stream).length, { timeout: 15_000 }).toBeGreaterThan(0);
+    const requests = await aiRequests();
+    expect(requests.filter((request) => request.stream).map((request) => request.reasoning_effort)).toEqual(["low"]);
     expect(new Set(requests.filter((request) => !request.stream).map((request) => request.reasoning_effort))).toEqual(new Set(["low"]));
   });
 
@@ -169,7 +169,7 @@ test.describe("chat experience", () => {
     const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line));
     const threadId = events.find((event) => event.type === "start").threadId;
 
-    const answer = (await groqRequests()).find((request) => request.stream);
+    const answer = (await aiRequests()).find((request) => request.stream);
     expect(answer?.systemText).toContain("catalase breaks down hydrogen peroxide");
     const userRow = (await tableRows("chat_messages")).find((row) => row.role === "user");
     expect(userRow?.citations).toEqual([expect.objectContaining({ fileId, fileName: "lab-notes.txt" })]);

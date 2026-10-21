@@ -6,7 +6,7 @@ import { refundAiRequest, reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
 import { configuredAiModel, streamAi, streamChatWithTools } from "@/lib/ai";
 import { extractMemories, maybeBootstrapMemories, retrieveMemories } from "@/lib/content-memory";
-import { GroqHttpError, type GroqChatMessage } from "@/lib/groq";
+import { GeminiHttpError, type ChatModelMessage } from "@/lib/gemini";
 import { searchChunksFullText, searchProjectChunks, type RetrievedChunk } from "@/lib/retrieve-context";
 import { serializeError } from "@/lib/serialize-error";
 import { ingestUserStyle } from "@/lib/style-profile";
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const [historyResult, context, styleProfile, memories] = await Promise.all([
       supabase
         .from("chat_messages")
-        .select("role, content")
+        .select("role, content, research")
         .eq("thread_id", finalThreadId)
         .order("created_at", { ascending: false })
         .limit(HISTORY_ROWS),
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
             }
           ]
         : []),
-      ...buildHistory((historyResult.data || []) as HistoryRow[], isNewMessage ? userContent : null)
+      ...buildHistory(((historyResult.data || []) as HistoryRow[]).map((row) => row.research?.groundingProvider === "google" ? { ...row, content: "[A Google-grounded answer was displayed here. Its content is excluded from automated transformations.]" } : row), isNewMessage ? userContent : null)
     ];
 
     const webCitations: Record<string, Citation> = {};
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
       webCitations,
       citationOffset: Object.keys(context.citations).length
     };
-    const toolMessages: GroqChatMessage[] = [messages[0], ACTION_GUIDE, ...messages.slice(1)];
+    const toolMessages: ChatModelMessage[] = [messages[0], ACTION_GUIDE, ...messages.slice(1)];
 
     const encoder = new TextEncoder();
     const startedAt = Date.now();
@@ -317,10 +317,10 @@ export async function POST(request: Request) {
         }
       };
       let first: Awaited<ReturnType<typeof streamChatWithTools>> | null = null;
-      let answerProvider: "anthropic" | "groq" | undefined;
+      let answerProvider: "gemini" | undefined;
       let answerModel: string | undefined;
       let fallbackReason: string | undefined;
-      const streamPlain = async (msgs: GroqChatMessage[]) => {
+      const streamPlain = async (msgs: ChatModelMessage[]) => {
         const result = await streamAi(msgs, {
           temperature: 0.6,
           provider: first?.provider,
@@ -339,8 +339,8 @@ export async function POST(request: Request) {
         let route: Awaited<ReturnType<typeof assessResearch>> | null = null;
         try {
           route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]));
-        } catch {
-          const result = researchFailure(researchSignal.aborted ? "timeout" : "routing_failed");
+        } catch (error) {
+          const result = researchFailure(researchSignal.aborted ? "timeout" : error instanceof GeminiHttpError ? "unavailable" : "routing_failed");
           research = result.research;
           send({ type: "research", research });
           push(result.text);
@@ -385,7 +385,7 @@ export async function POST(request: Request) {
             // every model and wait has already been tried, so retrying only delays the error.
             if (held.trim()) release();
             if (answer) throw error;
-            if (error instanceof GroqHttpError && (error.rateLimited || error.status >= 500)) throw error;
+            if (error instanceof GeminiHttpError && (error.rateLimited || error.status >= 500)) throw error;
             held = "";
             holding = false;
             console.error("[chat] tool-enabled stream failed, retrying without tools", serializeError(error));
@@ -557,7 +557,7 @@ const ACTION_GUIDE = {
     "Tools: search the user's notes and files, create a note, create a flashcard deck. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
-// Groq limits tokens per minute, so every request is kept lean.
+// Bound history and tools to keep model latency and token use predictable.
 const HISTORY_ROWS = 12;
 const HISTORY_CHAR_BUDGET = 8000;
 const HISTORY_MESSAGE_MAX = 2000;
@@ -565,7 +565,7 @@ const CURRENT_MESSAGE_MAX = 12000;
 const HOLD_CHARS = 160;
 const HOLD_MS = 350;
 
-type HistoryRow = { role: "user" | "assistant"; content: string };
+type HistoryRow = { role: "user" | "assistant"; content: string; research?: ResearchMetadata | null };
 const MAX_ATTACHMENTS = 4;
 const ATTACHMENT_CHAR_BUDGET = 6000;
 
@@ -631,7 +631,7 @@ async function resolveConversation(
 }
 
 function describeFailure(error: unknown) {
-  if (error instanceof GroqHttpError && error.rateLimited) {
+  if (error instanceof GeminiHttpError && error.rateLimited) {
     return "Selrano's AI is handling a lot of requests right now. Wait a few seconds and send that again. This did not count against your limit.";
   }
   if (error) return "Selrano could not generate that response. Please try again. This did not count against your limit.";
@@ -658,7 +658,7 @@ function describeToolCall(name: string, args: Record<string, unknown>) {
 
 /**
  * Files attached to this message: their text goes into the prompt (within a
- * budget, since Groq limits tokens per minute) and a reference to each is saved
+ * small character budget) and a reference to each is saved
  * on the user's message so the page can show it.
  */
 async function loadAttachments(

@@ -12,13 +12,14 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.
 - Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, create notes, or create flashcard decks, then stream the final response.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
-- Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Groq keys, Resend keys, customer content, or browser-session data.
-- Claude Haiku is the primary chat model and Groq is the fallback (owner approved 2026-10-14). Background work, transformations, flashcards, and OCR remain on Groq. Do not add another provider without asking.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, Gemini keys, Resend keys, customer content, or browser-session data.
+- Gemini is the sole AI provider (owner approved 2026-10-21), including chat, background work, transformations, flashcards and OCR. Web answers use Google Search grounding with its citation/display requirements. Do not add another provider without asking.
 - Selrano is private (owner decision, 2026-10-13): only `ALLOWED_EMAILS` accounts get in, and nothing is offered to search engines. Keep new pages and API routes behind `lib/access.ts` (middleware plus `getAuthenticatedUser`). See `docs/HANDOFF.md`, "Private access".
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
+- Owner preference (2026-10-21): push completed, validated changes to `main` without asking for confirmation again. Report deployment status and unresolved blockers.
 - Work on `main` only. There are no feature branches and no preview deployments (`vercel.json` deploys only `main`).
-- Chat requests must stay small: Groq limits tokens per minute per model. Keep prompts, history, and tool descriptions lean, and keep model work that is not the answer (memory extraction) off the critical path.
+- Chat requests must stay small: Keep prompts, history, and tool descriptions lean, and keep model work that is not the answer (memory extraction) off the critical path.
 - Preserve user changes in the working tree and never delete production/test data without explicit approval.
 
 ## Before a release
@@ -35,21 +36,20 @@ rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase and Groq (see `docs/HANDOFF.md`, "Tests"); CI does not run it yet, so run it yourself before pushing chat changes.
+Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase and Gemini (see `docs/HANDOFF.md`, "Tests"); CI does not run it yet, so run it yourself before pushing chat changes.
 
 ## Important paths
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
 - `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
-- `lib/ai.ts` and `lib/anthropic.ts` — Claude-first chat streaming with Groq fallback; Groq completion and structured output for other AI work.
-- `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).
-- `lib/ocr.ts` — reads text in uploaded images with a Groq vision model. Scanned PDFs are not supported.
+- `lib/ai.ts` and `lib/gemini.ts` - Gemini streaming, signed tool continuations, completion and structured output.
+- `lib/ocr.ts` — reads text in uploaded images with a Gemini vision model. Scanned PDFs are not supported.
 - `lib/stream-markdown.ts` — tidies half-streamed Markdown so replies never flash raw symbols.
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx` — error reporting to logs (`[server-error]`, `[client-error]`).
-- `e2e/` — Playwright tests and the offline fake Supabase and Groq servers (`e2e/support/mock-servers.mjs`).
+- `e2e/` — Playwright tests and the offline fake Supabase and Gemini servers (`e2e/support/mock-servers.mjs`).
 - `vercel.json` — cron schedule and the rule that only `main` deploys.
-- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions plus the `web_search` tool (backed by `lib/web-search.ts`).
+- `lib/ai-tools.ts` - authenticated workspace search/note/deck actions. `lib/research.ts` handles Google-grounded web answers; `lib/web-search.ts` only validates public queries and citation URLs.
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable fact extraction, historical backfill (background, at most once a day), explicit recall, and relevance ranking.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.

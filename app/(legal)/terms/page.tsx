@@ -58,7 +58,7 @@ export default function TermsPage() {
       <Section title="5. User Content">
         <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, flashcards, and chat messages.</p>
         <p><strong>License to us.</strong> By using the Service, you grant Selrano a limited, non-exclusive, royalty-free license to access, store, process, and transmit your User Content solely as necessary to provide and improve the Service. We do not claim ownership of your content and do not sell it to third parties.</p>
-        <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Anthropic and Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
+        <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently Google (Gemini)) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
         <p><strong>Your responsibility.</strong> You are solely responsible for the legality, accuracy, and appropriateness of your User Content. We have no obligation to monitor content but reserve the right to remove any content that violates these Terms.</p>
       </Section>
 
@@ -76,8 +76,8 @@ export default function TermsPage() {
         <p>The Service integrates with and depends on third-party services including:</p>
         <ul>
           <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
-          <li><strong>Groq, Inc.</strong>: AI inference for chat, content generation, and workspace tools.</li>
-          <li><strong>Tavily</strong>: optional live web search.</li>
+          <li><strong>Google (Gemini)</strong>: AI inference for chat, content generation, and workspace tools.</li>
+          <li><strong>Google Search</strong>: grounded web answers and search suggestions.</li>
           <li><strong>Vercel</strong>: hosting and infrastructure.</li>
         </ul>
         <p>Your use of the Service is also subject to the terms and privacy policies of these third-party providers. We are not responsible for the practices of any third-party service.</p>

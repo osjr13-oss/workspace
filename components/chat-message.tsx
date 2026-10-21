@@ -17,7 +17,7 @@ import remarkGfm from "remark-gfm";
 import { CitationBadge } from "@/components/citation-badge";
 import { healStreamingMarkdown } from "@/lib/stream-markdown";
 import { removeEmDashes } from "@/lib/text";
-import type { ChatMessage, FileCitation, WebCitation } from "@/lib/types";
+import type { ChatMessage, FileCitation } from "@/lib/types";
 
 type ChatMessageProps = {
   message: ChatMessage;
@@ -38,14 +38,6 @@ function isAttachment(citation: { marker: string }): citation is FileCitation {
   return citation.marker.startsWith("attachment-");
 }
 
-function hostname(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
 export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatMessageProps) {
   const content = removeEmDashes(message.content);
   // Unfinished formatting at the tail of a reply that is still arriving is tidied so it never flashes as raw symbols.
@@ -58,7 +50,6 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
   const copiedTimerRef = useRef<number | null>(null);
   const citations = message.citations || [];
   const attachments = citations.filter(isAttachment);
-  const webSources = message.research?.sources || citations.filter((citation): citation is WebCitation => citation.kind === "web");
   const limitations = (message.research?.limitations || []).filter((text) => !content.includes(text));
 
   useEffect(() => {
@@ -231,31 +222,14 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
         </div>
       )}
 
-      {!streaming && webSources.length ? (
-        <div className="mt-4">
-          <p className="text-xs font-bold text-[var(--muted)]">Sources</p>
-          <ol className={message.research ? "mt-1.5 space-y-2" : "mt-1.5 flex flex-wrap gap-1.5"}>
-            {webSources.map((source) => (
-              <li key={source.marker} className="min-w-0 break-words">
-                {message.research || source.evidenceKind ? <details className="rounded-lg border border-[var(--border)] p-2 text-xs">
-                  <summary className="cursor-pointer">[{source.marker}] {source.title} · {source.publisher || hostname(source.url)}</summary>
-                  <div className="mt-2 space-y-2 max-w-xl">
-                    <p>{source.evidenceKind === "page" ? "Page content" : "Search excerpt"}</p>
-                    <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{source.evidence || source.snippet}</blockquote>
-                    <p>Publication/update date (provider estimate) {source.publishedAt ? new Date(source.publishedAt).toLocaleDateString(undefined, { timeZone: "UTC" }) : "date unknown"}</p>
-                    {source.retrievedAt ? <p>Retrieved {new Date(source.retrievedAt).toLocaleString()}</p> : null}
-                    <a href={source.url} target="_blank" rel="noreferrer" className="underline">Open source</a>
-                  </div>
-                </details> : (
-                  <a href={source.url} target="_blank" rel="noreferrer" className="source-chip" title={source.title}>
-                    <span className="source-chip-marker">{source.marker}</span>
-                    <span className="max-w-[14rem] truncate">{hostname(source.url)}</span>
-                  </a>
-                )}
-              </li>
-            ))}
-          </ol>
-        </div>
+      {content.trim() && message.research?.groundingProvider === "google" && message.research.searchSuggestionsHtml ? (
+        <iframe
+          title="Google Search suggestions"
+          className="mt-3 h-40 w-full border-0"
+          sandbox="allow-popups allow-popups-to-escape-sandbox"
+          referrerPolicy="no-referrer"
+          srcDoc={`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; base-uri 'none'; form-action 'none'"><base target="_blank">${message.research.searchSuggestionsHtml}`}
+        />
       ) : null}
 
       {!streaming && limitations.length ? (

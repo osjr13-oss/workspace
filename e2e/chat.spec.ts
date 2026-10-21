@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   control,
   findGlitches,
-  groqRequests,
+  aiRequests,
   installRecorder,
   readSamples,
   resetMocks,
@@ -58,7 +58,7 @@ const LONG_MARKDOWN = [
 ].join("\n");
 
 test.describe("chat", () => {
-  // These tests steer a fake Groq and Supabase, so they only run against the local app that starts them.
+  // These tests steer a fake Gemini and Supabase, so they only run against the local app that starts them.
   test.skip(Boolean(process.env.E2E_BASE_URL), "Chat tests need the local mock servers.");
 
   test.beforeEach(async ({ page, context }) => {
@@ -112,20 +112,20 @@ test.describe("chat", () => {
     await expect(page.getByText(/empty reply|could not generate/i)).toBeVisible({ timeout: 25_000 });
     await settled(page);
     await expect(page.locator(composer)).toHaveValue("Say something please");
-    const requests = await groqRequests();
+    const requests = await aiRequests();
     expect(requests.filter((r) => r.lastUser === "Say something please").length).toBeGreaterThanOrEqual(2);
     const rows = await tableRows("chat_messages");
     expect(rows.length, "the failed turn must leave nothing behind").toBe(savedBefore);
   });
 
-  test("when the main model is rate limited the second model answers straight away", async ({ page }) => {
+  test("Gemini retries a short rate limit without switching providers", async ({ page }) => {
     await sendAndSettle(page, "warm up");
-    await control({ failNext: [{ status: 429, retryAfter: 30 }] });
+    await control({ failNext: [{ status: 429, retryAfter: 1 }] });
     const started = Date.now();
     await sendAndSettle(page, "Explain photosynthesis simply");
     expect(Date.now() - started, "should not wait out the 30 second limit").toBeLessThan(10_000);
-    const models = (await groqRequests()).filter((r) => r.stream).map((r) => r.model);
-    expect(models.slice(-2)).toEqual(["openai/gpt-oss-120b", "openai/gpt-oss-20b"]);
+    const models = (await aiRequests()).filter((r) => r.stream).map((r) => r.model);
+    expect(models.slice(-2)).toEqual(["gemini-3.6-flash", "gemini-3.6-flash"]);
   });
 
   test("when every model is rate limited the user gets a clear message and keeps their text", async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe("chat", () => {
   test("a short rate limit is waited out and the answer still arrives", async ({ page }) => {
     await sendAndSettle(page, "warm up");
     const limited = { status: 429, retryAfter: 1 };
-    await control({ failNext: [limited, limited] }); // both models, then it succeeds after the wait
+    await control({ failNext: [limited] }); // the same Gemini model retries once after the wait
     await sendAndSettle(page, "Explain osmosis simply");
     await expect(page.locator(bubbles).last()).toContainText("Here is a clear answer");
   });
@@ -154,18 +154,18 @@ test.describe("chat", () => {
     await page.goto("/chats?thread=11111111-1111-4111-8111-111111111111");
     await expect(page.locator(bubbles)).toHaveCount(6);
     await sendAndSettle(page, "What should I review tonight?");
-    const requests = await groqRequests();
+    const requests = await aiRequests();
     const answerIndex = requests.findIndex((r) => r.stream);
     expect(answerIndex, "the answer should be the first model call").toBe(0);
-    await expect.poll(async () => (await groqRequests()).length, { timeout: 15_000 }).toBeGreaterThan(1);
+    await expect.poll(async () => (await aiRequests()).length, { timeout: 15_000 }).toBeGreaterThan(1);
   });
 
-  test("long conversations keep each request small enough for Groq's per-minute limit", async ({ page }) => {
+  test("long conversations keep each request small enough for Gemini's per-minute limit", async ({ page }) => {
     await seedConversation(12, 1800);
     await page.goto("/chats?thread=11111111-1111-4111-8111-111111111111");
     await expect(page.locator(bubbles)).toHaveCount(12);
     await sendAndSettle(page, "Summarize what we covered");
-    const [answer] = (await groqRequests()).filter((r) => r.stream);
+    const [answer] = (await aiRequests()).filter((r) => r.stream);
     expect(answer.approxTokens, `request was about ${answer.approxTokens} tokens`).toBeLessThan(3500);
   });
 
@@ -197,14 +197,14 @@ test.describe("chat", () => {
     test.setTimeout(90_000);
     await sendAndSettle(page, "warm up");
     await control({ reply: "A slow answer. ".repeat(40), tokenDelayMs: 20 });
-    const streamsBefore = (await groqRequests()).filter((r) => r.stream).length;
+    const streamsBefore = (await aiRequests()).filter((r) => r.stream).length;
 
     await send(page, "First question");
     await page.locator(composer).fill("Second question sent too early");
     await page.locator(composer).press("Enter");
     await settled(page);
 
-    const streams = (await groqRequests()).filter((r) => r.stream).length - streamsBefore;
+    const streams = (await aiRequests()).filter((r) => r.stream).length - streamsBefore;
     expect(streams, "only one reply should have been requested").toBe(1);
     expect(await page.locator(bubbles).count()).toBe(2);
     expect((await tableRows("chat_threads")).length, "the follow-up must stay in the same conversation").toBe(1);

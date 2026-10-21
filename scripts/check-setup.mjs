@@ -33,18 +33,17 @@ const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "GROQ_API_KEY",
+  "GEMINI_API_KEY",
   // Selrano is private: only these comma-separated emails can sign in (lib/access.ts).
   "ALLOWED_EMAILS"
 ];
 
-console.log(`Primary chat: ${status("ANTHROPIC_API_KEY") === "ok" ? "Claude Haiku" : "Groq (ANTHROPIC_API_KEY missing)"}`);
+console.log("AI provider: Gemini (including Google Search grounding)");
 
 const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM"];
 
-const optionalRag = ["EMBEDDING_API_KEY", "TAVILY_API_KEY"];
 
 function status(key) {
   const v = env[key];
@@ -65,11 +64,6 @@ for (const key of branding) {
 
 console.log("\nTransactional email (Resend):");
 for (const key of email) {
-  console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
-}
-
-console.log("\nSemantic search (optional):");
-for (const key of optionalRag) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }
 

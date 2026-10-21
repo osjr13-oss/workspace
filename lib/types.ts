@@ -65,6 +65,8 @@ export type WebCitation = {
 export type Citation = FileCitation | WebCitation;
 
 export type ResearchMetadata = {
+  groundingProvider?: "google";
+  searchSuggestionsHtml?: string;
   status: "complete" | "limited" | "unavailable" | "timeout" | "no_results" | "inaccessible" | "insufficient_evidence" | "clarification" | "routing_failed";
   sources: WebCitation[];
   limitations: string[];

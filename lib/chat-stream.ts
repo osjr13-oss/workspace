@@ -14,7 +14,7 @@ export type ChatStreamEvent =
   | { type: "status"; label: string | null }
   | { type: "text"; text: string }
   | { type: "research"; research: ResearchMetadata }
-  | { type: "model"; provider: "anthropic" | "groq"; model: string; fallbackReason?: string }
+  | { type: "model"; provider: "gemini"; model: string; fallbackReason?: string }
   | { type: "error"; error: string; restore: boolean };
 
 /** Reads a chat reply stream and hands each event to onEvent as soon as its line is complete. */

@@ -43,30 +43,24 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase -> Settings -> API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
-| `GROQ_API_KEY` | console.groq.com (secret; fallback and non-chat work) |
-| `ANTHROPIC_API_KEY` | https://platform.claude.com/settings/keys (server-only Secret; primary chat) |
+| `GEMINI_API_KEY` | https://aistudio.google.com/api-keys (server-only secret; use a billing-enabled project) |
 | `ALLOWED_EMAILS` | Comma-separated emails that may sign in. Empty lets nobody in (Selrano is private) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)
 
-Claude Haiku is primary for chat when `ANTHROPIC_API_KEY` is set; Groq takes over if Claude is unavailable before output. Without that key, chat continues on Groq. All other AI work remains on Groq. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
+Gemini powers chat, Google Search grounding, workspace tools, structured generation, memory, and image transcription. Old Anthropic, Groq and Tavily credentials are no longer used.
 
 | Name | Default | Used for |
 |------|---------|----------|
-| `ANTHROPIC_MODEL` | `claude-haiku-5-5` | Primary chat model |
-| `ANTHROPIC_WORKSPACE_ID` | none | Required for a key not scoped to one workspace; find the ID in Anthropic Settings > Workspaces |
-| `GROQ_MODEL` | `openai/gpt-oss-120b` | Chat answers, flashcard generation, text transformations |
-| `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
-| `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
-| `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
-| `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
-| `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
-| `EMBEDDING_API_KEY` | none | Smarter file search in project chat |
+| `GEMINI_MODEL` | `gemini-3.6-flash` | Chat, grounding, structured output and OCR |
+| `GEMINI_BACKGROUND_MODEL` | chat model | Memory and background work |
 
-`SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
+File embeddings use `gemini-embedding-001` with the existing 1536-dimensional storage. Existing vectors from another provider are not reused as Gemini matches; full-text search remains available.
 
-`ANTHROPIC_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+Put `GEMINI_API_KEY` in the ignored root `.env.local` for local work. Never paste it into chat or commit it. `GEMINI_BASE_URL` exists only for offline tests; do not configure it in Vercel. Use a billing-enabled Google project for the paid-service data terms. Save environment changes and redeploy for production.
+
+Google-grounded answers use inline source links plus Google's required Search Suggestions. They are not rewritten by another model or reused for automated note/deck transformations. The owner approved expiry of new Google-grounded chat replies within two years. The daily `/api/cron/grounded-history` job requires `CRON_SECRET`; verify it is configured before release. Existing chats, notes and files are outside this rule.
 
 ---
 
