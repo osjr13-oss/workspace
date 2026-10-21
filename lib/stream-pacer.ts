@@ -1,7 +1,7 @@
 /**
  * Reveals a streamed reply at a steady pace.
  *
- * Gemini is fast and its text arrives in bursts of a few hundred characters, so
+ * Groq is fast and its text arrives in bursts of a few hundred characters, so
  * painting each burst as it lands makes a reply jump forward in chunks. The
  * pacer instead shows a few more characters every frame: never slower than a
  * comfortable reading speed, and fast enough to stay at most CATCH_UP_MS behind

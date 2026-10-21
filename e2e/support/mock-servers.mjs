@@ -1,9 +1,9 @@
-// Offline stand-ins for Supabase (port 54321) and Gemini (port 54322) so the real
+// Offline stand-ins for Supabase (port 54321) and Groq (port 54322) so the real
 // app can be driven end to end without any account or network.
 //
 //   node e2e/support/mock-servers.mjs
 //
-// Gemini behavior is steered through a control API on the Gemini port:
+// Groq behavior is steered through a control API on the Groq port:
 //   POST /__control   { "failNext": [{ "status": 429, "retryAfter": 1 }], "quota": false, ... }
 //   GET  /__requests  every chat completion request received so far
 //   POST /__reset     clear requests and scenarios
@@ -11,7 +11,7 @@ import http from "node:http";
 import crypto from "node:crypto";
 
 const SUPABASE_PORT = 54321;
-const AI_PORT = 54322;
+const GROQ_PORT = 54322;
 const ORIGINS = new Set(["http://localhost:3000", "http://127.0.0.1:3000"]);
 
 export const TEST_USER = {
@@ -58,7 +58,7 @@ function readBody(req) {
 }
 
 function matches(row, key, expr) {
-  const value = key.includes("->>") ? row[key.split("->>")[0]]?.[key.split("->>")[1]] : row[key];
+  const value = row[key];
   const dot = expr.indexOf(".");
   const op = expr.slice(0, dot);
   const operand = expr.slice(dot + 1);
@@ -262,21 +262,25 @@ async function handleSupabase(req, res) {
   return sendJson(res, 405, { message: "method not allowed" });
 }
 
-// -------------------------------------------------------------------- Gemini --
+// -------------------------------------------------------------------- Groq --
 
-const aiState = { requests: [], failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
+const groqState = { requests: [], claudeRequests: [], claude: false, claudeTool: false, claudePartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
-function aiReset() {
-  for (const key of ["toolName", "toolArgs", "grounding", "groundedText", "partial", "structuredReply", "assessment", "webFailure", "webDelayMs", "researchUnavailable"]) delete aiState[key];
-  aiState.requests = [];
-  aiState.failNext = [];
-  aiState.toolNext = false;
-  aiState.firstTokenDelayMs = 0;
-  aiState.chunkChars = 0;
-  aiState.toolPreface = "";
-  aiState.reply = null;
-  aiState.emptyNext = false;
-  aiState.tokenDelayMs = 2;
+function groqReset() {
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "claudeResearchUnavailable", "claudeReviewInvalidJson"]) delete groqState[key];
+  groqState.requests = [];
+  groqState.claudeRequests = [];
+  groqState.claude = false;
+  groqState.claudeTool = false;
+  groqState.claudePartial = false;
+  groqState.failNext = [];
+  groqState.toolNext = false;
+  groqState.firstTokenDelayMs = 0;
+  groqState.chunkChars = 0;
+  groqState.toolPreface = "";
+  groqState.reply = null;
+  groqState.emptyNext = false;
+  groqState.tokenDelayMs = 2;
 }
 
 function approxTokens(messages, tools) {
@@ -307,68 +311,40 @@ function researchInput(body) {
   const content = typeof user?.content === "string" ? user.content : user?.content?.find((b) => b.type === "text")?.text;
   try { const v = JSON.parse(content); return v.stage?.startsWith("research_") ? v : null; } catch { return null; }
 }
-async function handleGemini(req, res, url) {
-  const native = JSON.parse(await readBody(req));
-  if (url.pathname.endsWith(":embedContent")) return sendJson(res, 200, { embedding: { values: Array.from({ length: 1536 }, (_, i) => i === 0 ? 1 : 0) } });
-  const stream = url.pathname.endsWith(":streamGenerateContent");
-  const model = decodeURIComponent(url.pathname.split("/").at(-1).split(":")[0]);
-  const system = native.systemInstruction?.parts?.map((p) => p.text || "").join("\n") || "";
-  const messages = [{ role: "system", content: system }, ...(native.contents || []).map((c) => ({ role: c.role === "model" ? "assistant" : "user", content: c.parts.map((p) => p.text || p.functionResponse?.response?.result || "").join(""), parts: c.parts }))];
-  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content || "";
-  const payload = (text, groundingMetadata) => ({ modelVersion: model, candidates: [{ content: { role: "model", parts: [{ text }] }, finishReason: "STOP", ...(groundingMetadata ? { groundingMetadata } : {}) }], usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 } });
-  const v = researchInput({ messages });
-  if (v) {
-    researchRequests.push({ ...v, provider: "gemini", native });
-    if (aiState.researchUnavailable) return sendJson(res, 503, {});
-    const need = /latest|current|today|research|verify|look.*up|search the web|applications close|eligibility|what about/i.test(JSON.stringify(v.input));
-    const answer = aiState.assessment ?? { decision: need ? "search" : "ordinary", query: need ? "agency program deadline New York official" : "", clarification: "", consequential: need };
-    return sendJson(res, 200, payload(JSON.stringify(answer)));
+async function researchReply(req, res, body, claude) {
+  const v = researchInput(body);
+  if (!v) return false;
+  researchRequests.push({ ...v, provider: claude ? "anthropic" : "groq" });
+  if (groqState.researchUnavailable || (claude && groqState.claudeResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
+  if (v.stage === "research_review" && groqState.reviewDelayMs) await sleep(groqState.reviewDelayMs);
+  let answer;
+  const text = JSON.stringify(v.input);
+  if (v.stage === "research_assessment") {
+    const need = /latest|current|today|research|verify|look.*up|search the web|applications close|eligibility|what about/i.test(text);
+    answer = groqState.assessment ?? { decision: need ? "search" : "ordinary", query: need ? "agency program deadline New York official" : "", clarification: "", consequential: need };
+  } else if (v.stage === "research_selection") {
+    answer = groqState.selection ?? { urls: v.input.candidates.slice(0, 3).map((s) => s.url), gapQuery: groqState.gapQuery || "" };
+  } else if (v.stage === "research_draft") {
+    answer = { answer: "UNREVIEWED_DRAFT Applications close on 30 November 2026 [1]. Everyone qualifies. The grant pays $9000." };
+  } else if (v.stage === "research_action") {
+    answer = v.input.action === "create_flashcards" ? { deck_name: "Agency program", cards: [{ front: "When do applications close?", back: "30 November 2026" }] } : { title: "Agency program research" };
+  } else {
+    const source = v.input.evidence.find((s) => s.evidenceKind === "page");
+    const marker = source?.marker || "1";
+    answer = groqState.review ?? { answer: [{ text: `Applications close on 30 November 2026 [${marker}].`, evidence: [{ marker, quote: "Applications close on 30 November 2026." }] }], limitations: ["The grant amount and universal eligibility were not supported."] };
   }
-  if (native.tools?.some((t) => t.google_search)) {
-    researchRequests.push({ stage: "google_grounding", provider: "gemini", native });
-    if (aiState.webDelayMs) await sleep(aiState.webDelayMs);
-    if (aiState.webFailure) return sendJson(res, 503, {});
-    const text = aiState.groundedText ?? "Applications close on 30 November 2026.";
-    const grounding = aiState.grounding ?? { webSearchQueries: ["program deadline"], searchEntryPoint: { renderedContent: '<a href="https://www.google.com/search?q=program">Search Google</a>' }, groundingChunks: [{ web: { uri: SOURCE_URL, title: "Agency program" } }], groundingSupports: [{ segment: { startIndex: 0, endIndex: text.length, text }, groundingChunkIndices: [0] }] };
-    return sendJson(res, 200, payload(text, grounding));
-  }
-  aiState.requests.push({ native, at: Date.now(), model, stream, tools: Boolean(native.tools?.length), messageCount: messages.length, approxTokens: approxTokens(messages.map(({ role, content }) => ({ role, content })), native.tools), reasoning_effort: native.generationConfig?.thinkingConfig?.thinkingLevel, max_completion_tokens: native.generationConfig?.maxOutputTokens, lastUser: lastUser.slice(0, 80), system: system.slice(0, 60), systemText: system });
-  const fail = aiState.failNext.shift();
-  if (fail) { res.writeHead(fail.status || 429, { "Content-Type": "application/json", "retry-after": String(fail.retryAfter || 1) }); return res.end(JSON.stringify({ error: { message: "Unavailable" } })); }
-  if (!stream) {
-    const image = native.contents?.some((c) => c.parts.some((p) => p.inlineData));
-    const text = image ? "Image transcription." : system.includes("Extract lasting facts") ? "[]" : aiState.structuredReply ?? "ok";
-    return sendJson(res, 200, payload(text));
-  }
+  const content = claude && v.stage === "research_review" && groqState.claudeReviewInvalidJson ? '{"answer":[' : JSON.stringify(answer);
   res.writeHead(200, { "Content-Type": "text/event-stream" });
-  const send = (parts, finishReason) => res.write(`data: ${JSON.stringify({ modelVersion: model, candidates: [{ content: { role: "model", parts }, ...(finishReason ? { finishReason } : {}) }] })}\n\n`);
-  send([{ thought: true, text: "PRIVATE_REASONING", thoughtSignature: "test-thought" }]);
-  if (aiState.toolNext && native.tools?.length && native.toolConfig?.functionCallingConfig?.mode !== "NONE") {
-    aiState.toolNext = false;
-    if (aiState.toolPreface) send([{ text: aiState.toolPreface }]);
-    send([{ functionCall: { name: aiState.toolName || "search_workspace", args: aiState.toolArgs || { query: "biology" } }, thoughtSignature: "test-signature" }], "STOP");
-    return res.end();
+  if (claude) {
+    for (const event of [{ type: "message_start", message: { model: "claude-haiku-5-5" } }, { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }, { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: content } }, { type: "message_stop" }]) res.write(`data: ${JSON.stringify(event)}\n\n`);
+  } else {
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`);
   }
-  if (aiState.emptyNext) {
-    aiState.emptyNext = aiState.emptyNext === true ? false : aiState.emptyNext - 1 || false;
-    send([], "STOP"); return res.end();
-  }
-  if (aiState.firstTokenDelayMs) await sleep(aiState.firstTokenDelayMs);
-  const text = aiState.reply ?? defaultReply(lastUser);
-  let pending = "";
-  for (const word of text.split(/(\s+)/)) {
-    pending += word;
-    if (aiState.chunkChars && pending.length < aiState.chunkChars) continue;
-    send([{ text: pending }]); pending = "";
-    if (aiState.partial) return res.end();
-    if (aiState.tokenDelayMs) await sleep(aiState.tokenDelayMs);
-  }
-  if (pending) send([{ text: pending }]);
-  if (aiState.partial) return res.end();
-  send([], "STOP"); res.end();
+  res.end();
+  return true;
 }
 
-async function handleAi(req, res) {
+async function handleGroq(req, res) {
   cors(req, res);
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -376,25 +352,165 @@ async function handleAi(req, res) {
     return;
   }
   const url = new URL(req.url, "http://localhost");
-  if (url.pathname.startsWith("/gemini/models/")) return handleGemini(req, res, url);
 
   if (url.pathname === "/__reset") {
-    aiReset();
+    groqReset();
     researchRequests = []; webRequests = [];
     return sendJson(res, 200, { ok: true });
   }
   if (url.pathname === "/__research_requests") return sendJson(res, 200, researchRequests);
   if (url.pathname === "/__web_requests") return sendJson(res, 200, webRequests);
-  if (url.pathname === "/__requests") return sendJson(res, 200, aiState.requests);
+  if (url.pathname.startsWith("/tavily/")) {
+    const body = JSON.parse(await readBody(req)); webRequests.push({ path: url.pathname, body });
+    if (groqState.webDelayMs) await sleep(groqState.webDelayMs);
+    if (groqState.webFailure) return sendJson(res, 503, {});
+    if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }] });
+    return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
+  }
+  if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
+  if (url.pathname === "/__claude_requests") return sendJson(res, 200, groqState.claudeRequests);
   if (url.pathname === "/__control") {
     const body = JSON.parse((await readBody(req)) || "{}");
-    Object.assign(aiState, body);
+    Object.assign(groqState, body);
     return sendJson(res, 200, { ok: true });
   }
 
-  return sendJson(res, 404, { error: "Unexpected AI endpoint" });
+  if (url.pathname === "/anthropic/v1/messages") {
+    const body = JSON.parse(await readBody(req));
+    if (await researchReply(req, res, body, true)) return;
+    groqState.claudeRequests.push({ ...body, workspaceId: req.headers["anthropic-workspace-id"] });
+    if (!groqState.claude) return sendJson(res, 503, { error: { type: "overloaded_error" } });
+    res.writeHead(200, { "Content-Type": "text/event-stream" });
+    // Split data frames across writes to exercise the incremental SSE parser.
+    const send = (event) => {
+      const frame = `event: ${event.type}\r\ndata: ${JSON.stringify(event)}\r\n\r\n`;
+      res.write(frame.slice(0, 19));
+      res.write(frame.slice(19));
+    };
+    send({ type: "message_start", message: { usage: { input_tokens: 30 } } });
+    send({ type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } });
+    send({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "PRIVATE_REASONING" } });
+    send({ type: "content_block_delta", index: 0, delta: { type: "signature_delta", signature: "test-signature" } });
+    send({ type: "content_block_stop", index: 0 });
+    if (groqState.claudeTool && body.tools?.length && body.tool_choice?.type !== "none") {
+      groqState.claudeTool = false;
+      send({ type: "content_block_start", index: 1, content_block: { type: "tool_use", id: "toolu_1", name: "search_workspace", input: {} } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '{"query":' } });
+      send({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: '"biology"}' } });
+      send({ type: "content_block_stop", index: 1 });
+    } else {
+      send({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+      for (const token of ["Let's work through it", "\u2014together."]) {
+        send({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text: token } });
+        await sleep(200);
+      }
+      if (groqState.claudePartial) { res.end(); return; }
+      send({ type: "content_block_stop", index: 1 });
+    }
+    send({ type: "message_stop" });
+    res.end();
+    return;
+  }
+  if (!url.pathname.endsWith("/chat/completions")) return sendJson(res, 404, { error: "not found" });
+
+  const body = JSON.parse(await readBody(req));
+  if (await researchReply(req, res, body, false)) return;
+  const messages = body.messages || [];
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  const lastUserText = typeof lastUser?.content === "string" ? lastUser.content : "";
+  groqState.requests.push({
+    at: Date.now(),
+    model: body.model,
+    stream: Boolean(body.stream),
+    tools: Boolean(body.tools?.length),
+    messageCount: messages.length,
+    approxTokens: approxTokens(messages, body.tools),
+    reasoning_effort: body.reasoning_effort,
+    max_completion_tokens: body.max_completion_tokens ?? body.max_tokens,
+    lastUser: lastUserText.slice(0, 80),
+    system: typeof messages[0]?.content === "string" ? messages[0].content.slice(0, 60) : "",
+    systemText: messages
+      .filter((m) => m.role === "system" && typeof m.content === "string")
+      .map((m) => m.content)
+      .join("\n")
+      .slice(0, 12000)
+  });
+
+  const fail = groqState.failNext.shift();
+  if (fail) {
+    res.writeHead(fail.status || 429, {
+      "Content-Type": "application/json",
+      ...(fail.retryAfter ? { "retry-after": String(fail.retryAfter) } : {})
+    });
+    res.end(
+      JSON.stringify({
+        error: {
+          message:
+            fail.message ||
+            "Rate limit reached for model `openai/gpt-oss-120b` in organization `org_test` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7000, Requested 3000. Please try again in 6.1s.",
+          type: "tokens",
+          code: "rate_limit_exceeded"
+        }
+      })
+    );
+    return;
+  }
+
+  // Background calls (memory extraction and similar) are non-streaming.
+  if (!body.stream) {
+    const isExtraction = JSON.stringify(messages[0]?.content || "").includes("Extract lasting facts");
+    const content = isExtraction ? "[]" : "ok";
+    sendJson(res, 200, {
+      choices: [{ message: { role: "assistant", content } }],
+      usage: { prompt_tokens: approxTokens(messages), completion_tokens: 5 }
+    });
+    return;
+  }
+
+  res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" });
+  const send = (delta, finish = null) =>
+    res.write(`data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
+
+  if (groqState.toolNext && body.tools?.length) {
+    groqState.toolNext = false;
+    if (groqState.toolPreface) send({ role: "assistant", content: groqState.toolPreface });
+    send({ role: "assistant", content: null, tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "search_workspace", arguments: "" } }] });
+    send({ tool_calls: [{ index: 0, function: { arguments: '{"query":"biology"}' } }] });
+    send({}, "tool_calls");
+    res.write("data: [DONE]\n\n");
+    res.end();
+    return;
+  }
+
+  if (groqState.emptyNext) {
+    groqState.emptyNext = groqState.emptyNext === true ? false : groqState.emptyNext - 1 || false;
+    send({ role: "assistant", content: "" });
+    send({}, "stop");
+    res.write("data: [DONE]\n\n");
+    res.end();
+    return;
+  }
+
+  const text = groqState.reply ?? defaultReply(lastUserText);
+  const words = text.split(/(\s+)/);
+  send({ role: "assistant", content: "" });
+  if (groqState.firstTokenDelayMs) await sleep(groqState.firstTokenDelayMs);
+  // chunkChars groups words into bursts, the way the real Groq delivers a fast reply.
+  let pending = "";
+  for (const word of words) {
+    if (!word) continue;
+    pending += word;
+    if (groqState.chunkChars && pending.length < groqState.chunkChars) continue;
+    send({ content: pending });
+    pending = "";
+    if (groqState.tokenDelayMs) await sleep(groqState.tokenDelayMs);
+  }
+  if (pending) send({ content: pending });
+  send({}, "stop");
+  res.write("data: [DONE]\n\n");
+  res.end();
 }
 
 reset();
 http.createServer((req, res) => handleSupabase(req, res).catch((e) => { console.error(e); res.writeHead(500); res.end(); })).listen(SUPABASE_PORT, () => console.log(`mock supabase on ${SUPABASE_PORT}`));
-http.createServer((req, res) => handleAi(req, res).catch((e) => { console.error(e); res.writeHead(500); res.end(); })).listen(AI_PORT, () => console.log(`mock Gemini on ${AI_PORT}`));
+http.createServer((req, res) => handleGroq(req, res).catch((e) => { console.error(e); res.writeHead(500); res.end(); })).listen(GROQ_PORT, () => console.log(`mock groq on ${GROQ_PORT}`));

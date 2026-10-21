@@ -2,7 +2,13 @@
 
 Last updated: **October 21, 2026**
 
-## Gemini migration (October 21, release authorized)
+## Provider restoration (October 21)
+
+The owner reports their Google account is unusable and explicitly authorized restoring Claude primary chat, Groq fallback/background/OCR, and Tavily research, keeping inline citations without the Sources footer. The exact-source evidence validation and citation-format repair from `d96e4c0` are restored. No Gemini API calls remain. Existing Google-grounded replies retain attribution, history exclusion and the owner-approved expiry cleanup. No stored data or local credentials were removed. The owner requested pushes without another confirmation and will handle post-push deployment verification.
+
+Local restoration validation: typecheck, lint, production build, high-severity dependency audit, punctuation scan and diff check passed. The full offline run passed 61 tests with three credential-dependent skips; two cases passed on targeted rerun after correcting an obsolete footer assertion and a transient Playwright trace-cleanup failure (63 distinct passing cases). No post-push deployment verification, per owner request.
+
+## Gemini migration (October 21, superseded by restoration)
 
 The owner approved Gemini as the only AI provider, explicitly chose Google Search grounding and its display/verification rules over the prior independent quote-review pipeline, and approved automatic expiry of new Google-grounded assistant replies within two years. These decisions supersede the earlier Claude/Groq direction for the next release. The owner explicitly authorized pushing this migration despite the known Google billing/quota blocker, and requested automatic pushes after validation for future completed work. Production changes when the deployment succeeds.
 

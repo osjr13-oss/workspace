@@ -1,4 +1,4 @@
-import { embedText, getEmbeddingModel, hasEmbeddingProvider } from "@/lib/embeddings";
+import { embedText, hasEmbeddingProvider } from "@/lib/embeddings";
 import type { getAuthenticatedUser } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof getAuthenticatedUser>>["supabase"];
@@ -45,15 +45,8 @@ export async function searchProjectChunks(
       return [];
     }
 
-    const rows = (data || []) as MatchFileChunksRow[];
-    if (!rows.length) return [];
-    // Legacy embeddings use a different vector space. Never present them as Gemini matches.
-    const compatible = await supabase.from("file_chunk_embeddings").select("chunk_id")
-      .in("chunk_id", rows.map((row) => row.chunk_id)).eq("model", getEmbeddingModel());
-    if (compatible.error) return [];
-    const ids = new Set((compatible.data || []).map((row) => row.chunk_id));
-    return rows
-      .filter((row) => row.content && ids.has(row.chunk_id))
+    return ((data || []) as MatchFileChunksRow[])
+      .filter((row) => row.content)
       .map((row) => ({
         content: row.content,
         chunkId: row.chunk_id,
