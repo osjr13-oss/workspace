@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "**": false,
-      "main": true
+      "main": true,
+      "claude/intelligent-johnson-adtfsx": true
     }
   },
   "crons": [
