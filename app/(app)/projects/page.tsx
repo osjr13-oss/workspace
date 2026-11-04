@@ -76,7 +76,7 @@ export default function ProjectsPage() {
           {loading ? "Creating…" : "Create project"}
         </button>
         {error ? (
-          <p className="w-full text-sm font-bold text-[var(--critical)]">
+          <p className="w-full text-sm font-semibold text-[var(--critical)]">
             {error}{" "}
             <Link href="/pricing" className="text-[var(--text)] underline">
               View plans
@@ -90,7 +90,7 @@ export default function ProjectsPage() {
           {projects.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`} className="glass-card group relative p-6">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-base font-extrabold tracking-[-0.01em]">{project.name}</h2>
+                <h2 className="text-base font-display font-medium tracking-[-0.02em]">{project.name}</h2>
                 <button
                   type="button"
                   onClick={(e) => deleteProject(e, project.id)}

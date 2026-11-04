@@ -169,7 +169,7 @@ export function ChatComposer({
           autoFocus
         />
         {hint ? (
-          <span className="pointer-events-none absolute -top-5 left-4 text-[11px] font-bold text-[var(--muted)]">{hint}</span>
+          <span className="pointer-events-none absolute -top-5 left-4 text-[11px] font-semibold text-[var(--muted)]">{hint}</span>
         ) : null}
       </div>
 

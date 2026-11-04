@@ -15,7 +15,7 @@ export function PwaIconMarkup({ size, maskable }: PwaIconMarkupProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#f7f5f0"
+        background: "#f6f3ec"
       }}
     >
       <div

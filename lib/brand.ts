@@ -4,7 +4,7 @@
  */
 export const brand = {
   name: "Selrano",
-  tagline: "An AI workspace that learns how you think and write.",
+  tagline: "Your notes, files, and the web, in one calm place to think.",
   legalName: process.env.NEXT_PUBLIC_LEGAL_NAME || "Selrano",
 
   emails: {
@@ -22,10 +22,10 @@ export const brand = {
   },
 
   colors: {
-    background: "#f7f5f0",
-    text: "#15181f",
-    muted: "#69707d",
-    accent: "#15181f"
+    background: "#f6f3ec",
+    text: "#16191f",
+    muted: "#676b72",
+    accent: "#1b2d50"
   }
 } as const;
 

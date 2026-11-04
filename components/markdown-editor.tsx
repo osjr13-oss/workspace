@@ -48,7 +48,7 @@ export function MarkdownEditor({
         />
       </div>
       <div className="panel min-h-[520px] p-5">
-        <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Preview</p>
+        <p className="mb-4 eyebrow text-[var(--muted)]">Preview</p>
         <ReactMarkdown className="prose-selrano" remarkPlugins={[remarkGfm]}>
           {value || "Start writing to preview your note."}
         </ReactMarkdown>

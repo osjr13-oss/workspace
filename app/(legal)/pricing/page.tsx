@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <article>
-      <p className="text-sm font-bold text-[var(--muted)]">Pricing</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em]">Simple plans for real work</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Pricing</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em]">Simple plans for real work</h1>
       <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-strong)]">
         Start free. Upgrade when Selrano becomes part of your daily workflow and you need more room for projects and files. Cancel anytime.
       </p>
@@ -23,7 +23,7 @@ export default function PricingPage() {
 
       <p className="mt-8 text-sm text-[var(--muted)]">
         Already have an account?{" "}
-        <Link href="/settings" className="font-bold text-[var(--text)]">
+        <Link href="/settings" className="font-semibold text-[var(--text)]">
           Manage billing in Settings
         </Link>
         .

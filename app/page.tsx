@@ -13,7 +13,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(247,245,240,0.82)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6">
           <SelranoLogo />
-          <nav className="hidden items-center gap-6 text-sm font-bold text-[var(--muted)] sm:flex">
+          <nav className="hidden items-center gap-6 text-sm font-semibold text-[var(--muted)] sm:flex">
             <a href="#features">Features</a>
             <Link href="/pricing">Pricing</Link>
             <Link href="/guides">Guides</Link>
@@ -31,7 +31,7 @@ export default function LandingPage() {
 
       <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:pt-20">
         <div>
-          <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
+          <h1 className="max-w-3xl text-5xl font-display font-medium leading-[1.02] tracking-[-0.02em] text-balance sm:text-6xl lg:text-7xl">
             An AI workspace that learns how you think and write.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
@@ -43,7 +43,7 @@ export default function LandingPage() {
               See how it works
             </Link>
           </div>
-          <div className="mt-8 grid max-w-2xl gap-3 text-sm font-bold text-[var(--muted-strong)] sm:grid-cols-3">
+          <div className="mt-8 grid max-w-2xl gap-3 text-sm font-semibold text-[var(--muted-strong)] sm:grid-cols-3">
             {[
               { label: "Voice", value: "Responses learn your style" },
               { label: "Context", value: "Your sources stay grounded" },
@@ -70,8 +70,8 @@ export default function LandingPage() {
             return (
               <Reveal key={step.title} delay={index * 0.08}>
                 <SpotlightCard className="panel p-6 transition-transform duration-300 hover:-translate-y-1">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{step.label}</p>
-                  <h2 className="mt-5 text-lg font-extrabold tracking-[-0.01em]">{step.title}</h2>
+                  <p className="eyebrow text-[var(--muted)]">{step.label}</p>
+                  <h2 className="mt-5 text-lg font-display font-medium tracking-[-0.02em]">{step.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{step.body}</p>
                 </SpotlightCard>
               </Reveal>
@@ -91,8 +91,8 @@ export default function LandingPage() {
           return (
             <Reveal key={feature.title} delay={index * 0.06}>
               <SpotlightCard className="glass-card h-full p-6">
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{feature.label}</p>
-                <h3 className="mt-5 text-base font-extrabold tracking-[-0.01em]">{feature.title}</h3>
+                <p className="eyebrow text-[var(--muted)]">{feature.label}</p>
+                <h3 className="mt-5 text-base font-display font-medium tracking-[-0.02em]">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{feature.body}</p>
               </SpotlightCard>
             </Reveal>
@@ -105,8 +105,8 @@ export default function LandingPage() {
           className="rounded-[24px] bg-[var(--text)] p-8 text-[var(--background-elevated)] sm:p-10"
           size="420px"
         >
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-white/60">Start with one thought</p>
-          <h2 className="mt-5 max-w-2xl text-3xl font-extrabold tracking-[-0.03em] text-balance">A better conversation starts by listening.</h2>
+          <p className="eyebrow text-white/60">Start with one thought</p>
+          <h2 className="mt-5 max-w-2xl text-3xl font-display font-medium tracking-[-0.02em] text-balance">A better conversation starts by listening.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72">
             Start free with adaptive chat, projects, uploads, notes, and grounded answers that use your material.
           </p>

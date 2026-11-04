@@ -9,7 +9,7 @@ export default function SignUpPage() {
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
         <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Sign-ups are closed</h1>
+        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">Sign-ups are closed</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           Selrano is not taking new accounts right now. If you already have one, you can sign in.
         </p>

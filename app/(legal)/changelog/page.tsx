@@ -25,8 +25,8 @@ function formatDate(value: string) {
 export default function ChangelogPage() {
   return (
     <article className="prose-meridian">
-      <p className="text-sm font-bold text-[var(--muted)]">Changelog</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">What&apos;s new in {brand.name}</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Changelog</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">What&apos;s new in {brand.name}</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         A running record of features and improvements as they ship.
       </p>
@@ -35,14 +35,14 @@ export default function ChangelogPage() {
         {changelog.map((entry, index) => (
           <section key={`${entry.date}-${index}`} className="border-b border-[var(--border)] pb-10 last:border-none">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm font-bold text-[var(--muted)]">{formatDate(entry.date)}</p>
+              <p className="text-sm font-semibold text-[var(--muted)]">{formatDate(entry.date)}</p>
               {entry.tag ? (
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${tagStyles[entry.tag] || "bg-[var(--surface-subtle)] text-[var(--muted-strong)]"}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${tagStyles[entry.tag] || "bg-[var(--surface-subtle)] text-[var(--muted-strong)]"}`}>
                   {entry.tag}
                 </span>
               ) : null}
             </div>
-            <h2 className="mt-3 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">{entry.title}</h2>
+            <h2 className="mt-3 text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{entry.title}</h2>
             <p className="mt-2 text-base leading-7 text-[var(--muted-strong)]">{entry.description}</p>
           </section>
         ))}

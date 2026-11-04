@@ -72,7 +72,7 @@ export function PwaProvider() {
     <div className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-lg rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:inset-x-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-extrabold tracking-[-0.01em]">Install Selrano</p>
+          <p className="text-sm font-display font-medium tracking-[-0.02em]">Install Selrano</p>
           <p className="mt-1 text-sm leading-6 text-[var(--muted-strong)]">
             {iosHint ? (
               <>

@@ -9,27 +9,27 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: October 8, 2026</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Last updated: October 8, 2026</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
       </p>
 
       <Section title="1. Information We Collect">
-        <h3 className="font-extrabold text-[var(--text)]">a. Information you provide directly</h3>
+        <h3 className="font-display font-medium text-[var(--text)]">a. Information you provide directly</h3>
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
           <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
-        <h3 className="mt-4 font-extrabold text-[var(--text)]">b. Information collected automatically</h3>
+        <h3 className="mt-4 font-display font-medium text-[var(--text)]">b. Information collected automatically</h3>
         <ul>
           <li><strong>Usage data:</strong> basic interaction logs such as which features you use, collected to improve the Service.</li>
           <li><strong>Technical data:</strong> IP address, browser type, and device information transmitted as part of standard web requests and handled by our infrastructure provider (Vercel).</li>
         </ul>
 
-        <h3 className="mt-4 font-extrabold text-[var(--text)]">c. Information we do NOT collect</h3>
+        <h3 className="mt-4 font-display font-medium text-[var(--text)]">c. Information we do NOT collect</h3>
         <ul>
           <li>We do not collect payment information (no paid features currently exist).</li>
           <li>We do not use tracking cookies or third-party advertising trackers.</li>
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">{title}</h2>
+      <h2 className="text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{title}</h2>
       <div className="mt-3 space-y-3 text-sm leading-7 text-[var(--muted-strong)]">{children}</div>
     </section>
   );

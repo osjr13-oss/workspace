@@ -9,7 +9,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <header className="border-b border-[var(--border)] bg-[rgba(247,245,240,0.84)] backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <SelranoLogo href="/" />
-          <nav className="flex flex-wrap gap-6 text-sm font-bold text-[var(--muted)]">
+          <nav className="flex flex-wrap gap-6 text-sm font-semibold text-[var(--muted)]">
             <Link href="/pricing" className="hover:text-[var(--text)] transition-colors">Pricing</Link>
             <Link href="/guides" className="hover:text-[var(--text)] transition-colors">Guides</Link>
             <Link href="/changelog" className="hover:text-[var(--text)] transition-colors">Changelog</Link>

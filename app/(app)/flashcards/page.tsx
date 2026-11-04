@@ -258,7 +258,7 @@ function FlashcardsContent() {
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Flashcards" eyebrow="Study system" />
 
-      {pageError ? <p className="text-sm font-bold text-[var(--critical)]">{pageError}</p> : null}
+      {pageError ? <p className="text-sm font-semibold text-[var(--critical)]">{pageError}</p> : null}
 
       {/* Top row: create deck + generate */}
       <section className="grid gap-5 lg:grid-cols-2">
@@ -308,17 +308,17 @@ function FlashcardsContent() {
             </button>
           </div>
           {!deckId && (
-            <p className="text-xs font-bold text-[var(--muted)]">
+            <p className="text-xs font-semibold text-[var(--muted)]">
               ← Create or select a deck on the left first
             </p>
           )}
           {generateError && (
-            <p className="rounded-xl bg-red-50 px-4 py-2 text-xs font-bold text-[var(--critical)]">
+            <p className="rounded-xl bg-red-50 px-4 py-2 text-xs font-semibold text-[var(--critical)]">
               {generateError}
             </p>
           )}
           {generateSuccess && (
-            <p className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2 text-xs font-bold text-[var(--low)]">
+            <p className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2 text-xs font-semibold text-[var(--low)]">
               <CheckCircle size={14} /> {generateSuccess}
             </p>
           )}
@@ -328,7 +328,7 @@ function FlashcardsContent() {
       {/* Bottom row: decks sidebar + cards */}
       <section className="grid gap-6 xl:grid-cols-[280px_1fr]">
         <aside className="panel p-4">
-          <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+          <p className="mb-3 eyebrow text-[var(--muted)]">
             Decks ({decks.length})
           </p>
           {decks.length === 0 && (
@@ -348,7 +348,7 @@ function FlashcardsContent() {
                 <button
                   type="button"
                   onClick={() => setDeckId(deck.id)}
-                  className="min-w-0 flex-1 truncate text-left text-sm font-bold"
+                  className="min-w-0 flex-1 truncate text-left text-sm font-semibold"
                 >
                   {deck.name}
                 </button>
@@ -391,7 +391,7 @@ function FlashcardsContent() {
           {selectedDeck && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+                <p className="eyebrow text-[var(--muted)]">
                   {selectedDeck.name}: {visibleCards.length} card{visibleCards.length !== 1 ? "s" : ""}
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -421,7 +421,7 @@ function FlashcardsContent() {
               </div>
               {selectedDeck.is_public && selectedDeck.share_slug && (
                 <div className="glass-card flex flex-wrap items-center justify-between gap-3 p-4">
-                  <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--muted-strong)]">
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--muted-strong)]">
                     selrano.com/d/{selectedDeck.share_slug}
                   </p>
                   <button type="button" onClick={() => copyShareLink(selectedDeck)} className="btn-secondary shrink-0">
@@ -438,7 +438,7 @@ function FlashcardsContent() {
               {visibleCards.map((card) => (
                 <article key={card.id} className="panel p-5">
                   <div className="flex justify-between gap-4">
-                    <h2 className="font-extrabold">{card.front}</h2>
+                    <h2 className="font-display font-medium">{card.front}</h2>
                     <button
                       type="button"
                       onClick={() => removeCard(card.id)}

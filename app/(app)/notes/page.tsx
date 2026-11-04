@@ -140,12 +140,12 @@ function NotesContent() {
         </button>
       </WorkspaceHeader>
 
-      {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
+      {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
 
       <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
         <aside className="panel p-4">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">Library</p>
+            <p className="eyebrow text-[var(--muted)]">Library</p>
             <span className="status-pill">{notes.length} notes</span>
           </div>
           {notes.length ? (
@@ -157,7 +157,7 @@ function NotesContent() {
                   onClick={() => selectNote(note)}
                   className={`w-full rounded-2xl p-4 text-left ${selectedId === note.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
                 >
-                  <p className="font-extrabold">{note.title}</p>
+                  <p className="font-display font-medium">{note.title}</p>
                   <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(note.updated_at)}</p>
                 </button>
               ))}

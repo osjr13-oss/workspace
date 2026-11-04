@@ -43,7 +43,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <main className="mx-auto grid min-h-screen max-w-3xl place-items-center px-5">
         <section className="panel p-7">
-          <h1 className="text-2xl font-extrabold tracking-[-0.03em]">Configuration needed</h1>
+          <h1 className="text-2xl font-display font-medium tracking-[-0.02em]">Configuration needed</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--muted-strong)]">{envError}</p>
           <p className="mt-3 text-sm leading-6 text-[var(--muted-strong)]">
             Add the Supabase values from `.env.example`, then restart the app.

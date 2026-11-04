@@ -16,7 +16,7 @@ export function SiteFooter({ showHome = true }: { showHome?: boolean }) {
         <p className="text-sm text-[var(--muted)]">
           © {new Date().getFullYear()} {brand.legalName}. All rights reserved.
         </p>
-        <nav className="flex flex-wrap justify-center gap-6 text-sm font-bold text-[var(--muted)]">
+        <nav className="flex flex-wrap justify-center gap-6 text-sm font-semibold text-[var(--muted)]">
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="transition-colors hover:text-[var(--text)]">
               {link.label}

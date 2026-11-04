@@ -119,7 +119,7 @@ export function BillingSection() {
   if (!status) {
     return (
       <section className="panel p-6">
-        <p className="text-sm font-bold text-[var(--muted-strong)]">Could not load billing status.</p>
+        <p className="text-sm font-semibold text-[var(--muted-strong)]">Could not load billing status.</p>
       </section>
     );
   }
@@ -131,7 +131,7 @@ export function BillingSection() {
     <section className="panel p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-extrabold tracking-[-0.01em]">Plan & billing</h2>
+          <h2 className="text-base font-display font-medium tracking-[-0.02em]">Plan & billing</h2>
           <p className="mt-2 text-sm text-[var(--muted-strong)]">
             You are on <strong>{status.planName}</strong>
             {isPro && status.currentPeriodEnd
@@ -175,7 +175,7 @@ export function BillingSection() {
         </p>
       ) : null}
 
-      {message ? <p className="mt-4 text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
+      {message ? <p className="mt-4 text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
     </section>
   );
 }

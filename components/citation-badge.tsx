@@ -11,7 +11,7 @@ export function CitationBadge({ citation }: { citation: Citation }) {
         target="_blank"
         rel="noreferrer"
         title={`Open source: ${citation.title}`}
-        className="citation-badge mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-1 align-super text-[10px] font-extrabold leading-none text-[var(--muted-strong)] no-underline transition-all duration-[170ms] ease-out hover:-translate-y-1 hover:border-[var(--border-strong)] hover:bg-[var(--text)] hover:text-white"
+        className="citation-badge mx-0.5 inline-flex h-[17px] min-w-[17px] -translate-y-0.5 items-center justify-center rounded-[5px] border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-1 align-super text-[10px] font-semibold leading-none text-[var(--accent)] no-underline transition-colors duration-[160ms] ease-out hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-[var(--on-accent)]"
       >
         {citation.marker}
       </a>
@@ -28,7 +28,7 @@ export function CitationBadge({ citation }: { citation: Citation }) {
     <Link
       href={href}
       title={`Jump to source: ${title}`}
-      className="citation-badge mx-0.5 inline-flex h-4 min-w-4 -translate-y-0.5 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-1 align-super text-[10px] font-extrabold leading-none text-[var(--muted-strong)] no-underline transition-all duration-[170ms] ease-out hover:-translate-y-1 hover:border-[var(--border-strong)] hover:bg-[var(--text)] hover:text-white"
+      className="citation-badge mx-0.5 inline-flex h-[17px] min-w-[17px] -translate-y-0.5 items-center justify-center rounded-[5px] border border-[var(--accent-ring)] bg-[var(--accent-soft)] px-1 align-super text-[10px] font-semibold leading-none text-[var(--accent)] no-underline transition-colors duration-[160ms] ease-out hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-[var(--on-accent)]"
     >
       {citation.marker}
     </Link>

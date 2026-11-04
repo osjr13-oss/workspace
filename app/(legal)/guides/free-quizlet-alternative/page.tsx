@@ -22,21 +22,21 @@ export const metadata: Metadata = {
 export default function FreeQuizletAlternativeGuide() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Guide</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">{guide.title}</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Guide</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{guide.title}</h1>
       <p className="mt-4 text-base leading-7 text-[var(--muted-strong)]">
         Quizlet is genuinely good at what it&apos;s built for, and it&apos;s worth saying that plainly before anything else.
         This is about one specific gap, not a case against it.
       </p>
 
-      <h2 className="mt-10 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">When Quizlet is the right call</h2>
+      <h2 className="mt-10 text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">When Quizlet is the right call</h2>
       <p className="mt-3 text-base leading-7">
         If you&apos;re studying something common, like intro biology, a standard vocab list, or a widely-taught course, there&apos;s a
         good chance someone already built and shared a solid deck for it. Quizlet&apos;s free tier is generous, its library is
         enormous, and for material that already exists on the platform, there&apos;s often no reason to build anything yourself.
       </p>
 
-      <h2 className="mt-10 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">Where the gap actually is</h2>
+      <h2 className="mt-10 text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Where the gap actually is</h2>
       <p className="mt-3 text-base leading-7">
         The gap shows up when the material is yours specifically: your professor&apos;s slides, a reading nobody else has
         uploaded, your own lecture notes. Quizlet does have an AI feature for this now, called Magic Notes, which
@@ -50,7 +50,7 @@ export default function FreeQuizletAlternativeGuide() {
         live in separate places, if they live in the product at all.
       </p>
 
-      <h2 className="mt-10 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">What {brand.name} does differently</h2>
+      <h2 className="mt-10 text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">What {brand.name} does differently</h2>
       <p className="mt-3 text-base leading-7">
         {brand.name} is built around a project, not a deck. Upload your own material once, and it stays connected to
         everything else in that project: notes you write, flashcards generated from it, spaced repetition review, and
@@ -58,7 +58,7 @@ export default function FreeQuizletAlternativeGuide() {
         nowhere in particular.
       </p>
 
-      <h2 className="mt-10 text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">Pricing, honestly</h2>
+      <h2 className="mt-10 text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Pricing, honestly</h2>
       <p className="mt-3 text-base leading-7">
         Quizlet Plus runs about $3/month billed annually, or roughly $8/month billed monthly, and its free tier is hard
         to beat on price for basic flashcard use. {brand.name}&apos;s free plan includes projects, uploads, and flashcard
@@ -103,7 +103,7 @@ export default function FreeQuizletAlternativeGuide() {
 
       <div className="panel mt-12 flex flex-wrap items-center justify-between gap-4 p-6">
         <div>
-          <p className="font-extrabold text-[var(--text)]">Working from your own material?</p>
+          <p className="font-display font-medium text-[var(--text)]">Working from your own material?</p>
           <p className="mt-1 text-sm text-[var(--muted)]">Start free, no card required.</p>
         </div>
         <Link href="/signup" className="btn-primary">

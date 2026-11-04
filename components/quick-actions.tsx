@@ -42,7 +42,7 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
           <Wand2 size={18} />
         </span>
         <div>
-          <h2 className="text-base font-extrabold tracking-[-0.01em]">Quick actions</h2>
+          <h2 className="text-base font-display font-medium tracking-[-0.02em]">Quick actions</h2>
           <p className="text-sm text-[var(--muted)]">Transform pasted text without leaving the workspace.</p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
           </button>
         ))}
       </div>
-      {error ? <p className="mt-4 text-sm font-bold text-[var(--critical)]">{error}</p> : null}
+      {error ? <p className="mt-4 text-sm font-semibold text-[var(--critical)]">{error}</p> : null}
       {result ? <pre className="mt-5 whitespace-pre-wrap rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6">{result}</pre> : null}
     </section>
   );

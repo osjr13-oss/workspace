@@ -43,7 +43,7 @@ export default function UpdatePasswordPage() {
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
         <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">Set new password</h1>
+        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">Set new password</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           Choose a new password for your account.
         </p>
@@ -71,9 +71,9 @@ export default function UpdatePasswordPage() {
           <button className="btn-primary w-full" type="submit" disabled={loading}>
             {loading ? "Saving" : "Update password"}
           </button>
-          {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
+          {message ? <p className="text-sm font-semibold text-[var(--critical)]">{message}</p> : null}
         </form>
-        <Link href="/signin" className="mt-6 inline-block text-sm font-bold text-[var(--text)]">
+        <Link href="/signin" className="mt-6 inline-block text-sm font-semibold text-[var(--text)]">
           Back to sign in
         </Link>
       </section>

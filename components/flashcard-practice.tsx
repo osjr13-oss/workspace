@@ -76,7 +76,7 @@ export function FlashcardPracticeSession({
 
   return (
     <section className="panel p-7">
-      {error ? <p className="mb-4 text-sm font-bold text-[var(--critical)]">{error}</p> : null}
+      {error ? <p className="mb-4 text-sm font-semibold text-[var(--critical)]">{error}</p> : null}
       <div className="flex items-center justify-between">
         <span className="status-pill">
           {index + 1} of {cards.length}
@@ -86,10 +86,10 @@ export function FlashcardPracticeSession({
       </div>
       <div className="grid min-h-[360px] place-items-center text-center">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+          <p className="eyebrow text-[var(--muted)]">
             {revealed ? "Back" : "Front"}
           </p>
-          <h2 className="mt-4 text-4xl font-extrabold tracking-[-0.04em] text-balance">
+          <h2 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-balance">
             {revealed ? current.back : current.front}
           </h2>
         </div>
@@ -115,7 +115,7 @@ export function FlashcardPracticeSession({
         )}
       </div>
       {footerNote ? (
-        <p className="mt-5 text-center text-xs font-bold text-[var(--muted)]">{footerNote}</p>
+        <p className="mt-5 text-center text-xs font-semibold text-[var(--muted)]">{footerNote}</p>
       ) : null}
     </section>
   );

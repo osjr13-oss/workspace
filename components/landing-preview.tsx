@@ -44,7 +44,7 @@ export function LandingPreview() {
               <div
                 key={item}
                 onMouseEnter={() => setHovered(index)}
-                className={`relative mb-2 cursor-pointer rounded-2xl px-3 py-3 text-sm font-bold transition-colors duration-200 ${
+                className={`relative mb-2 cursor-pointer rounded-2xl px-3 py-3 text-sm font-semibold transition-colors duration-200 ${
                   isActive || isHovered ? "text-[var(--text)]" : "text-[var(--muted)]"
                 }`}
               >
@@ -64,8 +64,8 @@ export function LandingPreview() {
           })}
         </aside>
         <div className="p-6">
-          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">New conversation</p>
-          <h2 className="mt-12 text-4xl font-extrabold tracking-[-0.04em]">Think out loud with Selrano.</h2>
+          <p className="eyebrow text-[var(--muted)]">New conversation</p>
+          <h2 className="mt-12 text-4xl font-display font-medium tracking-[-0.02em]">Think out loud with Selrano.</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">Start anywhere. Add a project when your own material should guide the answer.</p>
           <motion.div
             className="group panel mt-10 overflow-hidden shadow-none"
@@ -75,11 +75,11 @@ export function LandingPreview() {
           >
             <div className="flex items-start justify-between gap-6 p-6">
               <div>
-                <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--muted)]">
+                <p className="flex items-center gap-2 eyebrow text-[var(--muted)]">
                   <LibraryBig size={14} strokeWidth={2.25} />
                   Grounded workspace
                 </p>
-                <p className="mt-4 text-xl font-extrabold tracking-[-0.025em]">Every source stays in its place.</p>
+                <p className="mt-4 text-xl font-display font-medium tracking-[-0.02em]">Every source stays in its place.</p>
                 <p className="mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">
                   Bring notes, files, and live research into one answer without losing where anything came from.
                 </p>
@@ -96,7 +96,7 @@ export function LandingPreview() {
               ].map(({ label, Icon }, index) => (
                 <div
                   key={label}
-                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold text-[var(--muted-strong)] ${
+                  className={`flex items-center gap-2.5 px-4 py-3 text-xs font-semibold text-[var(--muted-strong)] ${
                     index > 0 ? "border-l border-[var(--border)]" : ""
                   }`}
                 >
@@ -115,8 +115,8 @@ export function LandingPreview() {
                 whileHover={{ y: -3 }}
                 transition={{ type: "spring", stiffness: 320, damping: 22 }}
               >
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{item.title}</p>
-                <p className="mt-6 text-sm font-bold leading-6 text-[var(--muted-strong)]">{item.body}</p>
+                <p className="eyebrow text-[var(--muted)]">{item.title}</p>
+                <p className="mt-6 text-sm font-semibold leading-6 text-[var(--muted-strong)]">{item.body}</p>
               </motion.div>
             ))}
           </div>

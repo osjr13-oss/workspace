@@ -23,10 +23,10 @@ export function PublicDeckCards({ cards }: { cards: PublicCard[] }) {
             className="glass-card p-5 text-left"
             aria-expanded={isRevealed}
           >
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">
+            <p className="eyebrow text-[var(--muted)]">
               Card {index + 1} · {isRevealed ? "Answer" : "Question, tap to reveal"}
             </p>
-            <p className="mt-3 text-sm font-bold leading-6 text-[var(--text)]">
+            <p className="mt-3 text-sm font-semibold leading-6 text-[var(--text)]">
               {isRevealed ? card.back : card.front}
             </p>
           </button>

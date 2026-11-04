@@ -96,7 +96,7 @@ function FileDetailContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <div>
-        <Link href="/files" className="mb-4 inline-flex items-center gap-2 text-xs font-bold text-[var(--muted)] hover:text-[var(--text)]">
+        <Link href="/files" className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)]">
           <ArrowLeft size={14} /> Back to files
         </Link>
         <WorkspaceHeader title={file.name} eyebrow="Source file" />

@@ -46,7 +46,7 @@ export function ReferralSection() {
   if (loading || !status) {
     return (
       <section className="panel p-6">
-        <h2 className="text-base font-extrabold tracking-[-0.01em]">Invite classmates</h2>
+        <h2 className="text-base font-display font-medium tracking-[-0.02em]">Invite classmates</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Loading your referral link…</p>
       </section>
     );
@@ -56,7 +56,7 @@ export function ReferralSection() {
 
   return (
     <section className="panel p-6">
-      <h2 className="flex items-center gap-2 text-base font-extrabold tracking-[-0.01em]">
+      <h2 className="flex items-center gap-2 text-base font-display font-medium tracking-[-0.02em]">
         <Users size={18} /> Invite classmates
       </h2>
       <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
@@ -64,7 +64,7 @@ export function ReferralSection() {
       </p>
 
       <div className="glass-card mt-5 flex flex-wrap items-center justify-between gap-3 p-4">
-        <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--muted-strong)]">{status.referralLink}</p>
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--muted-strong)]">{status.referralLink}</p>
         <button type="button" onClick={copyLink} className="btn-secondary shrink-0">
           {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
           {copied ? "Copied" : "Copy link"}

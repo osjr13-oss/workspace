@@ -21,10 +21,10 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
         const isPro = key === "pro";
         return (
           <SpotlightCard key={key} className={`panel p-7 ${isPro ? "border-[var(--border-strong)]" : ""}`}>
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{plan.name}</p>
-            <p className="mt-3 text-4xl font-extrabold tracking-[-0.04em]">
+            <p className="eyebrow text-[var(--muted)]">{plan.name}</p>
+            <p className="mt-3 text-4xl font-display font-medium tracking-[-0.02em]">
               {plan.priceMonthly === 0 ? "Free" : formatPlanPrice(plan.priceMonthly)}
-              {plan.priceMonthly > 0 ? <span className="text-base font-bold text-[var(--muted)]">/mo</span> : null}
+              {plan.priceMonthly > 0 ? <span className="text-base font-semibold text-[var(--muted)]">/mo</span> : null}
             </p>
             <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{plan.tagline}</p>
             <ul className="mt-6 space-y-3">

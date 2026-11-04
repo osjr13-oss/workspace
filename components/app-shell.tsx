@@ -118,7 +118,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" className="icon-button" aria-label="Open menu" onClick={() => setDrawerOpen(true)}>
             <Menu size={20} />
           </button>
-          <Link href="/chats" className="text-[17px] font-extrabold tracking-[-0.02em]">
+          <Link href="/chats" className="text-[17px] font-display font-medium tracking-[-0.02em]">
             Selrano
           </Link>
           <Link href="/chats" className="icon-button" aria-label="New chat" title="New chat">
@@ -168,7 +168,7 @@ function SidebarContent({
         {collapsed ? null : (
           <Link href="/chats" className="flex items-center gap-2.5 px-2">
             <Image src="/logo.svg" alt="" width={28} height={28} priority />
-            <span className="text-lg font-extrabold tracking-[-0.03em]">Selrano</span>
+            <span className="text-lg font-display font-medium tracking-[-0.02em]">Selrano</span>
           </Link>
         )}
         {onToggleCollapsed ? (
@@ -241,7 +241,7 @@ function SidebarContent({
           <LogOut size={17} />
           {collapsed ? <span className="sr-only">Sign out</span> : signingOut ? "Signing out..." : "Sign out"}
         </button>
-        {signOutError ? <p className="px-3 pt-1 text-xs font-bold text-[var(--critical)]">{signOutError}</p> : null}
+        {signOutError ? <p className="px-3 pt-1 text-xs font-semibold text-[var(--critical)]">{signOutError}</p> : null}
       </div>
     </div>
   );
@@ -277,7 +277,7 @@ function RecentChats() {
   return (
     <div className="flex min-h-0 flex-1 flex-col pt-5">
       <div className="flex items-center justify-between px-5">
-        <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--muted)]">Chats</p>
+        <p className="eyebrow text-[var(--muted)]">Chats</p>
       </div>
       {threads.length > 6 ? (
         <label className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] px-3 text-sm">
@@ -291,7 +291,7 @@ function RecentChats() {
           />
         </label>
       ) : null}
-      {error ? <p className="px-5 pt-2 text-xs font-bold text-[var(--critical)]">{error}</p> : null}
+      {error ? <p className="px-5 pt-2 text-xs font-semibold text-[var(--critical)]">{error}</p> : null}
       <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {loaded && !threads.length ? (
           <p className="px-2 py-2 text-sm text-[var(--muted)]">Your conversations will appear here.</p>
@@ -301,7 +301,7 @@ function RecentChats() {
         ) : null}
         {groups.map((group) => (
           <section key={group.label} className="pt-2">
-            <h2 className="px-2 pb-1 pt-2 text-[11px] font-bold text-[var(--muted)]">{group.label}</h2>
+            <h2 className="px-2 pb-1 pt-2 text-[11px] font-semibold text-[var(--muted)]">{group.label}</h2>
             <ul className="space-y-0.5">
               {group.threads.map((thread) => {
                 const title = removeEmDashes(thread.title) || "Untitled chat";
@@ -325,7 +325,7 @@ function RecentChats() {
                       href={`/chats?thread=${thread.id}`}
                       aria-current={active ? "page" : undefined}
                       className={`block truncate rounded-xl py-2 pl-3 pr-9 text-sm transition ${
-                        active ? "bg-[var(--surface-strong)] font-bold shadow-[var(--shadow-tight)]" : "text-[var(--muted-strong)] hover:bg-[var(--surface-subtle)]"
+                        active ? "bg-[var(--surface-strong)] font-semibold shadow-[var(--shadow-tight)]" : "text-[var(--muted-strong)] hover:bg-[var(--surface-subtle)]"
                       }`}
                     >
                       {title}

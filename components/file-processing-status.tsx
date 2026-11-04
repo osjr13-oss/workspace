@@ -32,7 +32,7 @@ export function FileProcessingStatus({ status }: FileProcessingStatusProps) {
   const { label, Icon, className } = statusConfig[status];
 
   return (
-    <span className={`inline-flex items-center gap-2 text-xs font-extrabold tracking-[-0.01em] ${className}`}>
+    <span className={`inline-flex items-center gap-2 text-xs font-semibold ${className}`}>
       <Icon size={15} strokeWidth={2.25} className={status === "pending" ? "animate-spin" : ""} aria-hidden="true" />
       <span>{label}</span>
     </span>

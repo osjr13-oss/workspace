@@ -75,8 +75,8 @@ export default async function PublicDeckPage({
 
   return (
     <article>
-      <p className="text-sm font-bold text-[var(--muted)]">Free flashcard deck</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">{deck.name}</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Free flashcard deck</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{deck.name}</h1>
       <p className="mt-4 text-base leading-7 text-[var(--muted-strong)]">
         {cards.length} card{cards.length === 1 ? "" : "s"} · study free, no account required.
       </p>

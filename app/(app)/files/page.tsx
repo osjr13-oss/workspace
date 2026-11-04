@@ -92,7 +92,7 @@ function FilesContent() {
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Files" eyebrow="Workspace" />
       <form onSubmit={upload} className="panel grid gap-3 p-5 lg:grid-cols-[1fr_240px_auto]">
-        <label className="flex min-h-12 items-center rounded-full border border-dashed border-[var(--border-strong)] bg-white/70 px-5 text-sm font-bold text-[var(--muted-strong)]">
+        <label className="flex min-h-12 items-center rounded-full border border-dashed border-[var(--border-strong)] bg-white/70 px-5 text-sm font-semibold text-[var(--muted-strong)]">
           <input
             className="sr-only"
             type="file"
@@ -112,7 +112,7 @@ function FilesContent() {
           {uploading ? (uploadProgress > 0 && uploadProgress < 100 ? `${uploadProgress}%` : "Processing") : "Upload"}
         </button>
       </form>
-      {message ? <p className="text-sm font-bold text-[var(--muted-strong)]">{message}</p> : null}
+      {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
 
       {files.length ? (
         <section className="panel overflow-hidden">
@@ -130,7 +130,7 @@ function FilesContent() {
               {files.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <Link href={`/files/${item.id}`} className="font-extrabold hover:underline">
+                    <Link href={`/files/${item.id}`} className="font-display font-medium hover:underline">
                       {item.name}
                     </Link>
                     <p className="text-xs text-[var(--muted)]">{item.mime_type || "Unknown type"}</p>

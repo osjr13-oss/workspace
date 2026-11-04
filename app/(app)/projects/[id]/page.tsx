@@ -81,7 +81,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   if (!project) {
     return (
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
-        {error ? <p className="text-sm font-bold text-[var(--critical)]">{error}</p> : loaded ? <p className="text-sm font-bold text-[var(--muted)]">Project not found.</p> : <span className="status-pill">Loading…</span>}
+        {error ? <p className="text-sm font-semibold text-[var(--critical)]">{error}</p> : loaded ? <p className="text-sm font-semibold text-[var(--muted)]">Project not found.</p> : <span className="status-pill">Loading…</span>}
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </button>
       </WorkspaceHeader>
 
-      {error ? <p className="text-sm font-bold text-[var(--critical)]">{error}</p> : null}
+      {error ? <p className="text-sm font-semibold text-[var(--critical)]">{error}</p> : null}
 
       {project.description && (
         <p className="max-w-2xl text-sm leading-6 text-[var(--muted-strong)]">{project.description}</p>
@@ -119,7 +119,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`flex shrink-0 items-center gap-2 border-b-2 px-4 pb-3 text-sm font-bold transition-colors ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-4 pb-3 text-sm font-semibold transition-colors ${
               tab === t.key
                 ? "border-[var(--text)] text-[var(--text)]"
                 : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
@@ -127,7 +127,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           >
             {t.icon}
             {t.label}
-            <span className="rounded-full bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-extrabold">
+            <span className="rounded-full bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-display font-medium">
               {t.count}
             </span>
           </button>
@@ -143,7 +143,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {notes.map((note) => (
                 <Link key={note.id} href={`/notes?project=${id}`} className="glass-card p-5">
-                  <p className="font-extrabold">{note.title}</p>
+                  <p className="font-display font-medium">{note.title}</p>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted-strong)]">{note.content || "Empty note."}</p>
                   <p className="mt-3 text-xs text-[var(--muted)]">{formatRelative(note.updated_at)}</p>
                 </Link>
@@ -168,7 +168,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   {files.map((file) => (
                     <tr key={file.id}>
                       <td>
-                        <p className="font-extrabold">{file.name}</p>
+                        <p className="font-display font-medium">{file.name}</p>
                         <p className="text-xs text-[var(--muted)]">{file.mime_type || "Unknown type"}</p>
                       </td>
                       <td><FileProcessingStatus status={file.extraction_status} /></td>
@@ -193,7 +193,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-3 md:grid-cols-2">
               {threads.map((thread) => (
                 <Link key={thread.id} href={`/chats?thread=${thread.id}&project=${id}`} className="glass-card p-5">
-                  <p className="font-extrabold">{thread.title}</p>
+                  <p className="font-display font-medium">{thread.title}</p>
                   <p className="mt-2 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
                 </Link>
               ))}
@@ -213,7 +213,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {decks.map((deck) => (
                 <Link key={deck.id} href={`/flashcards?project=${id}`} className="glass-card p-5">
-                  <p className="font-extrabold">{deck.name}</p>
+                  <p className="font-display font-medium">{deck.name}</p>
                   <p className="mt-2 text-xs text-[var(--muted)]">Updated {formatRelative(deck.updated_at)}</p>
                 </Link>
               ))}
@@ -230,7 +230,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 function Empty({ label, action }: { label: string; action: { href: string; label: string } }) {
   return (
     <div className="panel flex flex-col items-center gap-4 py-16 text-center">
-      <p className="text-sm font-bold text-[var(--muted)]">{label}</p>
+      <p className="text-sm font-semibold text-[var(--muted)]">{label}</p>
       <Link href={action.href} className="btn-secondary"><Plus size={16} /> {action.label}</Link>
     </div>
   );

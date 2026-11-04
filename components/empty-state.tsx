@@ -10,7 +10,7 @@ export function EmptyState({
   return (
     <div className="panel grid min-h-48 place-items-center p-7 text-center">
       <div>
-        <h3 className="text-base font-extrabold tracking-[-0.01em]">{title}</h3>
+        <h3 className="text-base font-display font-medium tracking-[-0.02em]">{title}</h3>
         <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">{description}</p>
         {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
       </div>

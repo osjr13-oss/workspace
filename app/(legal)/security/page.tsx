@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-extrabold tracking-[-0.02em]">{title}</h2>
+      <h2 className="text-xl font-display font-medium tracking-[-0.02em]">{title}</h2>
       <div className="mt-4 space-y-3 text-base leading-7 text-[var(--muted-strong)]">{children}</div>
     </section>
   );
@@ -19,8 +19,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function SecurityPage() {
   return (
     <article className="prose-meridian">
-      <p className="text-sm font-bold text-[var(--muted)]">Trust &amp; security</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Security at {brand.name}</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Trust &amp; security</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Security at {brand.name}</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         We design {brand.name} with security appropriate for sensitive academic and personal work. This page summarizes
         our practices; enterprise customers may request additional documentation.
@@ -65,7 +65,7 @@ export default function SecurityPage() {
 
       <Section title="Privacy & compliance">
         <p>
-          See our <Link href={brand.urls.privacy} className="font-bold text-[var(--text)]">Privacy Policy</Link> for data
+          See our <Link href={brand.urls.privacy} className="font-semibold text-[var(--text)]">Privacy Policy</Link> for data
           collection and your rights.
         </p>
       </Section>

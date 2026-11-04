@@ -489,7 +489,7 @@ function ChatsContent() {
       <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 py-10 sm:px-6">
-            <h1 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[32px]">What are we working on?</h1>
+            <h1 className="text-[28px] font-display font-medium tracking-[-0.02em] sm:text-[32px]">What are we working on?</h1>
             <p className="mt-2 max-w-md text-[15px] leading-6 text-[var(--muted-strong)]">
               Ask anything. Pick a project or attach files when your own material should guide the answer.
             </p>
@@ -504,7 +504,7 @@ function ChatsContent() {
                     requestAnimationFrame(() => (document.querySelector('[aria-label="Chat message"]') as HTMLTextAreaElement | null)?.focus());
                   }}
                 >
-                  <span className="text-sm font-bold">{starter.title}</span>
+                  <span className="text-sm font-semibold">{starter.title}</span>
                   <span className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-[var(--muted)]">{starter.prompt}</span>
                 </button>
               ))}
@@ -640,9 +640,9 @@ function ChatHeader({
           </button>
         </form>
       ) : (
-        <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold">{title}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</h2>
       )}
-      {error ? <p className="text-xs font-bold text-[var(--critical)]">{error}</p> : null}
+      {error ? <p className="text-xs font-semibold text-[var(--critical)]">{error}</p> : null}
       {canManage && !renaming ? (
         <div className="relative" ref={menuRef}>
           <button

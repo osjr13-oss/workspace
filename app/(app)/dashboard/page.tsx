@@ -69,7 +69,7 @@ export default function DashboardPage() {
             <MessageSquare size={21} />
           </span>
           <div>
-            <h2 className="text-base font-extrabold tracking-[-0.01em]">Ask your workspace a question</h2>
+            <h2 className="text-base font-display font-medium tracking-[-0.02em]">Ask your workspace a question</h2>
             <p className="text-sm text-[var(--muted)]">Use a project to include notes, files, and flashcards as context.</p>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function DashboardPage() {
         <PanelList title="Recent chats" href="/chats" empty="No chats yet">
           {chats.map((chat) => (
             <Link key={chat.id} href={`/chats?thread=${chat.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
-              <span className="font-bold">{chat.title}</span>
+              <span className="font-semibold">{chat.title}</span>
               <span className="text-sm text-[var(--muted)]">{formatRelative(chat.updated_at)}</span>
             </Link>
           ))}
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         <PanelList title="Projects" href="/projects" empty="No projects yet">
           {projects.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-[var(--surface-subtle)]">
-              <span className="font-bold">{project.name}</span>
+              <span className="font-semibold">{project.name}</span>
               <span className="text-sm text-[var(--muted)]">{formatRelative(project.updated_at)}</span>
             </Link>
           ))}
@@ -103,7 +103,7 @@ export default function DashboardPage() {
         <PanelList title="Recent files" href="/files" empty="No files uploaded">
           {files.map((file) => (
             <div key={file.id} className="flex items-center justify-between rounded-2xl px-3 py-3">
-              <span className="font-bold">{file.name}</span>
+              <span className="font-semibold">{file.name}</span>
               <FileProcessingStatus status={file.extraction_status} />
             </div>
           ))}
@@ -126,9 +126,9 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     <div className="stat-card">
       <div className="flex items-center justify-between text-[var(--muted)]">
         {icon}
-        <span className="text-xs font-extrabold uppercase tracking-[0.1em]">{label}</span>
+        <span className="eyebrow">{label}</span>
       </div>
-      <p className="mt-4 text-3xl font-extrabold tracking-[-0.03em]">{value}</p>
+      <p className="mt-4 text-3xl font-display font-medium tracking-[-0.02em]">{value}</p>
     </div>
   );
 }
@@ -138,8 +138,8 @@ function PanelList({ title, href, empty, children }: { title: string; href: stri
   return (
     <section className="panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--muted)]">{title}</h2>
-        <Link href={href} className="text-sm font-bold text-[var(--muted)] hover:text-[var(--text)]">
+        <h2 className="eyebrow text-[var(--muted)]">{title}</h2>
+        <Link href={href} className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--text)]">
           View all
         </Link>
       </div>

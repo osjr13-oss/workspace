@@ -41,7 +41,7 @@ export function ProCheckoutButton({ className = "btn-primary w-full justify-cent
         <Crown size={18} />
         {loading ? "Redirecting..." : `Upgrade to Pro, ${priceLabel}/mo`}
       </button>
-      {message ? <p className="mt-3 text-sm font-bold text-[var(--critical)]">{message}</p> : null}
+      {message ? <p className="mt-3 text-sm font-semibold text-[var(--critical)]">{message}</p> : null}
     </div>
   );
 }

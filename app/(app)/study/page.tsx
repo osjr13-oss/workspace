@@ -95,7 +95,7 @@ export default function StudyPage() {
         </button>
       </WorkspaceHeader>
 
-      {loadError ? <p className="text-sm font-bold text-[var(--critical)]">{loadError}</p> : null}
+      {loadError ? <p className="text-sm font-semibold text-[var(--critical)]">{loadError}</p> : null}
 
       <FlashcardPracticeSession
         cards={cards}

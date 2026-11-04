@@ -67,7 +67,7 @@ export function AddPublicDeckButton({
     <div className="glass-card mt-12 flex flex-col gap-4 p-7">
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="flex items-center gap-2 text-sm font-extrabold">
+          <p className="flex items-center gap-2 text-sm font-display font-medium">
             <Image src="/logo.svg" alt="" width={16} height={16} /> Made with {brand.name}
           </p>
           <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-strong)]">
@@ -93,7 +93,7 @@ export function AddPublicDeckButton({
         )}
       </div>
       {error ? (
-        <p className="text-sm font-bold text-[var(--critical)]">
+        <p className="text-sm font-semibold text-[var(--critical)]">
           {error}{" "}
           {error.toLowerCase().includes("upgrade") ? (
             <Link href="/settings" className="underline">

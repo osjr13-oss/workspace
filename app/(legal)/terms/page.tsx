@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: October 8, 2026</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Terms of Service</h1>
+      <p className="text-sm font-semibold text-[var(--muted)]">Last updated: October 8, 2026</p>
+      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Terms of Service</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Selrano (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
       </p>
@@ -88,7 +88,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="9. Privacy">
-        <p>Your use of the Service is governed by our <a href="/privacy" className="underline font-bold">Privacy Policy</a>, which is incorporated into these Terms by reference. By using the Service, you consent to the data practices described in the Privacy Policy.</p>
+        <p>Your use of the Service is governed by our <a href="/privacy" className="underline font-semibold">Privacy Policy</a>, which is incorporated into these Terms by reference. By using the Service, you consent to the data practices described in the Privacy Policy.</p>
       </Section>
 
       <Section title="10. Fees and Payment">
@@ -131,7 +131,7 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-extrabold tracking-[-0.02em] text-[var(--text)]">{title}</h2>
+      <h2 className="text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{title}</h2>
       <div className="mt-3 space-y-3 text-sm leading-7 text-[var(--muted-strong)]">{children}</div>
     </section>
   );

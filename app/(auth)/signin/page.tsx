@@ -51,7 +51,7 @@ function SignInForm() {
         <button className="btn-primary w-full" type="submit" disabled={loading}>
           {loading ? "Signing in" : "Sign in"}
         </button>
-        {message ? <p className="text-sm font-bold text-[var(--critical)]">{message}</p> : null}
+        {message ? <p className="text-sm font-semibold text-[var(--critical)]">{message}</p> : null}
       </form>
       <div className="mt-6 flex items-center justify-end text-sm text-[var(--muted)]">
         <Link href="/reset-password">Reset password</Link>
@@ -65,7 +65,7 @@ function AuthFrame({ title, copy, children }: { title: string; copy: string; chi
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="panel w-full max-w-md p-7">
         <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-extrabold tracking-[-0.04em]">{title}</h1>
+        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{copy}</p>
         <div className="mt-7">{children}</div>
       </section>
