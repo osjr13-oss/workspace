@@ -118,7 +118,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" className="icon-button" aria-label="Open menu" onClick={() => setDrawerOpen(true)}>
             <Menu size={20} />
           </button>
-          <Link href="/chats" className="text-[17px] font-display font-medium tracking-[-0.02em]">
+          <Link href="/chats" className="text-[17px] font-semibold tracking-[-0.01em]">
             Selrano
           </Link>
           <Link href="/chats" className="icon-button" aria-label="New chat" title="New chat">
@@ -168,7 +168,7 @@ function SidebarContent({
         {collapsed ? null : (
           <Link href="/chats" className="flex items-center gap-2.5 px-2">
             <Image src="/logo.svg" alt="" width={28} height={28} priority />
-            <span className="text-lg font-display font-medium tracking-[-0.02em]">Selrano</span>
+            <span className="text-lg font-semibold tracking-[-0.01em]">Selrano</span>
           </Link>
         )}
         {onToggleCollapsed ? (

@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       </p>
 
       <Section title="1. Information We Collect">
-        <h3 className="font-display font-medium text-[var(--text)]">a. Information you provide directly</h3>
+        <h3 className="font-semibold text-[var(--text)]">a. Information you provide directly</h3>
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
@@ -24,13 +24,13 @@ export default function PrivacyPage() {
           <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
-        <h3 className="mt-4 font-display font-medium text-[var(--text)]">b. Information collected automatically</h3>
+        <h3 className="mt-4 font-semibold text-[var(--text)]">b. Information collected automatically</h3>
         <ul>
           <li><strong>Usage data:</strong> basic interaction logs such as which features you use, collected to improve the Service.</li>
           <li><strong>Technical data:</strong> IP address, browser type, and device information transmitted as part of standard web requests and handled by our infrastructure provider (Vercel).</li>
         </ul>
 
-        <h3 className="mt-4 font-display font-medium text-[var(--text)]">c. Information we do NOT collect</h3>
+        <h3 className="mt-4 font-semibold text-[var(--text)]">c. Information we do NOT collect</h3>
         <ul>
           <li>We do not collect payment information (no paid features currently exist).</li>
           <li>We do not use tracking cookies or third-party advertising trackers.</li>

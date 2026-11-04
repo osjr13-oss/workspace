@@ -143,7 +143,7 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
               >
                 Cancel
               </button>
-              <button type="button" onClick={saveEdit} className="chip-button bg-[var(--text)] text-white hover:bg-[var(--text)]" aria-label="Save and resend">
+              <button type="button" onClick={saveEdit} className="chip-button bg-[var(--accent)] text-[var(--on-accent)] hover:bg-[var(--accent-hover)]" aria-label="Save and resend">
                 Send
               </button>
             </div>

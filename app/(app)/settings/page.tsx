@@ -105,11 +105,11 @@ export default function SettingsPage() {
       <form onSubmit={save} className="panel space-y-4 p-6">
         <div>
           <label className="eyebrow text-[var(--muted)]">Full name</label>
-          <input className="input-premium mt-2 w-full px-5" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Your name" />
+          <input className="input-premium mt-2 w-full px-4" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Your name" />
         </div>
         <div>
           <label className="eyebrow text-[var(--muted)]">Email</label>
-          <input className="input-premium mt-2 w-full px-5" value={email} disabled />
+          <input className="input-premium mt-2 w-full px-4" value={email} disabled />
         </div>
         <button className="btn-primary" type="submit" disabled={saving}>
           <Save size={18} />
@@ -119,7 +119,7 @@ export default function SettingsPage() {
       </form>
 
       <section className="panel p-6">
-        <h2 className="text-base font-display font-medium tracking-[-0.02em]">Email preferences</h2>
+        <h2 className="text-base font-semibold tracking-[-0.01em]">Email preferences</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           A useful weekly workspace check-in plus occasional feature tips. The welcome email is always sent.
         </p>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="panel p-6">
-        <h2 className="text-base font-display font-medium tracking-[-0.02em]">Security</h2>
+        <h2 className="text-base font-semibold tracking-[-0.01em]">Security</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           Request a reset link by email. After you click the link, you will set a new password on a secure page.
         </p>
@@ -144,7 +144,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="panel p-6">
-        <h2 className="text-base font-display font-medium tracking-[-0.02em] text-[var(--critical)]">Danger zone</h2>
+        <h2 className="text-base font-semibold tracking-[-0.01em] text-[var(--critical)]">Danger zone</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
           Permanently delete your account and all your data. This cannot be undone.
         </p>

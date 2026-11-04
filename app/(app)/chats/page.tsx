@@ -4,7 +4,7 @@ import type { ResearchMetadata } from "@/lib/types";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowDown, Check, Globe2, Layers, ListChecks, MoreHorizontal, NotebookPen, Pencil, Trash2, X } from "lucide-react";
 import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
@@ -24,10 +24,10 @@ type Handoff = { userKey?: string | null; assistantKey?: string | null };
 const MAX_ATTACHMENTS = 4;
 
 const STARTERS = [
-  { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on." },
-  { title: "Quiz me", prompt: "Quiz me on what I have been studying. Ask one question at a time." },
-  { title: "Make flashcards", prompt: "Turn my latest notes into a flashcard deck." },
-  { title: "What changed today", prompt: "What are the most important news stories today?" }
+  { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on.", Icon: NotebookPen },
+  { title: "Quiz me", prompt: "Quiz me on what I have been studying. Ask one question at a time.", Icon: ListChecks },
+  { title: "Make flashcards", prompt: "Turn my latest notes into a flashcard deck.", Icon: Layers },
+  { title: "What changed today", prompt: "What are the most important news stories today?", Icon: Globe2 }
 ];
 
 function withHandoffKeys(rows: ChatMessage[], handoff?: Handoff): DisplayMessage[] {
@@ -489,11 +489,11 @@ function ChatsContent() {
       <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 py-10 sm:px-6">
-            <h1 className="text-[28px] font-display font-medium tracking-[-0.02em] sm:text-[32px]">What are we working on?</h1>
+            <h1 className="title-display text-[34px] sm:text-[42px]">What are we working on?</h1>
             <p className="mt-2 max-w-md text-[15px] leading-6 text-[var(--muted-strong)]">
               Ask anything. Pick a project or attach files when your own material should guide the answer.
             </p>
-            <div className="mt-7 grid gap-2 sm:grid-cols-2">
+            <div className="mt-8 grid gap-2.5 sm:grid-cols-2">
               {STARTERS.map((starter) => (
                 <button
                   key={starter.title}
@@ -504,8 +504,11 @@ function ChatsContent() {
                     requestAnimationFrame(() => (document.querySelector('[aria-label="Chat message"]') as HTMLTextAreaElement | null)?.focus());
                   }}
                 >
-                  <span className="text-sm font-semibold">{starter.title}</span>
-                  <span className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-[var(--muted)]">{starter.prompt}</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <starter.Icon size={15} className="text-[var(--accent)]" aria-hidden="true" />
+                    {starter.title}
+                  </span>
+                  <span className="mt-1 line-clamp-2 text-[13px] leading-5 text-[var(--muted)]">{starter.prompt}</span>
                 </button>
               ))}
             </div>

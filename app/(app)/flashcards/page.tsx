@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, Copy, Link2, Play, Plus, Trash2, Wand2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Copy, Layers, Link2, Play, Plus, Trash2, Wand2 } from "lucide-react";
 import { FlashcardPracticeSession } from "@/components/flashcard-practice";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
@@ -261,11 +261,11 @@ function FlashcardsContent() {
       {pageError ? <p className="text-sm font-semibold text-[var(--critical)]">{pageError}</p> : null}
 
       {/* Top row: create deck + generate */}
-      <section className="grid gap-5 lg:grid-cols-2">
+      <section className="grid gap-5 lg:grid-cols-2 [&>*]:min-w-0">
         <form onSubmit={createDeck} className="panel flex flex-wrap items-center gap-3 p-5">
           <input
             aria-label="Deck name"
-            className="input-premium min-w-0 flex-1 px-5"
+            className="input-premium min-w-[11rem] flex-1 px-4"
             placeholder="New deck name"
             value={deckName}
             onChange={(e) => setDeckName(e.target.value)}
@@ -273,7 +273,7 @@ function FlashcardsContent() {
           />
           <select
             aria-label="Project"
-            className="input-premium w-44 shrink-0 px-5"
+            className="input-premium w-44 shrink-0 px-4"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
           >
@@ -289,7 +289,7 @@ function FlashcardsContent() {
           <div className="flex flex-wrap items-center gap-3">
             <select
               aria-label="Generation source"
-              className="input-premium min-w-0 flex-1 px-5"
+              className="input-premium min-w-[11rem] flex-1 px-4"
               value={source}
               onChange={(e) => setSource(e.target.value)}
             >
@@ -341,7 +341,7 @@ function FlashcardsContent() {
                 key={deck.id}
                 className={`group mb-2 flex items-center gap-2 rounded-2xl border px-4 py-3 transition-colors ${
                   isSelected
-                    ? "border-[var(--border-strong)] bg-[var(--text)] text-white"
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--on-accent)]"
                     : "border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-subtle)]"
                 }`}
               >
@@ -369,7 +369,7 @@ function FlashcardsContent() {
           <form onSubmit={createCard} className="panel flex flex-wrap items-center gap-3 p-5">
             <input
               aria-label="Card front"
-              className="input-premium min-w-0 flex-1 px-5"
+              className="input-premium min-w-[11rem] flex-1 px-4"
               placeholder="Front (question)"
               value={front}
               onChange={(e) => setFront(e.target.value)}
@@ -377,7 +377,7 @@ function FlashcardsContent() {
             />
             <input
               aria-label="Card back"
-              className="input-premium min-w-0 flex-1 px-5"
+              className="input-premium min-w-[11rem] flex-1 px-4"
               placeholder="Back (answer)"
               value={back}
               onChange={(e) => setBack(e.target.value)}
@@ -438,7 +438,7 @@ function FlashcardsContent() {
               {visibleCards.map((card) => (
                 <article key={card.id} className="panel p-5">
                   <div className="flex justify-between gap-4">
-                    <h2 className="font-display font-medium">{card.front}</h2>
+                    <h2 className="font-semibold">{card.front}</h2>
                     <button
                       type="button"
                       onClick={() => removeCard(card.id)}
@@ -454,6 +454,7 @@ function FlashcardsContent() {
             </div>
           ) : (
             <EmptyState
+              icon={<Layers size={20} />}
               title={deckId ? "No cards in this deck" : "Select a deck to see its cards"}
               description={deckId ? "Add cards manually or generate them from a note or file." : "Click a deck on the left to view and add cards."}
             />

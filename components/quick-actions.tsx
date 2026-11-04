@@ -38,11 +38,11 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
   return (
     <section className="panel p-5">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--text)] text-white">
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
           <Wand2 size={18} />
         </span>
         <div>
-          <h2 className="text-base font-display font-medium tracking-[-0.02em]">Quick actions</h2>
+          <h2 className="text-base font-semibold tracking-[-0.01em]">Quick actions</h2>
           <p className="text-sm text-[var(--muted)]">Transform pasted text without leaving the workspace.</p>
         </div>
       </div>
@@ -51,17 +51,17 @@ export function QuickActions({ initialText = "" }: { initialText?: string }) {
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder="Paste a paragraph, note, or draft..."
-        className="mt-5 min-h-32 w-full rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6 outline-none focus:border-[var(--border-strong)]"
+        className="mt-5 min-h-32 w-full rounded-[14px] border border-[var(--border-strong)] bg-[var(--surface-strong)] p-4 text-sm leading-6 outline-none transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:shadow-[0_0_0_4px_var(--accent-soft-strong)]"
       />
       <div className="mt-4 flex flex-wrap gap-2">
         {actions.map((action) => (
-          <button key={action} type="button" onClick={() => run(action)} className="btn-secondary min-h-10 px-4 text-sm">
+          <button key={action} type="button" onClick={() => run(action)} className="btn-secondary btn-sm">
             {loading === action ? "Working" : action}
           </button>
         ))}
       </div>
       {error ? <p className="mt-4 text-sm font-semibold text-[var(--critical)]">{error}</p> : null}
-      {result ? <pre className="mt-5 whitespace-pre-wrap rounded-[18px] border border-[var(--border)] bg-white/70 p-4 text-sm leading-6">{result}</pre> : null}
+      {result ? <pre className="mt-5 whitespace-pre-wrap rounded-[14px] border border-[var(--border)] bg-[var(--background-elevated)] p-4 text-sm leading-6">{result}</pre> : null}
     </section>
   );
 }

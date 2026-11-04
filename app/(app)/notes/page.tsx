@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Save, Trash2, Wand2 } from "lucide-react";
+import { NotebookPen, Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
@@ -157,19 +157,19 @@ function NotesContent() {
                   onClick={() => selectNote(note)}
                   className={`w-full rounded-2xl p-4 text-left ${selectedId === note.id ? "bg-[var(--surface-subtle)]" : "hover:bg-[var(--surface-subtle)]"}`}
                 >
-                  <p className="font-display font-medium">{note.title}</p>
+                  <p className="font-semibold">{note.title}</p>
                   <p className="mt-1 text-xs text-[var(--muted)]">{formatRelative(note.updated_at)}</p>
                 </button>
               ))}
             </div>
           ) : (
-            <EmptyState title="No notes yet" description="Create your first markdown note." />
+            <EmptyState icon={<NotebookPen size={20} />} title="No notes yet" description="Create your first markdown note." />
           )}
         </aside>
         <section className="space-y-4">
           <div className="panel grid gap-3 p-4 lg:grid-cols-[1fr_220px_auto]">
-            <input aria-label="Note title" className="input-premium px-5" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Note title" />
-            <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+            <input aria-label="Note title" className="input-premium px-4" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Note title" />
+            <select aria-label="Project" className="input-premium px-4" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
               <option value="">No project</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>{project.name}</option>

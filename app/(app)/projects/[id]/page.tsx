@@ -127,7 +127,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           >
             {t.icon}
             {t.label}
-            <span className="rounded-full bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-display font-medium">
+            <span className="rounded-full bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-semibold">
               {t.count}
             </span>
           </button>
@@ -143,7 +143,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {notes.map((note) => (
                 <Link key={note.id} href={`/notes?project=${id}`} className="glass-card p-5">
-                  <p className="font-display font-medium">{note.title}</p>
+                  <p className="font-semibold">{note.title}</p>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--muted-strong)]">{note.content || "Empty note."}</p>
                   <p className="mt-3 text-xs text-[var(--muted)]">{formatRelative(note.updated_at)}</p>
                 </Link>
@@ -168,7 +168,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   {files.map((file) => (
                     <tr key={file.id}>
                       <td>
-                        <p className="font-display font-medium">{file.name}</p>
+                        <p className="font-semibold">{file.name}</p>
                         <p className="text-xs text-[var(--muted)]">{file.mime_type || "Unknown type"}</p>
                       </td>
                       <td><FileProcessingStatus status={file.extraction_status} /></td>
@@ -193,7 +193,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-3 md:grid-cols-2">
               {threads.map((thread) => (
                 <Link key={thread.id} href={`/chats?thread=${thread.id}&project=${id}`} className="glass-card p-5">
-                  <p className="font-display font-medium">{thread.title}</p>
+                  <p className="font-semibold">{thread.title}</p>
                   <p className="mt-2 text-xs text-[var(--muted)]">{formatRelative(thread.updated_at)}</p>
                 </Link>
               ))}
@@ -213,7 +213,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {decks.map((deck) => (
                 <Link key={deck.id} href={`/flashcards?project=${id}`} className="glass-card p-5">
-                  <p className="font-display font-medium">{deck.name}</p>
+                  <p className="font-semibold">{deck.name}</p>
                   <p className="mt-2 text-xs text-[var(--muted)]">Updated {formatRelative(deck.updated_at)}</p>
                 </Link>
               ))}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Trash2, Upload as UploadIcon } from "lucide-react";
+import { FileUp, Trash2, Upload as UploadIcon } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { FileProcessingStatus } from "@/components/file-processing-status";
@@ -92,7 +92,7 @@ function FilesContent() {
     <div className="mx-auto max-w-7xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Files" eyebrow="Workspace" />
       <form onSubmit={upload} className="panel grid gap-3 p-5 lg:grid-cols-[1fr_240px_auto]">
-        <label className="flex min-h-12 items-center rounded-full border border-dashed border-[var(--border-strong)] bg-white/70 px-5 text-sm font-semibold text-[var(--muted-strong)]">
+        <label className="flex min-h-12 items-center rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--background-elevated)] px-5 text-sm font-semibold text-[var(--muted-strong)]">
           <input
             className="sr-only"
             type="file"
@@ -101,7 +101,7 @@ function FilesContent() {
           />
           {file ? file.name : "Choose PDF, DOCX, TXT, Markdown, or image"}
         </label>
-        <select aria-label="Project" className="input-premium px-5" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+        <select aria-label="Project" className="input-premium px-4" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
           <option value="">No project</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
@@ -130,7 +130,7 @@ function FilesContent() {
               {files.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <Link href={`/files/${item.id}`} className="font-display font-medium hover:underline">
+                    <Link href={`/files/${item.id}`} className="font-semibold hover:underline">
                       {item.name}
                     </Link>
                     <p className="text-xs text-[var(--muted)]">{item.mime_type || "Unknown type"}</p>
@@ -149,7 +149,7 @@ function FilesContent() {
           </table>
         </section>
       ) : (
-        <EmptyState title="No files uploaded" description="Upload source material to make it available for project-aware chat and flashcard generation." />
+        <EmptyState icon={<FileUp size={20} />} title="No files uploaded" description="Upload source material to make it available for project-aware chat and flashcard generation." />
       )}
     </div>
   );

@@ -131,7 +131,7 @@ export function BillingSection() {
     <section className="panel p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-display font-medium tracking-[-0.02em]">Plan & billing</h2>
+          <h2 className="text-base font-semibold tracking-[-0.01em]">Plan & billing</h2>
           <p className="mt-2 text-sm text-[var(--muted-strong)]">
             You are on <strong>{status.planName}</strong>
             {isPro && status.currentPeriodEnd

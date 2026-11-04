@@ -32,7 +32,7 @@ export function MarkdownEditor({
                 type="button"
                 title={snippet.label}
                 onClick={() => onChange(`${value}${snippet.value}`)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-[var(--border)] bg-white/70 text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--border)] bg-[var(--surface-strong)] text-[var(--muted-strong)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
               >
                 <Icon size={17} />
               </button>

@@ -46,7 +46,7 @@ export function ReferralSection() {
   if (loading || !status) {
     return (
       <section className="panel p-6">
-        <h2 className="text-base font-display font-medium tracking-[-0.02em]">Invite classmates</h2>
+        <h2 className="text-base font-semibold tracking-[-0.01em]">Invite classmates</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Loading your referral link…</p>
       </section>
     );
@@ -56,7 +56,7 @@ export function ReferralSection() {
 
   return (
     <section className="panel p-6">
-      <h2 className="flex items-center gap-2 text-base font-display font-medium tracking-[-0.02em]">
+      <h2 className="flex items-center gap-2 text-base font-semibold tracking-[-0.01em]">
         <Users size={18} /> Invite classmates
       </h2>
       <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">

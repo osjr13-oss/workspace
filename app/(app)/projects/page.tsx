@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { FolderOpen, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -69,8 +69,8 @@ export default function ProjectsPage() {
       <WorkspaceHeader title="Projects" eyebrow="Workspace" />
 
       <form onSubmit={createProject} className="panel flex flex-wrap items-center gap-3 p-5">
-        <input aria-label="Project name" className="input-premium min-w-0 flex-1 px-5" placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input aria-label="Project description" className="input-premium min-w-[200px] flex-[2] px-5" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <input aria-label="Project name" className="input-premium min-w-[11rem] flex-1 px-4" placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <input aria-label="Project description" className="input-premium min-w-[200px] flex-[2] px-4" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <button type="submit" className="btn-primary shrink-0" disabled={loading}>
           <Plus size={18} />
           {loading ? "Creating…" : "Create project"}
@@ -90,7 +90,7 @@ export default function ProjectsPage() {
           {projects.map((project) => (
             <Link key={project.id} href={`/projects/${project.id}`} className="glass-card group relative p-6">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-base font-display font-medium tracking-[-0.02em]">{project.name}</h2>
+                <h2 className="text-base font-semibold tracking-[-0.01em]">{project.name}</h2>
                 <button
                   type="button"
                   onClick={(e) => deleteProject(e, project.id)}
@@ -107,7 +107,7 @@ export default function ProjectsPage() {
           ))}
         </section>
       ) : (
-        <EmptyState title="No projects yet" description="Create a project to group notes, files, chats, and flashcards around one class or thesis." />
+        <EmptyState icon={<FolderOpen size={20} />} title="No projects yet" description="Create a project to group notes, files, chats, and flashcards around one class or thesis." />
       )}
     </div>
   );
