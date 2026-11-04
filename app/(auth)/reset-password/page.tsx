@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { SelranoLogo } from "@/components/selrano-logo";
+import { AuthField, AuthFrame } from "@/components/auth-frame";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function ResetPasswordPage() {
@@ -29,20 +29,21 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
-      <section className="panel w-full max-w-md p-7">
-        <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">Reset password</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">Enter your email and Supabase will send a secure reset link.</p>
-        <form onSubmit={submit} className="mt-7 space-y-4">
-          <input aria-label="Email address" className="input-premium w-full px-5" type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          <button className="btn-primary w-full" type="submit" disabled={loading}>
-            {loading ? "Sending" : "Send reset link"}
-          </button>
-          {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
-        </form>
-        <Link href="/signin" className="mt-6 inline-block text-sm font-semibold text-[var(--text)]">Back to sign in</Link>
-      </section>
-    </main>
+    <AuthFrame title="Reset your password" copy="Enter the email on your account and we will send you a secure link to choose a new password.">
+      <form onSubmit={submit} className="space-y-4">
+        <AuthField label="Email address" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        <button className="btn-primary w-full" type="submit" disabled={loading}>
+          {loading ? "Sending" : "Send reset link"}
+        </button>
+        {message ? (
+          <p role="status" className="text-sm font-medium text-[var(--muted-strong)]">
+            {message}
+          </p>
+        ) : null}
+      </form>
+      <Link href="/signin" className="mt-8 inline-block text-sm font-medium text-[var(--accent)] hover:underline">
+        Back to sign in
+      </Link>
+    </AuthFrame>
   );
 }

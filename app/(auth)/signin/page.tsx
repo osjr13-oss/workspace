@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SelranoLogo } from "@/components/selrano-logo";
+import { AuthField, AuthFrame } from "@/components/auth-frame";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function safeNextPath(value: string | null) {
@@ -44,31 +44,32 @@ function SignInForm() {
   }
 
   return (
-    <AuthFrame title="Welcome back" copy="Sign in to continue organizing your work.">
+    <AuthFrame title="Welcome back" copy="Sign in to pick up where you left off.">
       <form onSubmit={submit} className="space-y-4">
-        <input aria-label="Email address" className="input-premium w-full px-5" type="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        <input aria-label="Password" className="input-premium w-full px-5" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <AuthField label="Email address" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        <div>
+          <AuthField label="Password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <div className="mt-2 text-right">
+            <Link href="/reset-password" className="text-[13px] font-medium text-[var(--accent)] hover:underline">
+              Forgot your password?
+            </Link>
+          </div>
+        </div>
         <button className="btn-primary w-full" type="submit" disabled={loading}>
           {loading ? "Signing in" : "Sign in"}
         </button>
-        {message ? <p className="text-sm font-semibold text-[var(--critical)]">{message}</p> : null}
+        {message ? (
+          <p role="alert" className="text-sm font-medium text-[var(--critical)]">
+            {message}
+          </p>
+        ) : null}
       </form>
-      <div className="mt-6 flex items-center justify-end text-sm text-[var(--muted)]">
-        <Link href="/reset-password">Reset password</Link>
-      </div>
+      <p className="mt-8 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)]">
+        New to Selrano? Accounts are paused for now.{" "}
+        <Link href="/signup" className="font-medium text-[var(--accent)] hover:underline">
+          Join the waitlist
+        </Link>
+      </p>
     </AuthFrame>
-  );
-}
-
-function AuthFrame({ title, copy, children }: { title: string; copy: string; children: React.ReactNode }) {
-  return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
-      <section className="panel w-full max-w-md p-7">
-        <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{copy}</p>
-        <div className="mt-7">{children}</div>
-      </section>
-    </main>
   );
 }

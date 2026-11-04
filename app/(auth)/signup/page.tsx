@@ -1,23 +1,27 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { SelranoLogo } from "@/components/selrano-logo";
+import { AuthFrame } from "@/components/auth-frame";
+import { WaitlistForm } from "@/components/marketing/waitlist-form";
+
+export const metadata: Metadata = { title: "Join the waitlist" };
 
 // Sign-ups are closed (owner decision, 2026-10-21): the site is public, but new
-// accounts are turned off in Supabase. The sign-up form is in git history
-// (before commit "Close sign-ups while keeping the site public").
+// accounts are turned off in Supabase. Visitors can join the waitlist instead
+// (app/api/waitlist). The old sign-up form is in git history (before commit
+// "Close sign-ups while keeping the site public").
 export default function SignUpPage() {
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
-      <section className="panel w-full max-w-md p-7">
-        <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">Sign-ups are closed</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          Selrano is not taking new accounts right now. If you already have one, you can sign in.
-        </p>
-        <div className="mt-7 flex gap-3">
-          <Link href="/signin" className="btn-primary">Sign in</Link>
-          <Link href="/" className="btn-secondary">Back to home</Link>
-        </div>
-      </section>
-    </main>
+    <AuthFrame
+      title="Sign-ups are closed for now"
+      copy="Selrano is not taking new accounts yet. Leave your email and we will let you know as soon as it opens."
+    >
+      <WaitlistForm />
+      <p className="mt-8 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)]">
+        Already have an account?{" "}
+        <Link href="/signin" className="font-medium text-[var(--accent)] hover:underline">
+          Sign in
+        </Link>
+      </p>
+    </AuthFrame>
   );
 }

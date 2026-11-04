@@ -18,7 +18,7 @@ export function ProCheckoutButton({ className = "btn-primary w-full justify-cent
       const payload = (await response.json()) as { url?: string; error?: string };
 
       if (response.status === 401) {
-        window.location.href = "/signup";
+        window.location.href = "/signin?next=/pricing";
         return;
       }
 

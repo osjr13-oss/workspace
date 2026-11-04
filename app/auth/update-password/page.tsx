@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SelranoLogo } from "@/components/selrano-logo";
+import { AuthField, AuthFrame } from "@/components/auth-frame";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function UpdatePasswordPage() {
@@ -40,43 +40,38 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
-      <section className="panel w-full max-w-md p-7">
-        <SelranoLogo />
-        <h1 className="mt-10 text-4xl font-display font-medium tracking-[-0.02em]">Set new password</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          Choose a new password for your account.
-        </p>
-        <form onSubmit={submit} className="mt-7 space-y-4">
-          <input
-            aria-label="New password"
-            className="input-premium w-full px-5"
-            type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={8}
-          />
-          <input
-            aria-label="Confirm password"
-            className="input-premium w-full px-5"
-            type="password"
-            placeholder="Confirm password"
-            value={confirm}
-            onChange={(event) => setConfirm(event.target.value)}
-            required
-            minLength={8}
-          />
-          <button className="btn-primary w-full" type="submit" disabled={loading}>
-            {loading ? "Saving" : "Update password"}
-          </button>
-          {message ? <p className="text-sm font-semibold text-[var(--critical)]">{message}</p> : null}
-        </form>
-        <Link href="/signin" className="mt-6 inline-block text-sm font-semibold text-[var(--text)]">
-          Back to sign in
-        </Link>
-      </section>
-    </main>
+    <AuthFrame title="Choose a new password" copy="Use at least 8 characters.">
+      <form onSubmit={submit} className="space-y-4">
+        <AuthField
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          minLength={8}
+        />
+        <AuthField
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+          required
+          minLength={8}
+        />
+        <button className="btn-primary w-full" type="submit" disabled={loading}>
+          {loading ? "Saving" : "Update password"}
+        </button>
+        {message ? (
+          <p role="alert" className="text-sm font-medium text-[var(--critical)]">
+            {message}
+          </p>
+        ) : null}
+      </form>
+      <Link href="/signin" className="mt-8 inline-block text-sm font-medium text-[var(--accent)] hover:underline">
+        Back to sign in
+      </Link>
+    </AuthFrame>
   );
 }
