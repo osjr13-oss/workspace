@@ -14,7 +14,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, OpenAI and Groq keys, Resend keys, customer content, or browser-session data.
 - OpenAI GPT is the primary chat model and Groq is the fallback (owner decision 2026-10-21; it replaced Claude Haiku). Background work, transformations, flashcards, and OCR remain on Groq. Do not add another provider without asking.
-- Selrano's pages are public again (owner decision, 2026-10-21) and marketing pages are indexed, but sign-ups stay closed (Supabase setting off; `/signup` says so). The 2026-10-13 private allowlist is removed. App pages stay behind sign-in (middleware) and API routes behind `getAuthenticatedUser`.
+- Selrano's pages are public again (owner decision, 2026-10-21) and marketing pages are indexed, but sign-ups stay closed (Supabase setting off; `/signup` says so and offers the waitlist). The 2026-10-13 private allowlist is removed. App pages stay behind sign-in (middleware) and API routes behind `getAuthenticatedUser`.
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
 - Owner preference (2026-10-21): push completed changes without asking again. The owner handles post-push deployment verification unless requested.
@@ -42,6 +42,9 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
+- `app/page.tsx` and `components/marketing/*` — the landing page, shared public header, hero demo, illustrations, and waitlist form. `DESIGN_SYSTEM.md` describes the tokens and primitives.
+- `app/api/waitlist/route.ts` — public waitlist sign-up while accounts are closed (stores into `pro_waitlist`, source `signup_waitlist`).
+- `app/(marketing)` and `app/(legal)` — public pages with the wide and reading layouts.
 - `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
 - `lib/ai.ts` and `lib/openai.ts` — OpenAI-first chat streaming (Responses API, `store: false`) with Groq fallback; Groq completion and structured output for other AI work.
 - `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).

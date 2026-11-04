@@ -1,6 +1,19 @@
 # Selrano production handoff
 
-Last updated: **October 21, 2026**
+Last updated: **November 4, 2026**
+
+## Redesign and waitlist (November 4)
+
+The owner asked for sweeping changes to the landing page and UI. Built on branch `claude/intelligent-johnson-adtfsx` for review first (owner's choice, because pushes to `main` deploy production and there are no previews), then fast-forwarded to `main` once approved.
+
+- **Design system:** "editorial calm". Inter and Newsreader now load through `next/font` (the old Plus Jakarta Sans was named in CSS but never loaded, so everyone saw a system font). Paper surfaces replace glass blur, the logo navy `#1b2d50` is the single accent, and headings dropped from weight 800. See `DESIGN_SYSTEM.md`.
+- **Landing page (`app/page.tsx`, `components/marketing/*`):** materials-first pitch, a looping product demo (`hero-demo.tsx`: an answer streams with numbered citations while the cited passage is highlighted), formats, How it works, four feature rows, privacy band, pricing teaser, FAQ, and a final waitlist. Every claim was checked against the code and the legal pages; keep it that way. The cursor spotlight components were removed.
+- **Waitlist:** sign-ups stay closed, so the old "Get started free" CTAs (which led to a dead end) are now a waitlist form. `POST /api/waitlist` validates the email, rejects placeholder domains, rate-limits by IP (`waitlist.join`, 6 an hour), and upserts into the existing **`public.pro_waitlist`** table with `source = 'signup_waitlist'` through the service-role client. A valid email always gets `{ ok: true }`, so the endpoint does not reveal who is on the list. **Before merging, confirm `pro_waitlist` exists in production with its `source` column** (Supabase Table editor). If it is missing, write one idempotent migration matching `supabase/migrations/007_pro_waitlist.sql`; do not run old numbered files. Export the list from that table filtered by `source`. The privacy page now mentions waitlist emails.
+- **Routes:** pricing, guides, changelog and shared decks moved to the `app/(marketing)` route group (wide layout); terms, privacy and security stay in `app/(legal)` (reading layout). URLs did not change. Both share `components/marketing/site-header.tsx` and `components/site-footer.tsx`.
+- **Auth pages** share `components/auth-frame.tsx`. `/signup` keeps the "Sign-ups are closed" heading and now carries the waitlist form. Signed-out Pro checkout goes to `/signin?next=/pricing` instead of `/signup`.
+- **App:** new dashboard layout, serif page titles, refreshed empty states, chat empty state with icons, ink citation markers. Flashcards form rows now wrap on phones. All accessible names the tests rely on are unchanged.
+- **Share image:** `app/opengraph-image.tsx` renders the headline in Newsreader (fetched at build; it falls back to the default font if the fetch fails).
+- **Open items for the owner:** Settings still shows "Invite classmates" with a `/signup?ref=` link, which now lands on the waitlist because accounts are closed. Decide whether to hide referrals until sign-ups reopen. The privacy policy has stale lines (it says no paid features exist); a follow-up task was suggested.
 
 ## Workspace restored and reopened (October 21)
 
@@ -246,7 +259,7 @@ On 2026-10-13 the owner confirmed by hand on the live site that chat is faster a
 - Malformed Groq tool-call output (a tool call written as text and rejected by Groq as `tool_use_failed`) is parsed from the rejected error and recovered (`recoverMalformedToolCall` in `lib/groq.ts`; it handles the `<function=name {...}>` form and a JSON object with a name and arguments). The llama model that produced it is shut down, so this is now a safety net.
 - The Settings billing panel no longer shows the redundant AI today/Projects/Decks usage counters.
 - Generic sparkle iconography was replaced with context-specific icons: a crown for Pro/premium actions, the Selrano brand mark for "Made with Selrano" attribution, and the existing wand icon unified across all AI-transform actions (flashcard generation, note transforms, quick actions).
-- The landing page and pricing cards use a cursor-tracking spotlight/glow border (`components/spotlight-card.tsx`, `components/use-spotlight.ts`) and scroll-in reveal animation (`components/reveal.tsx`), built on a new `framer-motion` dependency. See `DESIGN_SYSTEM.md`'s Motion section for the reusable pattern.
+- The landing page uses a scroll-in reveal (`components/reveal.tsx`, framer-motion). The August cursor spotlight was removed in the November 4 redesign.
 
 ## Production database
 

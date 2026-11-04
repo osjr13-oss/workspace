@@ -1,398 +1,97 @@
 # Selrano Design System
 
-A warm, glass-morphic design language built for focus and productivity. Translucent surfaces, soft shadows, and tight typography create a premium feel that keeps users engaged without distraction.
+Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Updated November 4, 2026.
 
----
+## Principles
 
-## Core Principles
+- **Paper, not glass.** Surfaces are solid warm paper with a hairline border and a soft drop. No backdrop blur on cards; blur is only for sticky headers and overlays.
+- **One accent.** The logo's navy (`#1b2d50`) is the only brand color. Use it for primary actions, active navigation, citation markers, and links. Do not add a second accent.
+- **The highlighter means "from your source".** `--highlight` marks cited passages and source text. Do not use it for decoration.
+- **Serif for titles, sans for everything else.** Newsreader carries page titles and marketing headlines; Inter carries the interface.
+- **Calm weights.** UI headings are 600. Display titles are 500. Nothing is 800.
+- **Sentence case.** Labels and eyebrows are sentence case. No uppercase tracking labels.
+- **Real UI over decoration.** Marketing illustrations are built from real product parts (bubbles, citations, file rows). No emoji, no stock icons as decoration, no fake customer logos.
 
-- **Warm neutrals over cold grays** — the palette leans warm (cream/parchment base), never sterile
-- **Glass over solid** — surfaces are translucent with backdrop blur, layering depth naturally
-- **Tight type** — extra-bold weights, negative letter-spacing, compact leading
-- **Subtle motion** — short transitions (160–180ms ease), only on transform/opacity/border
-- **Rounded everything** — pill buttons, 18px card radius, 2xl nav items; hard corners are rare
+## Fonts
 
----
+Loaded with `next/font/google` in `app/layout.tsx` (self-hosted at build, no runtime request to Google):
 
-## Color Tokens
+| Variable | Family | Use |
+|---|---|---|
+| `--font-sans` | Inter (variable) | All interface and body text. Tailwind `font-sans`. |
+| `--font-display` | Newsreader (variable, optical size) | Page titles, marketing headlines, big numbers. Tailwind `font-display`, or the `.title-display` class. |
 
-Paste these CSS variables into any project's `:root` to get the full palette.
+## Tokens (`app/globals.css`)
 
-```css
-:root {
-  /* Backgrounds */
-  --background:          #f7f5f0;          /* warm parchment — page base */
-  --background-elevated: #fffefa;          /* near-white — modals, cards on dark bg */
+| Token | Value | Use |
+|---|---|---|
+| `--background` | `#f6f3ec` | Page base |
+| `--background-elevated` | `#fdfbf7` | Wells and secondary panes inside a surface |
+| `--surface` / `--surface-strong` | `#fffdf9` / `#ffffff` | Cards and panels / inputs and raised items |
+| `--surface-sunken` | `#efebe2` | App sidebar, backdrops behind illustrations |
+| `--surface-subtle` | warm 4.5% tint | Hover rows |
+| `--border` / `--border-strong` | warm 11% / 20% | Hairlines / inputs and emphasis |
+| `--text` / `--muted-strong` / `--muted` | `#16191f` / `#3b4048` / `#676b72` | Headings / body / meta. Muted passes AA on paper. |
+| `--accent` / `--accent-hover` | `#1b2d50` / `#26396a` | Primary actions, active state, links |
+| `--accent-soft` / `--accent-soft-strong` / `--accent-ring` | navy at 7% / 12% / 22% | User bubble, citation fill, focus rings |
+| `--on-accent` | `#fdfbf7` | Text on the accent |
+| `--highlight` / `--highlight-strong` | `#f4e4b0` / `#ecd48a` | Cited passages, blockquote rule, text selection |
+| `--shadow-tight` / `--shadow-soft` / `--shadow-lift` | | Small items / panels / hero product shots |
 
-  /* Surfaces (translucent) */
-  --surface:        rgba(255, 255, 255, 0.72);   /* default glass panel */
-  --surface-strong: rgba(255, 255, 255, 0.92);   /* active/selected state */
-  --surface-hover:  rgba(255, 255, 255, 0.86);   /* hover state */
-  --surface-subtle: rgba(21, 24, 31, 0.035);     /* very light tint, zebra rows */
+Status colors (`--critical`, `--high`, `--medium`, `--low`, `--info`) are for state only.
 
-  /* Borders */
-  --border:        rgba(31, 35, 44, 0.10);  /* default dividers */
-  --border-strong: rgba(31, 35, 44, 0.18);  /* active/focus borders */
+## Type helpers
 
-  /* Text */
-  --text:         #15181f;  /* primary — near-black with warmth */
-  --muted:        #69707d;  /* secondary labels, placeholders */
-  --muted-strong: #3a404b;  /* body copy, descriptions */
+- `.title-display`: serif, weight 500, tight tracking. Size it with Tailwind (`text-[40px]` and up for page titles).
+- `.eyebrow`: 13px, weight 500, muted, sentence case. Add `.eyebrow-accent` for marketing section labels.
+- `.prose-selrano`: reading pages (legal, guides). Serif headings, 16px body, ink links.
+- `.answer-prose`: assistant replies in chat.
 
-  /* Semantic */
-  --critical: #c2413d;  /* errors, destructive */
-  --high:     #b85f1f;  /* warnings */
-  --medium:   #9a6b13;  /* caution */
-  --low:      #1f7a53;  /* success */
-  --info:     #246f9f;  /* informational */
-  --focus:    #15181f;  /* focus ring base */
+## Primitives
 
-  /* Shadows */
-  --shadow-soft:  0 18px 60px rgba(38, 35, 28, 0.08);  /* panels, modals */
-  --shadow-tight: 0 8px  24px rgba(38, 35, 28, 0.08);  /* cards, buttons */
-}
-```
-
-### Color Usage Guide
-
-| Token | Use it for |
+| Class | What it is |
 |---|---|
-| `--background` | `<body>` background only |
-| `--background-elevated` | Content sitting above the page bg (tooltips, popovers) |
-| `--surface` | Every card, panel, sidebar |
-| `--surface-strong` | Active nav item, selected card |
-| `--surface-subtle` | Hover rows, zebra stripes, subtle fills |
-| `--border` | Dividers, card outlines |
-| `--border-strong` | Active input, focused card |
-| `--text` | Headings, labels, any primary text |
-| `--muted` | Timestamps, meta, secondary labels |
-| `--muted-strong` | Body copy, descriptions |
+| `.panel` | Primary container: surface, hairline, `--shadow-soft`, 16px radius |
+| `.glass-card` | Interactive card (name kept for compatibility; it is solid now) |
+| `.well` | Recessed group inside a panel |
+| `.stat-card` | Small metric tile |
+| `.btn-primary` | Ink pill. One per view where possible. |
+| `.btn-secondary` | Paper pill with a strong hairline |
+| `.btn-ghost` | Text button with hover fill |
+| `.btn-invert` | Paper pill for use on ink bands |
+| `.btn-sm` | Smaller size modifier for any button |
+| `.input-premium` | 12px radius field; ink border and soft ring on focus |
+| `.status-pill` | Small neutral pill |
+| `.composer`, `.send-button`, `.user-bubble`, `.starter-card` | Chat parts, reused by the landing illustrations |
+| `.focus-ring` | Adds the standard focus ring to any element |
 
----
+Focus is always visible: a 3px paper gap plus a 2px accent ring (`--accent-ring`).
 
-## Typography
+## Components
 
-**Font family:** [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans)
-Fallback stack: `"Inter", "Segoe UI", system-ui, sans-serif`
-
-```css
-body {
-  font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, sans-serif;
-}
-```
-
-### Type Scale
-
-| Role | Size | Weight | Tracking | Usage |
-|---|---|---|---|---|
-| Display | `4.5rem / 5rem / 7rem` | `800` | `-0.035em` | Landing hero |
-| Page title | `1.875rem` | `800` | `-0.03em` | Section headers |
-| Card title | `1rem` | `800` | `-0.01em` | Panel headings |
-| Nav label | `0.875rem` | `700` | default | Sidebar links |
-| Body | `0.875rem` | `400` | default | Descriptions |
-| Meta / caption | `0.75rem` | `700` | default | Timestamps, pills |
-| Table header | `0.625rem` | `800` | `0.08em` + uppercase | Column headers |
-
-**Key rule:** headings use `font-extrabold` (800) + negative tracking (`tracking-[-0.035em]`). This is what makes the type feel premium.
-
-### Prose Styles
-
-```css
-.prose-Selrano {
-  color: var(--muted-strong);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.prose-Selrano h1, h2, h3 { color: var(--text); font-weight: 800; }
-.prose-Selrano code {
-  border-radius: 8px;
-  background: var(--surface-subtle);
-  padding: 2px 6px;
-  color: var(--text);
-}
-.prose-Selrano pre {
-  border-radius: 14px;
-  background: #15181f;
-  padding: 16px;
-  color: #fffefa;
-}
-```
-
----
-
-## Elevation & Surfaces
-
-The design uses three levels of elevation, all achieved with glass + shadow, not solid fills.
-
-### `.panel` — primary container
-
-```css
-.panel {
-  background: var(--surface);               /* rgba white, 72% */
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(22px) saturate(1.15);
-  -webkit-backdrop-filter: blur(22px) saturate(1.15);
-}
-```
-Use for: main content areas, sidebars, dialogs.
-
-### `.glass-card` — interactive card
-
-```css
-.glass-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(22px) saturate(1.15);
-  transition: transform 180ms ease, border-color 180ms ease,
-              box-shadow 180ms ease, background 180ms ease;
-}
-.glass-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
-}
-```
-Use for: clickable cards, feature tiles, project cards.
-
-### `.stat-card` — compact metric tile
-
-```css
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: var(--shadow-tight);
-}
-```
-Use for: dashboard stats, count tiles.
-
----
-
-## Buttons
-
-All buttons share a base of pill shape (`border-radius: 999px`), min-height 44px, bold weight, and a subtle lift on hover.
-
-```css
-.btn-primary,
-.btn-secondary,
-.btn-invert {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 0 18px;
-  font-weight: 700;
-  transition: transform 160ms ease, box-shadow 160ms ease,
-              background 160ms ease, border-color 160ms ease;
-}
-
-/* Dark — primary action */
-.btn-primary {
-  background: #15181f;
-  color: #fffefa;
-  border: 1px solid #15181f;
-  box-shadow: 0 10px 28px rgba(21, 24, 31, 0.16);
-}
-
-/* Light glass — secondary/ghost action */
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--text);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
-}
-
-/* White on dark — use on dark/hero backgrounds */
-.btn-invert {
-  background: #fffefa;
-  color: #15181f;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
-}
-
-.btn-primary:hover,
-.btn-secondary:hover,
-.btn-invert:hover {
-  transform: translateY(-1px);
-}
-```
-
----
-
-## Form Inputs
-
-```css
-.input-premium {
-  min-height: 48px;
-  border-radius: 999px;         /* pill shape */
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--text);
-  outline: none;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-}
-
-.input-premium:focus {
-  border-color: rgba(21, 24, 31, 0.44);
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(21, 24, 31, 0.08);
-}
-```
-
-For **textarea / multi-line**, swap `border-radius: 999px` for `border-radius: 18px`.
-
----
-
-## Status Pill / Badge
-
-```css
-.status-pill {
-  display: inline-flex;
-  min-height: 28px;
-  align-items: center;
-  gap: 7px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.78);
-  padding: 0 10px;
-  color: var(--muted-strong);
-  font-size: 12px;
-  font-weight: 700;
-}
-```
-Use for: tags, labels, mobile nav items, loading indicators.
-
----
-
-## Focus & Accessibility
-
-```css
-/* Applied to buttons + inputs on keyboard focus */
-.btn-primary:focus-visible,
-.btn-secondary:focus-visible,
-.btn-invert:focus-visible,
-.input-premium:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(21, 24, 31, 0.08), var(--shadow-tight);
-}
-
-/* Text selection */
-::selection {
-  background: rgba(21, 24, 31, 0.12);
-}
-
-/* Respect reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-```
-
----
+- `components/marketing/site-header.tsx`: public header with a mobile disclosure menu (Escape closes it and returns focus).
+- `components/site-footer.tsx`: public footer with Product, Learn, Legal, Account columns.
+- `components/marketing/hero-demo.tsx`: the looping product demo. Pauses offscreen and in hidden tabs; shows the final frame under reduced motion.
+- `components/marketing/vignettes.tsx`: small static product pictures used on the landing page and the auth panel.
+- `components/marketing/waitlist-form.tsx`: email capture that posts to `/api/waitlist`. Light and dark tones.
+- `components/marketing/page-intro.tsx`: title block for marketing pages.
+- `components/auth-frame.tsx`: shared layout and field for sign in, sign up, and password pages.
+- `components/workspace-header.tsx` and `components/empty-state.tsx`: app page title and empty states (optional icon).
+- `components/citation-badge.tsx`: numbered ink marker that opens the cited passage.
 
 ## Layout
 
-### App frame
-
-```css
-.app-frame { display: flex; min-height: 100dvh; --topbar-height: 56px; }
-```
-
-- Desktop (`lg` and up): a sticky sidebar beside the page.
-- Phone and tablet: a 56px `.topbar` (menu, Selrano, new chat) and the sidebar as a slide-in drawer (`.drawer-panel` over `.drawer-scrim`). Any link in the drawer closes it.
-
-### Sidebar
-
-- Width `268px`, or a `64px` icon rail when collapsed (`.sidebar-collapsed`, remembered per browser).
-- Background `rgba(255, 255, 255, 0.42)` with blur; right border `1px solid var(--border)`.
-- Order: logo and collapse toggle, **New chat**, section links, recent chats grouped Today / Yesterday / Previous 7 days / Older (with search once there are more than six), then Settings and Sign out.
-- Recent chats come from `ChatThreadsProvider` (`components/chat-threads.tsx`), shared with the chat page so titles, new chats, and deletions appear in both at once. Deleting asks inline, never with a browser dialog.
-
-### Nav items (`.side-item`)
-
-```
-Default:  14px semibold, text-muted-strong, 38px tall, rounded 12px
-Hover:    bg-surface-subtle + text-primary
-Active:   .side-item-active (bg-surface-strong, bold)
-Primary:  .side-item-strong (New chat: border, surface-strong, shadow-tight)
-```
-
-### Chat
-
-- `.chat-page` fills the viewport under the top bar; the conversation column is `max-w-[46rem]`, centered.
-- User messages: `.user-bubble` (soft tinted, right aligned, 20px radius); their copy and edit actions appear on hover.
-- Answers: `.answer-prose` (16px, 1.75 line height) without a container. Code uses `.code-block` (dark, language label, copy button, highlight.js loaded only when code appears). Tables sit in `.table-scroll`. Web sources show as `.source-chip`s under the answer.
-- `.composer`: a 22px-radius card with the message box on top and a row of attach, project (`.project-chip`), and send or stop (`.send-button`).
-- While waiting: the orbit ring until a tool starts, then `.tool-status` ("Searching the web for ...") until the first words.
-- `.jump-button` appears above the composer when the reader scrolls up.
-
-### Data table
-
-```css
-.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-
-.data-table th {
-  position: sticky; top: 0;
-  background: rgba(255, 255, 255, 0.84);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: 13px 16px;
-  font-size: 10px; font-weight: 800;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--muted);
-}
-
-.data-table td {
-  border-bottom: 1px solid var(--border);
-  padding: 15px 16px;
-}
-```
-
----
+- Marketing content width is `max-w-6xl` with `px-5 sm:px-8`. Reading pages are `max-w-[44rem]`.
+- `app/(marketing)` (pricing, guides, changelog, shared decks) uses a wide layout; `app/(legal)` uses the reading layout. Both use the shared header and footer.
+- The app frame is a sunken sidebar (268px, collapsible to 64px) beside the page. Below `lg` it becomes a drawer with a slim top bar.
+- Every page must work at 390px wide with no horizontal scroll. Form rows use `flex-wrap` with `min-w-[11rem]` fields so they wrap instead of crushing.
 
 ## Motion
 
-Keep animations short and purposeful.
-
-| Property | Duration | Easing |
-|---|---|---|
-| Hover lift (cards, buttons) | `160–180ms` | `ease` |
-| Border/background color | `160ms` | `ease` |
-| Cursor spotlight (card border/glow) | `260ms` opacity | `ease` |
-| Scroll reveal (landing sections) | `550ms` | custom (`[0.22, 1, 0.36, 1]`) |
-| Page transitions | avoid — use instant |  |
-
-**The one hover rule:** interactive surfaces lift `translateY(-1px)` or `translateY(-2px)` on hover. Never use scale. Never use opacity fades for hover.
-
-**Reusable motion components:** `components/spotlight-card.tsx` (a cursor-tracking spotlight border/glow, via the `components/use-spotlight.ts` hook and the `.spotlight` class in `globals.css`) and `components/reveal.tsx` (fade-and-rise on scroll into view) are the established implementations, built on `framer-motion`. Reach for these instead of writing new hover/scroll-animation logic.
-
----
+- Transitions are 140 to 200ms on color, border, and shadow. Buttons do not jump on hover.
+- `components/reveal.tsx` fades sections in on scroll (once). Keep offsets small.
+- Respect `prefers-reduced-motion`; the global rule in `globals.css` shortens animations, and the hero demo stops on its final frame.
 
 ## Iconography
 
-Library: [Lucide React](https://lucide.dev/)
-Default size: `18–19px` in nav, `16px` in body, `14–15px` in tight UI.
-Stroke width: default (1.5px). Never fill icons.
-
----
-
-## Applying to a New Project
-
-1. Copy the `:root` token block into your global CSS
-2. Add `Plus Jakarta Sans` via Google Fonts or `next/font`
-3. Copy the component classes (`.panel`, `.btn-*`, `.input-premium`, etc.) into your global CSS
-4. Set `body { background: var(--background); color: var(--text); font-family: ... }`
-5. Use Tailwind for spacing/layout, reference tokens with `var(--token-name)` for color
-
-That's the full system. Everything else — spacing, layout, page structure — uses standard Tailwind utility classes.
+Lucide icons at 15 to 20px, stroke 2. Use an icon only when it names an action, a section, or a file type. Icons inside the accent color mark the important thing in a group, not every item.
