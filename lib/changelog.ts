@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-11-04",
+    title: "A redesigned Selrano, and a waitlist",
+    description:
+      "New type, a calmer paper-and-ink look across the site and the app, and a homepage that shows an answer citing the exact page it came from. The cursor glow is gone. While new accounts are paused, you can join the waitlist from the homepage.",
+    tag: "Improved"
+  },
+  {
     date: "2026-08-13",
     title: "Founding Pro pricing and roomier Free decks",
     description:

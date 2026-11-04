@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-semibold text-[var(--muted)]">Last updated: October 8, 2026</p>
-      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">Privacy Policy</h1>
-      <p className="mt-4 text-base text-[var(--muted-strong)]">
+      <p className="eyebrow">Last updated: October 8, 2026</p>
+      <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Privacy Policy</h1>
+      <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
       </p>
 
@@ -20,6 +20,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
+          <li><strong>Waitlist:</strong> if you join the waitlist without an account, your email address, used only to tell you when sign-ups open.</li>
           <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
@@ -131,9 +132,9 @@ export default function PrivacyPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm leading-7 text-[var(--muted-strong)]">{children}</div>
+    <section className="mt-12">
+      <h2 className="font-display text-[26px] font-medium tracking-[-0.015em] text-[var(--text)]">{title}</h2>
+      <div className="mt-3 space-y-3 text-[15.5px] leading-[1.75] text-[var(--muted-strong)]">{children}</div>
     </section>
   );
 }

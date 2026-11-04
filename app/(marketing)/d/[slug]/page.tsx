@@ -74,10 +74,10 @@ export default async function PublicDeckPage({
   const { user } = await getAuthenticatedUser();
 
   return (
-    <article>
-      <p className="text-sm font-semibold text-[var(--muted)]">Free flashcard deck</p>
-      <h1 className="mt-4 text-4xl font-display font-medium tracking-[-0.02em] text-[var(--text)]">{deck.name}</h1>
-      <p className="mt-4 text-base leading-7 text-[var(--muted-strong)]">
+    <article className="mx-auto max-w-4xl px-5 pb-24 pt-14 sm:px-8 sm:pt-20">
+      <p className="eyebrow eyebrow-accent">Free flashcard deck</p>
+      <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">{deck.name}</h1>
+      <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         {cards.length} card{cards.length === 1 ? "" : "s"} · study free, no account required.
       </p>
 
