@@ -18,18 +18,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function SecurityPage() {
   return (
-    <article className="prose-meridian">
+    <article className="prose-selrano">
       <p className="text-sm font-bold text-[var(--muted)]">Trust &amp; security</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Security at {brand.name}</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         We design {brand.name} with security appropriate for sensitive academic and personal work. This page summarizes
-        our practices; enterprise customers may request additional documentation.
+        our practices.
       </p>
 
       <Section title="Infrastructure">
         <p>
           Application hosting runs on Vercel. Data, authentication, and file storage use Supabase (PostgreSQL with
-          row-level security). AI inference uses OpenAI and Groq; prompts are not used to train third-party models per provider policy.
+          row-level security and private storage buckets).
+        </p>
+        <p>
+          AI inference uses OpenAI as the primary chat model and Groq as the fallback. Groq also handles background
+          work such as flashcards and reading text in uploaded images. Web search queries go to Tavily. Prompts are not
+          used to train third-party models per provider policy.
+        </p>
+        <p>
+          Payments are processed by Stripe. Card details are entered on Stripe&apos;s own pages and never reach{" "}
+          {brand.name} servers; we keep only your subscription status.
         </p>
       </Section>
 

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="text-sm font-bold text-[var(--muted)]">Last updated: October 8, 2026</p>
+      <p className="text-sm font-bold text-[var(--muted)]">Last updated: November 4, 2026</p>
       <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.035em] text-[var(--text)]">Privacy Policy</h1>
       <p className="mt-4 text-base text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -20,18 +20,20 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
-          <li><strong>User content:</strong> notes, uploaded files (PDFs, DOCX, TXT), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
+          <li><strong>User content:</strong> notes, uploaded files (PDF, DOCX, TXT, Markdown, and images in PNG, JPG, WEBP, or GIF format), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
+          <li><strong>Billing information:</strong> if you subscribe to Selrano Pro, we store your plan tier, your Stripe customer and subscription IDs, and the date your current billing period ends.</li>
         </ul>
 
         <h3 className="mt-4 font-extrabold text-[var(--text)]">b. Information collected automatically</h3>
         <ul>
-          <li><strong>Usage data:</strong> basic interaction logs such as which features you use, collected to improve the Service.</li>
+          <li><strong>Usage data:</strong> basic interaction logs such as which features you use, and aggregate page view statistics from Vercel Web Analytics, which does not use cookies. We collect these to improve the Service.</li>
           <li><strong>Technical data:</strong> IP address, browser type, and device information transmitted as part of standard web requests and handled by our infrastructure provider (Vercel).</li>
+          <li><strong>Learned preferences and memories:</strong> as you chat, Selrano saves durable facts you share about yourself and a summary of your writing preferences so that replies fit you better. These stay in your account and are deleted when you delete your account.</li>
         </ul>
 
         <h3 className="mt-4 font-extrabold text-[var(--text)]">c. Information we do NOT collect</h3>
         <ul>
-          <li>We do not collect payment information (no paid features currently exist).</li>
+          <li>We never see or store your full card number or other payment card details. Stripe collects and processes them directly in Stripe Checkout and the Stripe customer portal. We keep only the subscription status described above.</li>
           <li>We do not use tracking cookies or third-party advertising trackers.</li>
           <li>We do not build advertising profiles or sell data to data brokers.</li>
         </ul>
@@ -43,9 +45,11 @@ export default function PrivacyPage() {
           <li>Provide, operate, and maintain the Service.</li>
           <li>Authenticate your identity and secure your account.</li>
           <li>Process and display your User Content within your workspace.</li>
-          <li>Send transactional emails such as password reset requests.</li>
+          <li>Personalize responses using the memories and writing preferences described above.</li>
+          <li>Process subscription payments and manage your plan through Stripe.</li>
+          <li>Send transactional emails such as password reset requests and, if you opt in, product tips and weekly workspace check-ins.</li>
           <li>Improve and develop new features of the Service.</li>
-          <li>Respond to your support requests and communications.</li>
+          <li>Communicate with you about your account and the Service.</li>
           <li>Detect and prevent fraud, abuse, and security incidents.</li>
           <li>Comply with legal obligations.</li>
         </ul>
@@ -53,8 +57,12 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features (chat, flashcard generation, text transformations), relevant portions of your User Content may be transmitted to <strong>Groq, Inc.</strong> for AI inference. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
+        <p>When you use AI features, relevant portions of your User Content are transmitted to third-party AI providers. This processing is necessary to generate responses, read your files, and retrieve current sources.</p>
         <ul>
+          <li><strong>OpenAI:</strong> the primary model for chat replies. We send chat requests with OpenAI&apos;s response storage turned off. When file search is enabled, text from your uploaded files may also be sent to OpenAI to build search indexes.</li>
+          <li><strong>Groq, Inc.:</strong> the fallback model for chat when OpenAI is unavailable, and the provider for flashcard generation, text transformations, extracting memories from your messages, and reading the text in images you upload (optical character recognition).</li>
+          <li><strong>Tavily:</strong> when a reply needs the live web, a short search query is sent to Tavily. Your files, notes, and conversation history are not sent.</li>
+          <li>Data sent to OpenAI is governed by <a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">OpenAI&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Tavily is governed by <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Tavily&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
@@ -65,8 +73,8 @@ export default function PrivacyPage() {
       <Section title="4. How We Share Your Information">
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
-          <li>Previously generated Google Search-grounded replies retain Google attribution and expire within two years. Google is no longer used for new AI requests.</li>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting), OpenAI and Groq (AI inference), and Tavily (optional web search) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Service providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting and analytics), OpenAI and Groq (AI inference and image text extraction), Tavily (web search), Stripe (payments and subscription billing), and Resend (email delivery) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Earlier Google-grounded replies:</strong> chat replies that were previously generated with Google Search grounding keep Google&apos;s attribution and are deleted automatically within two years. Google is no longer used for new AI requests.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
@@ -86,7 +94,8 @@ export default function PrivacyPage() {
       <Section title="6. Data Retention">
         <p>We retain your personal data for as long as your account is active or as necessary to provide the Service.</p>
         <ul>
-          <li>When you delete your account, we will delete your personal data, User Content, and files from our systems within 30 days, except where we are required to retain it by law.</li>
+          <li>When you delete your account, we will delete your personal data, User Content, memories, and files from our systems within 30 days, except where we are required to retain it by law.</li>
+          <li>Deleting your account cancels any active Pro subscription. Stripe keeps its own payment records as required by its legal and financial obligations.</li>
           <li>Aggregate, anonymized data that cannot identify you may be retained indefinitely for analytical purposes.</li>
           <li>Backups may retain data for up to 90 days following deletion before being purged.</li>
         </ul>
@@ -102,7 +111,7 @@ export default function PrivacyPage() {
           <li><strong>Objection:</strong> object to certain uses of your data.</li>
         </ul>
         <p>You can exercise most of these rights directly in the app: delete your account and data, and manage email preferences, from the Settings page.</p>
-        <p><strong>California residents:</strong> under the California Consumer Privacy Act (CCPA), you have the right to know what personal information we collect, request deletion, and opt out of any sale of personal information (we do not sell personal information). To submit a CCPA request, contact us at the email above.</p>
+        <p><strong>California residents:</strong> under the California Consumer Privacy Act (CCPA), you have the right to know what personal information we collect, request deletion, and opt out of any sale of personal information (we do not sell personal information). You can delete your account and data at any time from Settings. We will publish a contact channel for other CCPA requests as soon as one is available.</p>
       </Section>
 
       <Section title="8. Cookies">
