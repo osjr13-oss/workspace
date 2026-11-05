@@ -1,6 +1,12 @@
 # Selrano production handoff
 
-Last updated: **November 4, 2026**
+Last updated: **November 5, 2026**
+
+## Pill badges removed, privacy and context refresh (November 5)
+
+- **No pill badges** (owner decision): every small rounded label is gone from the site and the app. The hero "New accounts open soon" pill, the "Founding price" badges, changelog tags, demo status chips, note counts, file details, flashcard progress, the billing plan badge and loading states are plain text now, and the `.status-pill` class is deleted. The rule is in `AGENTS.md`, `DESIGN_SYSTEM.md` and `design-qa.md`; do not add pills back.
+- **Privacy policy** (`app/(legal)/privacy/page.tsx`, updated November 5): names OpenAI as the primary chat provider (requests sent with storage off) and Groq for the fallback, flashcards, transformations, memory and image text; adds Stripe (payments, no card numbers stored, subscription status kept) and Resend; lists the real upload types; mentions cookieless Vercel Web Analytics; and drops the stale "no paid features" line, the support-request line and the CCPA "email above" reference. The Security page adds that payments go through Stripe.
+- **Context files refreshed:** `README.md`, `AGENTS.md`, `DESIGN_SYSTEM.md`, `design-qa.md` (now a current UI checklist; the July chat screenshots it pointed at were deleted), `docs/CHAT_QUALITY.md`, `docs/SELRANO_AI_TRANSFORMATION.md`, `docs/SETUP.md`, `.env.example` (health-app wording removed), `docs/FEATURE_IDEAS.md` and `docs/OPERATIONS.md` (Supabase email template colors follow the redesign; re-pasting them is optional).
 
 ## Redesign and waitlist (November 4)
 
@@ -15,7 +21,7 @@ The owner asked for sweeping changes to the landing page and UI. Built on branch
 - **Share image:** `app/opengraph-image.tsx` renders the headline in Newsreader (fetched at build; it falls back to the default font if the fetch fails).
 - **Referrals hidden:** the Settings "Invite classmates" card is not rendered while sign-ups are closed (owner decision, November 4), because its free Pro month cannot be earned. `components/referral-section.tsx` and `/api/referrals/*` are unchanged; render `<ReferralSection />` in `app/(app)/settings/page.tsx` again when sign-ups reopen.
 - **One temporary preview:** the owner reviewed this branch on a Vercel preview by adding the branch to `git.deploymentEnabled` in `vercel.json`. The exception was removed in the final commit, so only `main` deploys again, and production built a SHA that had never been previewed.
-- **Open item:** the privacy policy has stale lines (it says no paid features exist); a follow-up task was suggested.
+- **Branch skipping confirmed:** before that exception, the owner saw no Vercel build for the branch, which confirms `vercel.json` skips every branch except `main`.
 
 ## Workspace restored and reopened (October 21)
 
@@ -28,6 +34,8 @@ The owner tried turning Selrano into a personal health app on October 21 (commit
 - The workspace's file-reading dependencies (`pdf-parse`, `mammoth`, `tus-js-client`) are back, with the same three accepted moderate advisories.
 
 ## Provider restoration (October 21)
+
+> Superseded the same day: OpenAI GPT became primary chat with Groq as fallback (see "Workspace restored and reopened"). Kept as history.
 
 The owner reports their Google account is unusable and explicitly authorized restoring Claude primary chat, Groq fallback/background/OCR, and Tavily research, keeping inline citations without the Sources footer. The exact-source evidence validation and citation-format repair from `d96e4c0` are restored. No Gemini API calls remain. Existing Google-grounded replies retain attribution, history exclusion and the owner-approved expiry cleanup. No stored data or local credentials were removed. The owner requested pushes without another confirmation and will handle post-push deployment verification.
 
@@ -83,6 +91,8 @@ The owner approved automatic, bounded web research inside ordinary chat, with th
 
 ## Claude-first chat (October 14)
 
+> History. Claude is no longer used: since 2026-10-21 OpenAI GPT is primary chat with Groq as fallback (see "Workspace restored and reopened"). `lib/anthropic.ts` and the Anthropic variables are gone from the code.
+
 The owner approved Claude Haiku as the primary chat model, with Groq as fallback, and asked for better answers and a less distant conversational voice. This supersedes the earlier Groq-only decision for chat. Releases `f6dc2e3` (integration/voice), `b148f03` (workspace header), and `e6d543c` (provider diagnostics) deployed successfully and passed CI and all required local checks: 34 enabled browser tests passed, three credential-dependent tests skipped.
 
 Real Claude checks with the owner's local key and workspace returned `claude-haiku-5-5`, streamed a coherent prose answer, accepted all four tool schemas, and completed a search-tool continuation. The key requires an explicit workspace header. The production key variable was initially misspelled (missing the final `Y`); the owner corrected it to `ANTHROPIC_API_KEY`. After deployment `232adf9`, two real live replies reported `provider: anthropic`, `model: claude-haiku-5-5`, and no fallback. The first used connected prose; the follow-up revised its advice when the user challenged the premise. The synthetic conversation is labeled `Claude release check - Oct 14`; leave it in place.
@@ -100,17 +110,17 @@ Real Claude checks with the owner's local key and workspace returned `claude-hai
 ## Current state
 
 - Production: `https://selrano.com` (redirects to `https://www.selrano.com`)
-- Repository: `osjr13-oss/workspace`. Only `main` exists on GitHub. Work is committed straight to `main`; there are no feature branches and no preview deployments (see "Hosting and deploys").
+- Repository: `osjr13-oss/workspace`. `main` is the production branch. The branch `claude/intelligent-johnson-adtfsx` was used to review the November redesign and is level with `main`; there are no preview deployments (see "Hosting and deploys").
 - Production branch: `main`
 - Supabase project ref: `ucuppqutbzbwekyxrkwr`
-- AI providers: **Claude Haiku primary chat, Groq fallback** (owner approved 2026-10-14). `ANTHROPIC_MODEL` defaults to `claude-haiku-5-5`. Groq defaults remain `openai/gpt-oss-120b` and `openai/gpt-oss-20b`, with background work, structured flashcards, transformations, and OCR still on Groq. See "Claude-first chat" and "Groq models".
+- AI providers: **OpenAI GPT primary chat, Groq fallback** (owner decision 2026-10-21). `lib/openai.ts` streams the Responses API with `store: false`; `OPENAI_MODEL` picks the model (see `docs/SETUP.md`). Groq defaults remain `openai/gpt-oss-120b` and `openai/gpt-oss-20b`, with background work, structured flashcards, transformations, and OCR on Groq. See "Workspace restored and reopened" and "Groq models".
 - Billing: Stripe Free + Pro at founding/introductory **$6.99/month** (see `lib/plans.ts` `priceKind: "founding"`)
 - Email: Resend for application mail; Supabase Auth for confirmation/reset mail
 - Access: **public** again since 2026-10-21 (see "Workspace restored and reopened"). The "Private access" section below is historical.
 - Support: there is **no support page, form, or inbox** (removed 2026-10-08). See "Support and contact".
 - Product feature flags: **none**. Shipped capabilities are always enabled.
 - Obsolete Vercel feature environment variables and `FLAGS_SECRET` were removed on July 11.
-- Latest product change: bounded everyday web research (October 15), following Claude-first chat and conversational instructions. Earlier today: the iPhone app's removal (2026-10-14, see "iPhone app (deleted)"). On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
+- Latest product change: the editorial redesign, waitlist and pill-badge removal (November 4 and 5, see the sections at the top). Design rules live in `DESIGN_SYSTEM.md` and the UI checklist in `design-qa.md`. On 2026-10-14 the owner moved local work to a Windows Dell laptop (cloned from GitHub main).
 - The code is the **August 13 baseline** (`36354bf`) plus the changes listed under "Changes since the August 13 baseline". The September work (security scanner pivot, "Lumen 1" prototype, mobile app) is **not** in `main`; it is preserved as tags (see "History and recovery").
 
 ## History and recovery
@@ -128,7 +138,7 @@ Real Claude checks with the owner's local key and workspace returned `claude-hai
 - **Support removed (2026-10-08):** see "Support and contact".
 - **Image uploads:** PNG, JPG, WebP, and GIF files are read by a Groq vision model (`lib/ocr.ts`, up to about 2.8 MB each). Scanned PDFs are **not** supported: Groq cannot read PDFs directly, and a PDF with no text layer is rejected with a clear message. See `app/api/files/upload/route.ts`.
 - **Error reporting:** `instrumentation.ts` logs failed server requests as one `[server-error]` JSON line; `/api/client-error` receives browser crashes (rate limited) and logs `[client-error]`; `app/error.tsx` and `app/global-error.tsx` show a friendly page instead of a blank one. Search these tags in Vercel logs. There is no alerting.
-- **AI:** Groq-only, with a streaming, rate-limit-aware request path. See "AI request lifecycle". Chat time to first word, the "no responses after a few messages" failures, and the flashing reply were all fixed on 2026-10-08.
+- **AI:** Groq-only at the time (OpenAI GPT became primary on 2026-10-21), with a streaming, rate-limit-aware request path. See "AI request lifecycle". Chat time to first word, the "no responses after a few messages" failures, and the flashing reply were all fixed on 2026-10-08.
 - **Chat page:** compact orbiting-ring waiting indicator; only one reply can be in flight (Enter is ignored while busy); half-streamed Markdown is tidied; the streamed bubble hands over to the saved message without remounting.
 - **Tailwind config:** `tailwind.config.ts` imports `@tailwindcss/typography` instead of calling `require`, because newer Node versions load TypeScript configs natively and `require` crashed the dev server.
 - **Tooling:** Playwright tests with offline stand-ins for Supabase and Groq. See "Tests".
@@ -164,13 +174,13 @@ The owner stopped the iPhone app on 2026-10-14 and asked for it to be deleted: t
 - `qwen/qwen3.8-27b` (vision) is listed as a preview model and may change. `openai/gpt-oss-120b` and `openai/gpt-oss-20b` are listed as production models.
 - Groq enforces request and token limits **per model**. That is why the fallback and background models differ from the main one, why prompts are kept small, and why a rate-limited main model hands over to the fallback at once.
 - Chat answers on gpt-oss models are sent `reasoning_effort: "medium"` (owner decision, 2026-10-13, for smarter answers; set `GROQ_REASONING_EFFORT` to `low` or `high` to change it) with room for 4,096 completion tokens, since hidden reasoning counts toward that limit. Background work (memory extraction, structured output) stays at `low`. Reasoning is never shown (`include_reasoning: false`). gpt-oss models do not support parallel tool calls.
-- Model decision (owner, 2026-10-14): **Claude Haiku primary, Groq fallback**, now approved. Gemini models remain ruled out. Do not add another provider without the owner asking.
+- Model decision (owner, 2026-10-21): **OpenAI GPT primary, Groq fallback**. Claude is no longer used and Gemini models remain ruled out. Do not add another provider without the owner asking.
 - `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in Vercel.
 
 ## Hosting and deploys
 
 - Vercel project `workspace`, deployed from `main`.
-- `vercel.json` sets `git.deploymentEnabled` to `{"**": false, "main": true}` so only `main` builds. A push to `main` deploying to production was confirmed; the "other branches are skipped" half was not tested on purpose, to avoid creating a preview.
+- `vercel.json` sets `git.deploymentEnabled` to `{"**": false, "main": true}` so only `main` builds. Both halves are confirmed: pushes to `main` deploy production, and the redesign branch was skipped until a temporary exception was added on 2026-11-04 (removed before merging).
 - Vercel does not create a **production** deployment for a commit SHA it has already built as a preview. With no previews every push to `main` builds as production; if one is ever missing, push a new commit.
 - Check a deploy with the GitHub commit status named "Vercel" or `gh api repos/osjr13-oss/workspace/deployments`, then open the live site.
 - CI (GitHub Actions, Node 20) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
@@ -199,9 +209,10 @@ The owner decided on 2026-10-13 to keep Selrano private while the product is rew
 - Do not let the homepage or onboarding revolve entirely around flashcards. Flashcards are useful, but Selrano should not read like a Quizlet competitor.
 - The preferred public framing is materials first: gather source material, work with context, then review what matters.
 - Avoid generic emoji-style decoration or low-effort visual shorthand in product and marketing UI. Use restrained text structure and intentional icons only when they clarify an action, navigation item, or status.
+- Visual design follows `DESIGN_SYSTEM.md` (editorial calm, November 2026): warm paper, the logo navy as the only accent, Newsreader titles, Inter interface text. No pill badges or status patches anywhere; labels are plain text. Check UI changes with `design-qa.md`.
 - Keep the Selrano name across the product, domain, and email. Do not revive the imported product's previous brand.
 - Public pricing and acquisition pages should sell capability and outcomes without advertising exact AI message allowances. Authenticated billing may still show current usage and limits.
-- Chat presentation should feel calm and premium: soft user prompt cards, borderless editorial assistant prose, visible response actions, and the compact orbiting-ring indicator while waiting.
+- Chat presentation should feel calm and premium: navy-tinted user prompt cards, borderless editorial assistant prose with ink citation markers, visible response actions, and the compact orbiting-ring indicator while waiting.
 - Never use the Unicode em dash character in user-visible copy, stored chat content, citations, lifecycle email content, or AI output.
 
 ## Confirmed production journeys
@@ -246,7 +257,7 @@ On 2026-10-13 the owner confirmed by hand on the live site that chat is faster a
 - All product feature flags and their environment variables were removed.
 - Desktop/mobile logout is accessible and uses local-session scope.
 - CI blocks on typecheck, lint, production dependency audit, and build.
-- Claude Haiku is primary for chat, with Groq fallback; other AI work remains on Groq.
+- OpenAI GPT is primary for chat (since 2026-10-21), with Groq fallback; other AI work remains on Groq.
 - Selrano learns a style directive from conversation history and uses durable content memories when relevant.
 - Established accounts with no memories can bootstrap up to 12 durable facts from as many as 80 earlier user messages. This runs **after** a reply is sent, at most once a day per account (`maybeBootstrapMemories`). It used to run in front of the answer on every message and was a major cause of slow and failing chat.
 - Explicit recall prompts such as "what do you remember about me?" return the strongest stored memories without requiring lexical overlap.
@@ -314,7 +325,7 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 
 `npm run test:e2e` builds the app into `.next-e2e`, serves it on port 3000, and starts two offline stand-ins (`e2e/support/mock-servers.mjs`): a fake Supabase on port 54321 and a fake Groq on port 54322. No accounts or network are needed. `E2E_DEV=1` uses the dev server instead of a production build.
 
-- `e2e/public.spec.ts`: private access. Closed marketing, signup, and shared-deck pages; open legal pages; robots and `noindex`; an allowed account getting in and a non-allowed one being refused and signed out (the fake Supabase can report another email through `GET http://localhost:54321/__user?email=...`).
+- `e2e/public.spec.ts`: public pages and closed sign-ups. The landing page offers the waitlist and no dead-end "Get started" link; joining stores the email in `pro_waitlist` with source `signup_waitlist`, a repeat stays one row, and an invalid email is refused; marketing, sign-up and legal pages open; removed support pages stay gone; robots allow public pages; protected routes redirect to sign in; signed-out Pro checkout goes to sign in.
 - `e2e/chat.spec.ts`: streaming without flashes, unfinished Markdown, empty replies, rate limits and model fallback, memory work staying off the critical path, prompt size, tool lead-ins, leaving mid-answer, double Enter, and the daily limit. These only run against the local setup, not a deployed site.
 - `e2e/chat-experience.spec.ts`: bursts are revealed smoothly (no frame jumps more than 80 characters), Stop (button and Esc) saves only what was shown, tool status, the sidebar (new chat appears, rename, reopen, delete), attachments reaching the model and showing on the message, code blocks and tables, jump to latest, and the phone menu.
 - `e2e/account.spec.ts`: signed-in checks; skipped unless you set `E2E_EMAIL` and `E2E_PASSWORD` for your own test account.
@@ -347,16 +358,20 @@ Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, 
 4. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
 5. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
 6. The Supabase performance-advisor warnings (missing foreign-key indexes, RLS policies calling `auth.uid()` without a scalar subquery) are addressed by the August 8 migrations in the repo. Confirm they are applied and re-run the advisor.
-7. Supabase leaked-password protection is unavailable on the current plan. Signups are turned off while Selrano is private (see "Private access"); when they reopen, email confirmation is disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
+7. Supabase leaked-password protection is unavailable on the current plan. Sign-ups are closed and visitors join the waitlist (see "Redesign and waitlist"); when they reopen, email confirmation is disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
 8. Monitoring is logs only: `[server-error]`, `[client-error]`, and the `[chat] reply` timing line. There is no alerting, error grouping, or product analytics beyond Vercel Web Analytics. Add them before scaling paid acquisition.
-9. Browser tests cover private access and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
+9. Browser tests cover public pages, the waitlist, and chat. Notes, the real upload path (the signed upload goes to Supabase Storage, which the fakes do not imitate), flashcard generation, study, billing, and logout are not covered, and the tests are not in CI.
 10. There is no public contact channel (see "Support and contact").
 11. Scanned PDFs are unsupported and images are limited to about 2.8 MB.
-12. Compare the new Claude-first conversational voice on real questions with the owner (see "Claude-first chat").
+12. Compare the OpenAI GPT conversational voice on real questions with the owner; automated tests do not judge answer quality.
 13. Parked ideas (owner said "not now", 2026-10-13): when web sources disagree because something changed over time, answer with what it was before and what it is now, citing each, and pass source dates to the model (it currently sees none); a small "Searched the web" label on replies that used search; possibly raise the 20-per-day Free cap for the owner's own account.
 
 ## Recent release commits
 
+- `9ed46dd` (2026-11-05): remove every pill badge from the site and the app
+- `69a60e8` (2026-11-05): hide referrals while sign-ups are closed, end the branch preview
+- `6c24d0c`: patch Next.js to 15.5.29 (critical advisory) and document the redesign
+- `dee302f`, `dac3552`, `0e7daef`, `44980fd` (2026-11-04): the editorial redesign (fonts and tokens, landing page and waitlist, public pages, app pass)
 - (2026-10-14): delete the iPhone app and the API's bearer-token sign-in
 - `cce338d`: start the iPhone app (since deleted); table dividers no longer flash while streaming
 - `1f4300b`: record the model direction (Haiku next, Gemini ruled out)

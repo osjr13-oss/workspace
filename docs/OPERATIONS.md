@@ -59,7 +59,7 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
    - Sender email: `noreply@selrano.com` (must match `EMAIL_FROM`, verified in Resend)
    - Sender name: `Selrano`
    - Host: `smtp.resend.com` · Port: `465` · Username: `resend` · Password: your `RESEND_API_KEY` value
-2. Customize templates under **Authentication → Email Templates** (Confirm signup, Reset password) with Selrano branding — reference HTML below, reused from `lib/email/layout.ts`'s style. Swap the copy per template; both use `{{ .ConfirmationURL }}`.
+2. Customize templates under **Authentication → Email Templates** (Confirm signup, Reset password) with Selrano branding — reference HTML below, reused from `lib/email/layout.ts`'s style. Swap the copy per template; both use `{{ .ConfirmationURL }}`. The colors follow the November 2026 redesign (paper `#f6f3ec`, ink `#16191f`, navy button `#1b2d50`, see `DESIGN_SYSTEM.md`); templates pasted before then still work, and re-pasting them is optional.
 3. Once the sender looks right, go to **Authentication → Providers → Email** and toggle **Confirm email** on.
 
 **Confirm signup** template:
@@ -71,8 +71,8 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
-<body style="margin:0;padding:0;background:#f7f5f0;font-family:'Segoe UI',system-ui,sans-serif;color:#15181f;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#f6f3ec;font-family:'Segoe UI',system-ui,sans-serif;color:#16191f;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f3ec;padding:32px 16px;">
     <tr>
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffefa;border:1px solid rgba(31,35,44,0.1);border-radius:18px;overflow:hidden;">
@@ -80,17 +80,17 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
             <td style="padding:28px 32px 8px;font-size:22px;font-weight:800;letter-spacing:-0.03em;">Selrano</td>
           </tr>
           <tr>
-            <td style="padding:8px 32px 28px;font-size:15px;line-height:1.6;color:#69707d;">
-              <p style="margin:0 0 16px;color:#15181f;font-size:16px;font-weight:700;">Confirm your email</p>
+            <td style="padding:8px 32px 28px;font-size:15px;line-height:1.6;color:#676b72;">
+              <p style="margin:0 0 16px;color:#16191f;font-size:16px;font-weight:700;">Confirm your email</p>
               <p style="margin:0 0 24px;">Click below to confirm your email and finish setting up your Selrano workspace.</p>
               <p style="margin:0 0 24px;">
-                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#15181f;color:#fffefa;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;font-size:14px;">Confirm email</a>
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#1b2d50;color:#fffefa;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;font-size:14px;">Confirm email</a>
               </p>
               <p style="margin:0;font-size:13px;">If you didn't create a Selrano account, you can safely ignore this email.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#69707d;">
+            <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#676b72;">
               © Selrano. All rights reserved.
             </td>
           </tr>
@@ -111,8 +111,8 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
-<body style="margin:0;padding:0;background:#f7f5f0;font-family:'Segoe UI',system-ui,sans-serif;color:#15181f;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#f6f3ec;font-family:'Segoe UI',system-ui,sans-serif;color:#16191f;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f3ec;padding:32px 16px;">
     <tr>
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffefa;border:1px solid rgba(31,35,44,0.1);border-radius:18px;overflow:hidden;">
@@ -120,17 +120,17 @@ Password reset and signup confirmation still flow through **Supabase Auth**. By 
             <td style="padding:28px 32px 8px;font-size:22px;font-weight:800;letter-spacing:-0.03em;">Selrano</td>
           </tr>
           <tr>
-            <td style="padding:8px 32px 28px;font-size:15px;line-height:1.6;color:#69707d;">
-              <p style="margin:0 0 16px;color:#15181f;font-size:16px;font-weight:700;">Reset your password</p>
+            <td style="padding:8px 32px 28px;font-size:15px;line-height:1.6;color:#676b72;">
+              <p style="margin:0 0 16px;color:#16191f;font-size:16px;font-weight:700;">Reset your password</p>
               <p style="margin:0 0 24px;">We received a request to reset the password for your Selrano account. Click below to choose a new one.</p>
               <p style="margin:0 0 24px;">
-                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#15181f;color:#fffefa;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;font-size:14px;">Reset password</a>
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#1b2d50;color:#fffefa;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;font-size:14px;">Reset password</a>
               </p>
               <p style="margin:0;font-size:13px;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#69707d;">
+            <td style="padding:20px 32px;border-top:1px solid rgba(31,35,44,0.1);font-size:12px;line-height:1.5;color:#676b72;">
               © Selrano. All rights reserved.
             </td>
           </tr>

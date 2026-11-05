@@ -8,6 +8,7 @@ Read `docs/HANDOFF.md` before changing the product. It is the current production
 - Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
 - Position Selrano as a calm materials workspace: source files, notes, grounded chat, review, and transformations together. Do not make the product revolve entirely around flashcards or frame it as a Quizlet competitor; flashcards are one useful output inside the broader workspace.
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
+- Follow `DESIGN_SYSTEM.md` for all UI (editorial calm, shipped 2026-11-04): warm paper surfaces, the logo navy `#1b2d50` as the only accent, Newsreader for titles, Inter for interface text, and plain-text labels. Check `design-qa.md` before shipping UI changes.
 - No pill badges or status patches (owner decision, 2026-11-05): no small rounded labels such as "New", "Founding price", "Coming soon", "Beta", or counts and statuses in a capsule, in marketing or in the app. Use plain text instead.
 - Do not market exact AI message allowances on public pricing or acquisition pages. Authenticated billing may show a user's current usage and plan limit for transparency.
 - There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.

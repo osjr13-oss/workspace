@@ -44,7 +44,7 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
 | `GROQ_API_KEY` | console.groq.com (secret; fallback and non-chat work) |
-| `OPENAI_API_KEY` | https://platform.openai.com/api-keys (server-only Secret; primary chat, meal estimates and food photos) |
+| `OPENAI_API_KEY` | https://platform.openai.com/api-keys (server-only Secret; primary chat) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)

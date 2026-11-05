@@ -1,6 +1,6 @@
 # Selrano Design System
 
-Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Updated November 4, 2026.
+Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Shipped November 4, 2026; updated November 5, 2026. Check changes with `design-qa.md`.
 
 ## Principles
 
@@ -9,6 +9,7 @@ Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a w
 - **The highlighter means "from your source".** `--highlight` marks cited passages and source text. Do not use it for decoration.
 - **Serif for titles, sans for everything else.** Newsreader carries page titles and marketing headlines; Inter carries the interface.
 - **Calm weights.** UI headings are 600. Display titles are 500. Nothing is 800.
+- **Light only.** Selrano has one light theme. There is no dark mode; do not add dark-only colors.
 - **Sentence case.** Labels and eyebrows are sentence case. No uppercase tracking labels.
 - **No pill badges.** Never put a label, status, count, or tag in a small rounded capsule ("New", "Founding price", "Coming soon", "3 sources ready", "0 notes"). Write it as plain text. Owner decision, November 5, 2026.
 - **Real UI over decoration.** Marketing illustrations are built from real product parts (bubbles, citations, file rows). No emoji, no stock icons as decoration, no fake customer logos.

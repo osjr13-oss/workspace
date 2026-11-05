@@ -1,6 +1,6 @@
 # Selrano AI transformation
 
-> Status note (2026-10-13): this was written for the July 24 transformation. The AI provider has since changed: **Groq is now the only provider** and Anthropic was removed on 2026-10-08. Current behavior is described in `docs/HANDOFF.md`; the Anthropic details below are kept only as history.
+> Status note (2026-11-05): this was written for the July 24 transformation and is history. Since 2026-10-21, **OpenAI GPT is the primary chat model and Groq is the fallback**; Groq also runs background work, flashcards, transformations, and OCR. Anthropic is not used. Current behavior is described in `docs/HANDOFF.md`.
 
 This branch transforms the existing Selrano application into an adaptive, chat-first AI workspace while preserving the Selrano brand and the working account, database, billing, file, note, and study infrastructure.
 

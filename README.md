@@ -1,13 +1,15 @@
 # Selrano
 
-Selrano is a personal AI workspace that learns how you think and write. Chat is the primary experience, supported by projects, notes, private files, web search, review tools, and flashcards.
+Selrano is a calm AI workspace for your own material: notes, files, and the web in one place. Ask a question and get an answer that cites the exact page it came from, then keep what matters as notes and review cards. Chat is the signed-in home, supported by projects, private uploads, web search, flashcards, and study review.
 
-The current chat uses Groq, streams responses, learns writing preferences, stores durable memories, and can use owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+Chat streams from OpenAI GPT, with Groq as the fallback; Groq also runs background work, flashcards, transformations, and image OCR. Selrano learns writing preferences, stores durable memories, and uses owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+
+Sign-ups are currently closed; the public pages are open and offer a waitlist.
 
 ## Local Setup
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env.local` and fill in Supabase and Groq values.
+2. Copy `.env.example` to `.env.local` and fill in Supabase, OpenAI, and Groq values.
 3. Review the migration history and live schema before applying anything. The personalization tables are defined in `20260724000000_selrano_personalization.sql`, but the production tables already exist even though that filename is not present in tracked production migration history.
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
 5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
@@ -21,7 +23,8 @@ See `.env.example` for the full list. Core variables:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-GROQ_API_KEY=
+OPENAI_API_KEY=                     # primary chat model
+GROQ_API_KEY=                       # fallback and background AI
 GROQ_MODEL=openai/gpt-oss-120b      # optional; also GROQ_FALLBACK_MODEL, GROQ_BACKGROUND_MODEL, GROQ_VISION_MODEL
 TAVILY_API_KEY=                     # live web search in chat
 NEXT_PUBLIC_APP_URL=
@@ -33,9 +36,18 @@ EMAIL_FROM=
 
 | Route | Purpose |
 |-------|---------|
-| `/security` | Security practices & disclosure |
-| `/terms`, `/privacy` | Legal |
+| `/` | Landing page with the live product demo and waitlist |
 | `/pricing` | Free vs Pro plans |
+| `/guides`, `/changelog` | Guides and release notes |
+| `/signup` | Sign-ups are closed; joins the waitlist |
+| `/signin`, `/reset-password` | Account access |
+| `/d/[slug]` | Shared flashcard decks |
+| `/security` | Security practices and disclosure |
+| `/terms`, `/privacy` | Legal |
+
+## Design
+
+Read **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** before changing any UI: editorial calm, warm paper, one navy accent, Newsreader titles, Inter interface text, and no pill badges. **[design-qa.md](design-qa.md)** is the checklist for shipping UI changes.
 
 ## Billing
 

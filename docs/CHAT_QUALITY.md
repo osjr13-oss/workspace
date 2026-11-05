@@ -2,7 +2,7 @@
 
 The default audience is an everyday person seeking explanations, research and help with decisions. Clear language must preserve important qualifications. `lib/chat-guidance.ts` supplies the same response guidance to ordinary chat and to research drafting and review. Source validation, budgets and provider choices remain unchanged.
 
-Use the following public or fictional questions when evaluating real provider behavior. Check Claude and the Groq fallback. Record the actual answer and sources, provider, date and any failures; do not mark these checks passed from mock responses. Do not use customer content. A passing example is not a guarantee of factual accuracy.
+Use the following public or fictional questions when evaluating real provider behavior. Check OpenAI GPT (primary) and the Groq fallback. Record the actual answer and sources, provider, date and any failures; do not mark these checks passed from mock responses. Do not use customer content. A passing example is not a guarantee of factual accuracy.
 
 | Question | What a useful answer should do |
 | --- | --- |

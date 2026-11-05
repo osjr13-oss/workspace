@@ -30,6 +30,7 @@ export default function SecurityPage() {
         <p>
           Application hosting runs on Vercel. Data, authentication, and file storage use Supabase (PostgreSQL with
           row-level security). AI inference uses OpenAI and Groq; prompts are not used to train third-party models per provider policy.
+          Pro payments are processed by Stripe, so card numbers never reach Selrano.
         </p>
       </Section>
 

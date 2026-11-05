@@ -1,16 +1,24 @@
-# Selrano chat presentation QA
+# Selrano design QA
 
-- Source reference: `/Users/osmanosman/Desktop/Screenshot 2026-07-24 at 6.57.34 PM.png`
-- Implementation capture: `/Users/osmanosman/Desktop/workspace/docs/selrano-chat-implementation.jpg`
-- Side-by-side comparison: `/Users/osmanosman/Desktop/workspace/docs/selrano-chat-design-comparison.png`
-- Source dimensions: 1584 by 862
-- Implementation dimensions: 1280 by 720
-- Comparison dimensions: 2560 by 720
-- Normalization: the source was proportionally fitted into a 1280 by 720 canvas. The implementation was captured at its native 1280 by 720 browser viewport.
-- State tested: user prompt, completed assistant response, response actions, and active thinking state.
-- Controls verified: Copy response, Read response aloud, Regenerate response, and the accessible thinking status were present in the rendered page.
-- Runtime check: the preview rendered meaningful content with no Next.js error dialog. The empty development portal was the standard local development indicator.
-- Intentional adaptation: typography and spacing were reduced from the large source capture so the presentation remains comfortable inside Selrano's narrower authenticated chat panel.
-- Residual P3 consideration: assistant text size can be increased later if real-user feedback favors a more editorial reading scale.
+Run this before shipping any UI change. The design rules themselves live in `DESIGN_SYSTEM.md`; this is how to check a change against them. Updated November 5, 2026.
 
-passed
+## Setup
+
+Run the app against the offline fakes, as the e2e tests do: `node e2e/support/mock-servers.mjs`, then `npm run dev` with the environment from `playwright.config.ts`. For signed-in pages, set the fake session cookie the way `e2e/support/session.ts` does. Live pages need no setup.
+
+## Checklist
+
+- **Two widths.** Take a screenshot at 1440px and at 390px of every page the change touches, scroll through the whole page, and look at each one. Sections that fade in on scroll must be visible once scrolled.
+- **No sideways scroll.** At 390px, `document.documentElement.scrollWidth` must equal the viewport width. Form rows wrap instead of crushing their fields.
+- **Type.** Page titles and marketing headlines are Newsreader at weight 500. Interface text is Inter. Nothing uses weight 800. Labels are sentence case, never uppercase with letter spacing.
+- **Color.** Paper surfaces, ink text, and the navy `--accent` as the only brand color. The highlighter (`--highlight`) only marks cited or source text.
+- **No pill badges.** No small rounded labels for statuses, counts, tags, or announcements. Plain text instead. Buttons, inputs, and citation markers are controls and are fine.
+- **No em dashes** in any copy: `rg -n '\x{2014}' app components lib` returns nothing.
+- **Focus.** Tab through every new control: each shows the accent focus ring.
+- **Motion.** With reduced motion turned on, animations settle on their final frame. The hero demo pauses when offscreen.
+- **Claims.** Every marketing claim matches what the code does and what the Privacy, Terms, and Security pages say. No exact AI message allowances on public pages, no support email or `/support` link, no fake customer logos.
+- **Accessible names.** Buttons and links the e2e tests rely on keep their names, for example "Send message", "Stop responding", "Join the waitlist", and "Workspace navigation". Run `npm run test:e2e` to confirm.
+
+## Record
+
+Note in `docs/HANDOFF.md` what changed, which pages were checked, and anything deliberately left as is.
