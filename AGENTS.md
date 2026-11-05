@@ -2,6 +2,16 @@
 
 Read `docs/HANDOFF.md` before changing the product. It is the current production handoff and records deployed behavior, infrastructure, validation, known risks, and next priorities.
 
+## Working with the owner
+
+The owner is non-technical (stated 2026-11-05). Explain everything in plain language:
+
+- Lead with what changed for the product or its visitors, not how it was built.
+- Avoid jargon, and when a technical term is unavoidable (a table name, a setting), say what it is in a few words.
+- Give step-by-step instructions for anything the owner must do themselves, naming the exact screen and button.
+- Ask questions as simple choices with the tradeoff spelled out; do not expect the owner to judge code, commands, or file paths.
+- Keep technical detail in commits and `docs/HANDOFF.md`, not in messages to the owner.
+
 ## Product contract
 
 - Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, and Stripe billing.
