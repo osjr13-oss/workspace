@@ -38,7 +38,6 @@ export function PricingTable({ showCta = true }: { showCta?: boolean }) {
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-[16px] font-semibold">{plan.name}</h2>
-                {isPro ? <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--accent)]">Founding price</span> : null}
               </div>
               <p className="mt-4 flex items-baseline gap-1">
                 <span className="font-display text-[52px] font-medium leading-none tracking-[-0.02em]">

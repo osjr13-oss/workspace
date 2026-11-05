@@ -10,6 +10,7 @@ Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a w
 - **Serif for titles, sans for everything else.** Newsreader carries page titles and marketing headlines; Inter carries the interface.
 - **Calm weights.** UI headings are 600. Display titles are 500. Nothing is 800.
 - **Sentence case.** Labels and eyebrows are sentence case. No uppercase tracking labels.
+- **No pill badges.** Never put a label, status, count, or tag in a small rounded capsule ("New", "Founding price", "Coming soon", "3 sources ready", "0 notes"). Write it as plain text. Owner decision, November 5, 2026.
 - **Real UI over decoration.** Marketing illustrations are built from real product parts (bubbles, citations, file rows). No emoji, no stock icons as decoration, no fake customer logos.
 
 ## Fonts
@@ -55,13 +56,12 @@ Status colors (`--critical`, `--high`, `--medium`, `--low`, `--info`) are for st
 | `.glass-card` | Interactive card (name kept for compatibility; it is solid now) |
 | `.well` | Recessed group inside a panel |
 | `.stat-card` | Small metric tile |
-| `.btn-primary` | Ink pill. One per view where possible. |
-| `.btn-secondary` | Paper pill with a strong hairline |
+| `.btn-primary` | Ink rounded button. One per view where possible. |
+| `.btn-secondary` | Paper rounded button with a strong hairline |
 | `.btn-ghost` | Text button with hover fill |
-| `.btn-invert` | Paper pill for use on ink bands |
+| `.btn-invert` | Paper rounded button for use on ink bands |
 | `.btn-sm` | Smaller size modifier for any button |
 | `.input-premium` | 12px radius field; ink border and soft ring on focus |
-| `.status-pill` | Small neutral pill |
 | `.composer`, `.send-button`, `.user-bubble`, `.starter-card` | Chat parts, reused by the landing illustrations |
 | `.focus-ring` | Adds the standard focus ring to any element |
 

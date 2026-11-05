@@ -100,12 +100,11 @@ function FileDetailContent({ params }: { params: Promise<{ id: string }> }) {
           <ArrowLeft size={14} /> Back to files
         </Link>
         <WorkspaceHeader title={file.name} eyebrow="Source file" />
-        <div className="mt-3 flex flex-wrap gap-2">
-          <span className="status-pill">{file.mime_type || "Unknown type"}</span>
-          <span className="status-pill">{fileSize(file.size_bytes)}</span>
-          <span className="status-pill">Uploaded {formatDate(file.created_at)}</span>
-          {page ? <span className="status-pill">Page {page}</span> : null}
-        </div>
+        <p className="mt-3 text-sm text-[var(--muted)]">
+          {[file.mime_type || "Unknown type", fileSize(file.size_bytes), `Uploaded ${formatDate(file.created_at)}`, page ? `Page ${page}` : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       </div>
 
       {file.extraction_status !== "ready" || !text ? (

@@ -81,7 +81,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   if (!project) {
     return (
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
-        {error ? <p className="text-sm font-semibold text-[var(--critical)]">{error}</p> : loaded ? <p className="text-sm font-semibold text-[var(--muted)]">Project not found.</p> : <span className="status-pill">Loading…</span>}
+        {error ? <p className="text-sm font-semibold text-[var(--critical)]">{error}</p> : loaded ? <p className="text-sm font-semibold text-[var(--muted)]">Project not found.</p> : <p className="text-sm text-[var(--muted)]">Loading…</p>}
       </div>
     );
   }
@@ -127,9 +127,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           >
             {t.icon}
             {t.label}
-            <span className="rounded-full bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-semibold">
-              {t.count}
-            </span>
+            <span className="text-xs font-medium text-[var(--muted)]">{t.count}</span>
           </button>
         ))}
       </div>

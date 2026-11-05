@@ -146,7 +146,7 @@ function NotesContent() {
         <aside className="panel p-4">
           <div className="mb-4 flex items-center justify-between">
             <p className="eyebrow text-[var(--muted)]">Library</p>
-            <span className="status-pill">{notes.length} notes</span>
+            <span className="text-[13px] text-[var(--muted)]">{notes.length} {notes.length === 1 ? "note" : "notes"}</span>
           </div>
           {notes.length ? (
             <div className="space-y-2">

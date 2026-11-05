@@ -8,12 +8,6 @@ export const metadata: Metadata = {
   description: `What's new in ${brand.name}.`
 };
 
-const tagStyles: Record<string, string> = {
-  New: "bg-[var(--accent)] text-[var(--on-accent)]",
-  Improved: "bg-[var(--accent-soft-strong)] text-[var(--accent)]",
-  Fixed: "bg-[rgba(31,115,80,0.12)] text-[var(--low)]"
-};
-
 function formatDate(value: string) {
   return new Date(`${value}T00:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
@@ -32,11 +26,7 @@ export default function ChangelogPage() {
           <li key={`${entry.date}-${index}`} className="grid gap-3 border-b border-[var(--border)] py-9 sm:grid-cols-[180px_1fr] sm:gap-8">
             <div className="flex items-center gap-3 sm:block">
               <p className="text-sm text-[var(--muted)]">{formatDate(entry.date)}</p>
-              {entry.tag ? (
-                <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium sm:mt-2 ${tagStyles[entry.tag] || "bg-[var(--surface-subtle)] text-[var(--muted-strong)]"}`}>
-                  {entry.tag}
-                </span>
-              ) : null}
+              {entry.tag ? <p className="text-sm text-[var(--muted)] sm:mt-1">{entry.tag}</p> : null}
             </div>
             <div>
               <h2 className="font-display text-[24px] font-medium leading-tight tracking-[-0.015em] text-[var(--text)]">{entry.title}</h2>

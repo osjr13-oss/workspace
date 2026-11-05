@@ -72,11 +72,11 @@ export function ReferralSection() {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-4">
-        <span className="status-pill">
-          {status.referralCount} / {status.required} referrals
+        <span className="text-sm font-medium text-[var(--muted-strong)]">
+          {status.referralCount} of {status.required} referrals
         </span>
         {status.bonusActive ? (
-          <span className="status-pill text-[var(--low)]">
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--low)]">
             <Gift size={14} /> Pro bonus active{status.bonusUntil ? ` until ${new Date(status.bonusUntil).toLocaleDateString()}` : ""}
           </span>
         ) : remaining > 0 ? (

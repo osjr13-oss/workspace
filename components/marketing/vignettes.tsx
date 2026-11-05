@@ -138,7 +138,7 @@ export function CitationVignette() {
             <FileText size={14} className="text-[var(--accent)]" />
             <span className="truncate">Lecture 5, Inhibition.pdf</span>
           </span>
-          <span className="rounded-md bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--accent)]">p. 7</span>
+          <span className="shrink-0 text-[12px] text-[var(--muted)]">Page 7</span>
         </div>
         <p className="mt-3 text-[13px] leading-[1.7] text-[var(--muted-strong)]">
           <span className="rounded-[3px] bg-[var(--highlight)] px-0.5 text-[var(--text)] [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">

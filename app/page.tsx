@@ -122,11 +122,7 @@ export default function LandingPage() {
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] bg-[radial-gradient(50%_45%_at_50%_0%,rgba(255,253,247,0.95),transparent_75%),radial-gradient(35%_35%_at_88%_18%,rgba(236,212,138,0.2),transparent_70%),radial-gradient(30%_30%_at_10%_30%,rgba(27,45,80,0.035),transparent_70%)]"
           />
           <div className="mx-auto max-w-6xl px-5 pb-10 pt-14 text-center sm:px-8 sm:pt-20 lg:pt-24">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-[13px] text-[var(--muted-strong)] shadow-[0_1px_2px_rgba(40,36,28,0.05)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--medium)]" />
-              New accounts open soon
-            </p>
-            <h1 className="title-display mx-auto mt-6 max-w-4xl text-balance text-[44px] leading-[1.02] sm:text-[64px] lg:text-[78px]">
+            <h1 className="title-display mx-auto max-w-4xl text-balance text-[44px] leading-[1.02] sm:text-[64px] lg:text-[78px]">
               Your notes, files, and the web, in one <em className="italic text-[var(--accent)]">calm</em> place to think.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-[17px] leading-[1.65] text-[var(--muted-strong)] sm:text-lg">
@@ -349,7 +345,6 @@ function PlanCard({
     >
       <div className="flex items-center justify-between">
         <p className="text-[15px] font-semibold">{name}</p>
-        {featured ? <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--accent)]">Founding price</span> : null}
       </div>
       <p className="mt-4 flex items-baseline gap-1">
         <span className="font-display text-[46px] font-medium leading-none tracking-[-0.02em]">{price}</span>

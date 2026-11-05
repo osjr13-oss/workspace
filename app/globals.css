@@ -428,20 +428,6 @@ select {
   box-shadow: 0 0 0 4px var(--accent-soft-strong);
 }
 
-.status-pill {
-  display: inline-flex;
-  min-height: 26px;
-  align-items: center;
-  gap: 7px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  padding: 0 10px;
-  color: var(--muted-strong);
-  font-size: 12px;
-  font-weight: 500;
-}
-
 .data-table {
   width: 100%;
   border-collapse: collapse;

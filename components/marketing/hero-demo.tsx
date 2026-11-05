@@ -100,9 +100,6 @@ export function HeroDemo() {
             <span className="text-[var(--border-strong)]">/</span>
             <span className="truncate">Enzyme saturation</span>
           </div>
-          <span className="hidden items-center gap-1.5 rounded-full border border-[var(--border)] px-2.5 py-0.5 text-[12px] text-[var(--muted-strong)] sm:inline-flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--low)]" />3 sources ready
-          </span>
         </div>
 
         <div className="grid md:grid-cols-[1fr_300px] lg:grid-cols-[210px_1fr_310px]">
@@ -174,9 +171,9 @@ export function HeroDemo() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.4 }}
-                      className="mt-5 flex flex-wrap gap-2"
+                      className="mt-5 flex flex-wrap gap-x-5 gap-y-2"
                     >
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-1 text-[12.5px] font-medium text-[var(--muted-strong)]">
+                      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--muted-strong)]">
                         <Check size={13} className="text-[var(--low)]" strokeWidth={2.5} />
                         Saved to Notes
                       </span>
@@ -184,7 +181,7 @@ export function HeroDemo() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.35, duration: 0.4 }}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-1 text-[12.5px] font-medium text-[var(--muted-strong)]"
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--muted-strong)]"
                       >
                         <Layers size={13} className="text-[var(--accent)]" />
                         12 review cards
@@ -223,7 +220,7 @@ export function HeroDemo() {
                 </motion.div>
               ) : (
                 <motion.div key="pdf" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="p-5">
-                  <PreviewHeader icon={<FileText size={14} />} title="Lecture 4, Enzymes.pdf" tag="p. 4" />
+                  <PreviewHeader icon={<FileText size={14} />} title="Lecture 4, Enzymes.pdf" tag="Page 4" />
                   <p className="mt-5 font-display text-[19px] leading-tight text-[var(--text)]">4.2 Saturation</p>
                   <p className="mt-3 text-[13px] leading-[1.7] text-[var(--muted-strong)]">
                     Reaction rate depends on how often a substrate meets a free active site. At low concentrations the rate rises almost in
@@ -271,7 +268,7 @@ function PreviewHeader({ icon, title, tag }: { icon: React.ReactNode; title: str
         <span className="text-[var(--accent)]">{icon}</span>
         <span className="truncate">{title}</span>
       </span>
-      <span className="shrink-0 rounded-md bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--accent)]">{tag}</span>
+      <span className="shrink-0 text-[12px] text-[var(--muted)]">{tag}</span>
     </div>
   );
 }

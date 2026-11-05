@@ -78,11 +78,11 @@ export function FlashcardPracticeSession({
     <section className="panel p-7">
       {error ? <p className="mb-4 text-sm font-semibold text-[var(--critical)]">{error}</p> : null}
       <div className="flex items-center justify-between">
-        <span className="status-pill">
+        <span className="text-sm text-[var(--muted)]">
           {index + 1} of {cards.length}
           {dueExtra > 0 ? ` (+${dueExtra} more due)` : ""}
         </span>
-        <span className="status-pill">{revealed ? "Answer shown" : "Question"}</span>
+        <span className="text-sm text-[var(--muted)]">{revealed ? "Answer shown" : "Question"}</span>
       </div>
       <div className="grid min-h-[360px] place-items-center text-center">
         <div>

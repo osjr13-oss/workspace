@@ -111,7 +111,7 @@ export function BillingSection() {
   if (loading) {
     return (
       <section className="panel p-6">
-        <span className="status-pill">Loading plan…</span>
+        <p className="text-sm text-[var(--muted)]">Loading plan…</p>
       </section>
     );
   }
@@ -139,10 +139,6 @@ export function BillingSection() {
               : ""}
           </p>
         </div>
-        <span className={`status-pill ${isPro ? "border-[var(--border-strong)] bg-[var(--surface-strong)]" : ""}`}>
-          {isPro ? <Crown size={14} /> : null}
-          {status.planName}
-        </span>
       </div>
 
       <p className="mt-4 text-xs text-[var(--muted)]">File uploads up to {status.limits.maxFileMb} MB on your plan.</p>
