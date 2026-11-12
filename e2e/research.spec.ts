@@ -250,6 +250,21 @@ test.describe("research evidence contract", () => {
     expect(await groqRequests()).toHaveLength(0);
   });
 
+  test("news questions search recent news and widen from today to this week once", async () => {
+    await control({ reply: "The agency extended the deadline on 11 November 2026 [1].", searchQueue: [[], [{ ...source, published_date: "2026-11-09" }]] });
+    const news = { ...assessment, consequential: false, topic: "news" as const, freshness: "day" as const };
+    const result = await runQuickResearch({ assessment: news, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources: () => {}, onToken: () => {} });
+    expect(result.streamed).toBe(true);
+    expect(result.research.searches).toBe(2);
+    const bodies = (await requests()).map((r: any) => r.body);
+    expect(bodies.map((b: any) => [b.topic, b.time_range])).toEqual([["news", "day"], ["news", "week"]]);
+    expect((await groqRequests()).at(-1)?.systemText).toContain("Never mention \"the sources provided\"");
+
+    await resetMocks();
+    await control({ assessment: { decision: "search", query: "agency news", clarification: "", consequential: false, freshness: "yesterday" } });
+    await expect(assessResearch(history, AbortSignal.timeout(8000))).rejects.toThrow();
+  });
+
   test("routing runs on Groq's fast model and falls back to GPT", async () => {
     const routed = await assessResearch(history, AbortSignal.timeout(5000));
     expect(routed.model.provider).toBe("groq");

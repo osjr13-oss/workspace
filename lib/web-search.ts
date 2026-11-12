@@ -40,7 +40,10 @@ async function tavily(path: string, body: Record<string, unknown>, signal?: Abor
   return response.json();
 }
 
-export async function webSearch(query: string, signal?: AbortSignal): Promise<SearchOutcome> {
+/** How recent results must be. "news" searches Tavily's news index instead of the general web. */
+export type SearchFreshness = { topic?: "news" | "general"; timeRange?: "day" | "week" | "month" };
+
+export async function webSearch(query: string, signal?: AbortSignal, freshness: SearchFreshness = {}): Promise<SearchOutcome> {
   const safe = publicSearchQuery(query);
   if (!safe) return { outcome: "unavailable", sources: [] };
   try {
@@ -52,7 +55,9 @@ export async function webSearch(query: string, signal?: AbortSignal): Promise<Se
       max_results: 5,
       include_answer: false,
       include_raw_content: false,
-      include_published_date: true
+      include_published_date: true,
+      topic: freshness.topic || "general",
+      ...(freshness.timeRange ? { time_range: freshness.timeRange } : {})
     }, signal);
     if (!payload) return { outcome: "unavailable", sources: [] };
     if (!Array.isArray(payload.results)) return { outcome: "unavailable", sources: [] };
