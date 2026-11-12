@@ -358,6 +358,9 @@ export async function POST(request: Request) {
         }
         if (route?.data.decision === "clarify") {
           research = { status: "clarification", sources: [], limitations: [], searches: 0, extractedPages: 0 };
+          answerProvider = route.model.provider;
+          answerModel = route.model.model;
+          fallbackReason = route.model.fallbackReason;
           send({ type: "research", research });
           push(removeEmDashes(route.data.clarification));
         } else if (route?.data.decision === "search" && !route.data.consequential) {
@@ -481,7 +484,7 @@ export async function POST(request: Request) {
           const saved = await savedReply();
           stopped = Boolean(saved);
           if (saved && research) {
-            const markers = new Set(Array.from(String(saved.content).matchAll(/\[(\d+)\]/g), (m) => m[1]));
+            const markers = new Set(Array.from(String(saved.content).matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g), (m) => m[1].split(/\s*,\s*/)).flat());
             await supabase.from("chat_messages").update({ research, citations: research.sources.filter((source) => markers.has(source.marker)) }).eq("id", saved.id).eq("user_id", user!.id);
           }
         } catch (stopCheckError) {
@@ -514,7 +517,7 @@ export async function POST(request: Request) {
       try {
         if (answer.trim() && !stopped) {
           const allCitations = { ...context.citations, ...webCitations };
-          const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+)\]/g), (match) => match[1])));
+          const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g), (match) => match[1].split(/\s*,\s*/)).flat()));
           const citations = usedMarkers
             .map((marker) => allCitations[marker])
             .filter((citation): citation is Citation => Boolean(citation));

@@ -27,7 +27,11 @@ type ChatMessageProps = {
 };
 
 function withCitationLinks(content: string) {
-  return content.replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
+  return content
+    .replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_, list: string) =>
+      list.split(/\s*,\s*/).map((id) => `[${id}]`).join(" ")
+    )
+    .replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
 }
 
 function urlTransform(url: string) {

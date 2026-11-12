@@ -251,7 +251,8 @@ test.describe("research evidence contract", () => {
   });
 
   test("news questions search recent news and widen from today to this week once", async () => {
-    await control({ reply: "The agency extended the deadline on 11 November 2026 [1].", searchQueue: [[], [{ ...source, published_date: "2026-11-09" }]] });
+    const recentDate = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+    await control({ reply: "The agency extended the deadline on 11 November 2026 [1].", searchQueue: [[], [{ ...source, published_date: recentDate }]] });
     const news = { ...assessment, consequential: false, topic: "news" as const, freshness: "day" as const };
     const result = await runQuickResearch({ assessment: news, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources: () => {}, onToken: () => {} });
     expect(result.streamed).toBe(true);
@@ -263,6 +264,65 @@ test.describe("research evidence contract", () => {
     await resetMocks();
     await control({ assessment: { decision: "search", query: "agency news", clarification: "", consequential: false, freshness: "yesterday" } });
     await expect(assessResearch(history, AbortSignal.timeout(8000))).rejects.toThrow();
+  });
+
+  test("stale dates, roundup spam and single-site news floods are filtered out and RFC-2822 dates keep their year", async () => {
+    const todayRfc = new Date().toUTCString();
+    await control({ reply: "Latest update [1] [2].", searchResults: [
+      { ...source, url: "https://cleantechnica.com/2025/12/22/old-story", published_date: "Mon, 22 Dec 2025 21:08:01 GMT" },
+      { ...source, url: "https://bestcolleges.indiatoday.in/latest-news/school-assembly-news-headlines-today-12508", title: "School assembly news headlines today", published_date: todayRfc },
+      { ...source, url: "https://telegraphindia.com/world/page-1", title: "World News Today", published_date: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-1", title: "First major report", published_date: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-2", title: "Second major report", published_date: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-3", title: "Third from same site", published_date: todayRfc }
+    ] });
+    const news = { ...assessment, consequential: false, topic: "news" as const, freshness: "day" as const };
+    const result = await runQuickResearch({ assessment: news, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources: () => {}, onToken: () => {} });
+    expect(result.research.sources.map((s) => s.url)).toEqual([
+      "https://reuters.com/world/story-1",
+      "https://reuters.com/world/story-2"
+    ]);
+    expect(result.research.sources[0].publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect((await groqRequests()).at(-1)?.systemText).toContain(`published ${result.research.sources[0].publishedAt}`);
+  });
+
+  test("broad news questions force fast path with major-outlet query and follow-ups do not loop on clarify", async () => {
+    await control({ assessment: { decision: "search", query: "top news headlines today", clarification: "", consequential: true, topic: "news", freshness: "day" } });
+    const broad = await assessResearch([{ role: "user", content: "What are the biggest news stories today?" }], AbortSignal.timeout(5000));
+    expect(broad.data.consequential).toBe(false);
+    expect(broad.data.topic).toBe("news");
+    expect(broad.data.query).toContain("Reuters AP BBC");
+
+    await resetMocks();
+    await control({ assessment: { decision: "clarify", query: "", clarification: "Which state or agency?", consequential: false } });
+    const followUp = await assessResearch([
+      { role: "user", content: "What is the passport renewal fee?" },
+      { role: "assistant", content: "Which country are you asking about?" },
+      { role: "user", content: "United States" }
+    ], AbortSignal.timeout(5000));
+    expect(followUp.data.decision).toBe("search");
+    expect(followUp.data.query).toContain("passport renewal fee");
+    expect(followUp.data.query).toContain("United States");
+  });
+
+  test("curly quotes, dashes and grouped valid citations pass review without relaxing invalid-marker checks", async () => {
+    await control({
+      searchResults: [source, { ...source, url: "https://another.gov/program" }],
+      sourcePassage: "Applications\u2014including renewals\u2014close on 30 November 2026 under the agency\u2019s rules.",
+      review: {
+        answer: [{
+          text: "Applications and renewals close on 30 November 2026 [1, 2].",
+          evidence: [
+            { marker: "1", quote: "Applications-including renewals-close on 30 November 2026 under the agency's rules." },
+            { marker: "2", quote: "Applications-including renewals-close on 30 November 2026 under the agency's rules." }
+          ]
+        }],
+        limitations: []
+      }
+    });
+    const result = await run();
+    expect(result.research.status).toBe("complete");
+    expect(result.text).toBe("Applications and renewals close on 30 November 2026 [1] [2].");
   });
 
   test("routing runs on Groq's fast model and falls back to GPT", async () => {

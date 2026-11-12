@@ -43,6 +43,44 @@ async function tavily(path: string, body: Record<string, unknown>, signal?: Abor
 /** How recent results must be. "news" searches Tavily's news index instead of the general web. */
 export type SearchFreshness = { topic?: "news" | "general"; timeRange?: "day" | "week" | "month" };
 
+const MAX_AGE_DAYS: Record<NonNullable<SearchFreshness["timeRange"]>, number> = {
+  day: 3,
+  week: 10,
+  month: 40
+};
+
+/** Normalize any valid publication date (such as RFC-2822 news dates) to YYYY-MM-DD. */
+export function normalizePublishedDate(raw: unknown, url?: string): string | null {
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    const parsed = Date.parse(trimmed);
+    if (Number.isFinite(parsed)) return new Date(parsed).toISOString().slice(0, 10);
+  }
+  if (url) {
+    const match = url.match(/\/(20\d{2})\/(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])(?:\/|$)/);
+    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+  return null;
+}
+
+function isStaleForRange(publishedAt: string | null, timeRange?: SearchFreshness["timeRange"]): boolean {
+  if (!timeRange) return false;
+  if (!publishedAt) return false;
+  const parsed = Date.parse(`${publishedAt}T00:00:00Z`);
+  if (!Number.isFinite(parsed)) return false;
+  const ageDays = (Date.now() - parsed) / 86_400_000;
+  return ageDays > MAX_AGE_DAYS[timeRange];
+}
+
+function isLowValueResult(url: string, title: string, snippet: string): boolean {
+  if (snippet.trim().length < 25) return true;
+  const path = new URL(url).pathname.toLowerCase();
+  if (/\/(?:section|category|tag|topics?)\/|\/page-\d+\/?$|\/amp_videoshow\//.test(path)) return true;
+  if (/school[- ]assembly[- ]news|news[- ]headlines[- ]for[- ]school|audio[- ]briefing|top[- ]story[- ]summaries[- ]for/i.test(`${title} ${path}`)) return true;
+  return false;
+}
+
 export async function webSearch(query: string, signal?: AbortSignal, freshness: SearchFreshness = {}): Promise<SearchOutcome> {
   const safe = publicSearchQuery(query);
   if (!safe) return { outcome: "unavailable", sources: [] };
@@ -69,9 +107,14 @@ export async function webSearch(query: string, signal?: AbortSignal, freshness: 
       const url = typeof result.url === "string" ? publicSourceUrl(result.url) : null;
       if (!url || typeof result.title !== "string" || sources.some((s) => s.url === url)) continue;
       const snippet = removeEmDashes(String(result.content || "")).slice(0, 1500);
-      sources.push({ title: removeEmDashes(result.title).slice(0, 300), url, snippet, evidence: snippet,
-        evidenceKind: "search_excerpt", publisher: new URL(url).hostname, retrievedAt: new Date().toISOString(),
-        publishedAt: typeof result.published_date === "string" && Number.isFinite(Date.parse(result.published_date)) ? result.published_date : null });
+      const title = removeEmDashes(result.title).slice(0, 300);
+      const publishedAt = normalizePublishedDate(result.published_date, url);
+      if (isLowValueResult(url, title, snippet) || isStaleForRange(publishedAt, freshness.timeRange)) { dropped++; continue; }
+      const publisher = new URL(url).hostname;
+      if (freshness.topic === "news" && sources.filter((s) => s.publisher === publisher).length >= 2) { dropped++; continue; }
+      sources.push({ title, url, snippet, evidence: snippet,
+        evidenceKind: "search_excerpt", publisher, retrievedAt: new Date().toISOString(),
+        publishedAt });
     }
     return { outcome: sources.length ? "ok" : "no_results", sources, dropped };
   } catch (error) {
