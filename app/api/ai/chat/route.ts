@@ -1,4 +1,4 @@
-import { assessResearch, runResearch, researchFailure } from "@/lib/research";
+import { assessResearch, planResearchAction, runQuickResearch, runResearch, researchFailure } from "@/lib/research";
 import { EVERYDAY_ANSWER_GUIDE } from "@/lib/chat-guidance";
 import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
@@ -334,6 +334,16 @@ export async function POST(request: Request) {
         return result;
       };
 
+      // A requested note or deck runs once, and never after Stop or a newer turn.
+      const runResearchAction = async (action: { name: string; args: Record<string, unknown> }) => {
+        const { data: latest } = await supabase.from("chat_messages").select("role").eq("thread_id", finalThreadId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (latest?.role === "user" && !(await savedReply())) {
+          const actionResult = await executeTool(action.name, action.args, toolCtx);
+          push("\n\n" + removeEmDashes(actionResult));
+          toolsUsed++;
+        }
+      };
+
       try {
         const researchSignal = AbortSignal.timeout(45_000);
         let route: Awaited<ReturnType<typeof assessResearch>> | null = null;
@@ -350,6 +360,39 @@ export async function POST(request: Request) {
           research = { status: "clarification", sources: [], limitations: [], searches: 0, extractedPages: 0 };
           send({ type: "research", research });
           push(removeEmDashes(route.data.clarification));
+        } else if (route?.data.decision === "search" && !route.data.consequential) {
+          // Everyday web questions: one fast search, then the answer streams as it is written.
+          const result = await runQuickResearch({
+            assessment: route.data,
+            history: messages,
+            signal: researchSignal,
+            offset: Object.keys(context.citations).length,
+            progress: (label) => send({ type: "status", label }),
+            onSources: (found) => {
+              research = found;
+              for (const source of found.sources) webCitations[source.marker] = source;
+              send({ type: "research", research: found });
+            },
+            onToken: (token) => push(removeEmDashes(token))
+          });
+          research = result.research;
+          if (!result.streamed) {
+            send({ type: "research", research });
+            push(result.text);
+          } else {
+            answerProvider = result.model.provider;
+            answerModel = result.model.model;
+            fallbackReason = result.model.fallbackReason;
+            const requested = route.data.action;
+            if (requested && requested !== "none" && answer.trim()) {
+              try {
+                await runResearchAction(await planResearchAction(requested, answer, AbortSignal.timeout(20_000)));
+              } catch (error) {
+                console.error("[chat] quick research action failed", serializeError(error));
+                push("\n\nI answered your question but could not save it to your workspace. Please try again.");
+              }
+            }
+          }
         } else if (route?.data.decision === "search") {
           const result = await runResearch({ assessment: route.data, history: messages, signal: researchSignal,
             offset: Object.keys(context.citations).length, progress: (label) => send({ type: "status", label }) });
@@ -361,14 +404,7 @@ export async function POST(request: Request) {
           send({ type: "research", research });
           // Reveal only the exact reviewed answer, in small chunks through the existing stream.
           for (const chunk of result.text.match(/[\s\S]{1,96}/g) || []) push(chunk);
-          if (result.action && !researchSignal.aborted) {
-            const { data: latest } = await supabase.from("chat_messages").select("role").eq("thread_id", finalThreadId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-            if (latest?.role === "user" && !(await savedReply())) {
-              const actionResult = await executeTool(result.action.name, result.action.args, toolCtx);
-              push("\n\n" + removeEmDashes(actionResult));
-              toolsUsed++;
-            }
-          }
+          if (result.action && !researchSignal.aborted) await runResearchAction(result.action);
         } else if (route) {
           try {
             first = await streamChatWithTools(toolMessages, toolDefinitions, {

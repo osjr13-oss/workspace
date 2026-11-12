@@ -18,3 +18,5 @@ Use the following public or fictional questions when evaluating real provider be
 For research, inspect whether each cited passage supports the actual claim, whether sources apply to the question, and whether recommendations are clearly presented as judgment. Prefer a useful supported partial answer over unsupported certainty. A failed source check must clearly say what could not be checked and offer a practical next step.
 
 Offline tests exercise source rejection, provider fallback, persistence, failure recovery, and request size. They do not measure real model comprehension, recommendation quality or factual accuracy. Real-provider evaluation of this guidance remains pending.
+
+Since 2026-11-12, everyday web answers stream straight from the search results without the private draft-and-review step (owner decision, for speed); only consequential questions are still reviewed. Spot checks on real everyday questions now matter more: confirm answers cite specific facts, dates and numbers, that each citation supports its sentence, and that the answer says so when the sources do not cover the question.

@@ -84,8 +84,6 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
   switch (name) {
     case "search_workspace":
       return searchWorkspace(ctx, String(args.query ?? ""));
-    case "web_search":
-      return "Web research must run through the checked research flow. No search was performed.";
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
     case "create_flashcards":

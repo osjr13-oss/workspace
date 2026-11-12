@@ -267,7 +267,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "gptReviewInvalidJson"]) delete groqState[key];
+  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson"]) delete groqState[key];
   groqState.requests = [];
   groqState.gptRequests = [];
   groqState.gpt = false;
@@ -314,8 +314,8 @@ function researchInput(body) {
 async function researchReply(req, res, body, gpt) {
   const v = researchInput(body);
   if (!v) return false;
-  researchRequests.push({ ...v, provider: gpt ? "openai" : "groq" });
-  if (groqState.researchUnavailable || (gpt && groqState.gptResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
+  researchRequests.push({ ...v, provider: gpt ? "openai" : "groq", model: body.model });
+  if (groqState.researchUnavailable || (gpt && groqState.gptResearchUnavailable) || (!gpt && groqState.groqResearchUnavailable)) { sendJson(res, 503, { error: { message: "Unavailable" } }); return true; }
   if (v.stage === "research_review" && groqState.reviewDelayMs) await sleep(groqState.reviewDelayMs);
   let answer;
   const text = JSON.stringify(v.input);
@@ -364,7 +364,8 @@ async function handleGroq(req, res) {
     const body = JSON.parse(await readBody(req)); webRequests.push({ path: url.pathname, body });
     if (groqState.webDelayMs) await sleep(groqState.webDelayMs);
     if (groqState.webFailure) return sendJson(res, 503, {});
-    if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }] });
+    // Real Tavily scores every result (0 to 1); fixtures without one get a strong score.
+    if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: (groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }]).map((result) => ({ score: 0.9, ...result })) });
     return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);

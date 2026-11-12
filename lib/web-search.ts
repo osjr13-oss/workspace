@@ -4,7 +4,10 @@ import type { WebCitation } from "@/lib/types";
 
 export type SearchSource = Omit<WebCitation, "marker" | "kind">;
 export type RetrievalOutcome = "ok" | "unavailable" | "timeout" | "no_results" | "inaccessible";
-export type SearchOutcome = { outcome: RetrievalOutcome; sources: SearchSource[] };
+export type SearchOutcome = { outcome: RetrievalOutcome; sources: SearchSource[]; dropped?: number };
+
+/** Tavily relevance score (0 to 1) a result must beat to reach the model. */
+export const MIN_SOURCE_SCORE = 0.45;
 
 /** Only public HTTPS source candidates are ever sent to the extraction service. */
 export function publicSourceUrl(value: string): string | null {
@@ -41,19 +44,31 @@ export async function webSearch(query: string, signal?: AbortSignal): Promise<Se
   const safe = publicSearchQuery(query);
   if (!safe) return { outcome: "unavailable", sources: [] };
   try {
-    const payload = await tavily("search", { query: safe, search_depth: "basic", include_answer: false, include_published_date: true, max_results: 5, include_raw_content: false }, signal);
+    // "fast" returns the most relevant passages from each page in one quick call.
+    const payload = await tavily("search", {
+      query: safe,
+      search_depth: "fast",
+      chunks_per_source: 3,
+      max_results: 5,
+      include_answer: false,
+      include_raw_content: false,
+      include_published_date: true
+    }, signal);
     if (!payload) return { outcome: "unavailable", sources: [] };
     if (!Array.isArray(payload.results)) return { outcome: "unavailable", sources: [] };
     const sources: SearchSource[] = [];
+    let dropped = 0;
     for (const result of payload.results.slice(0, 5)) {
+      // Weak matches never reach the model; a result without a score is treated as weak.
+      if (!(typeof result.score === "number" && result.score > MIN_SOURCE_SCORE)) { dropped++; continue; }
       const url = typeof result.url === "string" ? publicSourceUrl(result.url) : null;
       if (!url || typeof result.title !== "string" || sources.some((s) => s.url === url)) continue;
-      const snippet = removeEmDashes(String(result.content || "")).slice(0, 600);
+      const snippet = removeEmDashes(String(result.content || "")).slice(0, 1500);
       sources.push({ title: removeEmDashes(result.title).slice(0, 300), url, snippet, evidence: snippet,
         evidenceKind: "search_excerpt", publisher: new URL(url).hostname, retrievedAt: new Date().toISOString(),
         publishedAt: typeof result.published_date === "string" && Number.isFinite(Date.parse(result.published_date)) ? result.published_date : null });
     }
-    return { outcome: sources.length ? "ok" : "no_results", sources };
+    return { outcome: sources.length ? "ok" : "no_results", sources, dropped };
   } catch (error) {
     return { outcome: signal?.aborted || (error instanceof Error && /timeout|abort/i.test(error.name)) ? "timeout" : "unavailable", sources: [] };
   }

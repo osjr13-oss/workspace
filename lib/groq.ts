@@ -380,15 +380,17 @@ export async function streamGroqWithTools(
  */
 export async function streamGroq(
   messages: GroqChatMessage[],
-  options: { signal?: AbortSignal; temperature?: number; maxTokens?: number; onToken: (token: string) => void }
+  options: { signal?: AbortSignal; temperature?: number; maxTokens?: number; onToken: (token: string) => void; background?: boolean }
 ): Promise<string> {
+  // Background work (such as routing a message) uses the small model at low
+  // reasoning so it stays fast and never spends the main model's rate limit.
   const response = await groqRequest((model) => ({
-    ...answerParams(model),
+    ...(options.background ? {} : answerParams(model)),
     messages,
     temperature: options.temperature ?? 0.4,
     max_completion_tokens: options.maxTokens ?? ANSWER_MAX_TOKENS,
     stream: true
-  }), { signal: options.signal });
+  }), { signal: options.signal, models: options.background ? [groqBackgroundModel(), groqFallbackModel()] : undefined });
 
   let full = "";
   await readSse(response.body!, (data) => {

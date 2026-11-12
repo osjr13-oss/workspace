@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { control, resetMocks, signIn, tableRows } from "./support/session";
-import { runResearch, assessResearch } from "../lib/research";
+import { control, groqRequests, resetMocks, signIn, tableRows } from "./support/session";
+import { runQuickResearch, runResearch, assessResearch } from "../lib/research";
 import { webSearch, publicSourceUrl, publicSearchQuery } from "../lib/web-search";
 
 const endpoint = "http://localhost:54322";
@@ -208,6 +208,61 @@ test.describe("research evidence contract", () => {
     expect(await requests()).toHaveLength(0);
   });
 
+  const quick = (onToken: (token: string) => void = () => {}, onSources: () => void = () => {}) =>
+    runQuickResearch({ assessment: { ...assessment, consequential: false }, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources, onToken });
+
+  test("everyday questions run one fast search and stream without a draft or review", async () => {
+    await control({ reply: "Applications close on 30 November 2026 [1]." });
+    const order: string[] = [];
+    let text = "";
+    const result = await quick((token) => { if (!order.includes("token")) order.push("token"); text += token; }, () => order.push("sources"));
+    expect(result.streamed).toBe(true);
+    expect(order).toEqual(["sources", "token"]);
+    expect(text).toContain("30 November 2026 [1]");
+    expect(result.research).toMatchObject({ status: "complete", searches: 1, extractedPages: 0 });
+    expect(result.research.sources[0]).toMatchObject({ marker: "1", publisher: "agency.gov", publishedAt: "2026-10-01" });
+    const web = await requests();
+    expect(web.map((r: any) => r.path)).toEqual(["/tavily/search"]);
+    expect(web[0].body).toMatchObject({ search_depth: "fast", chunks_per_source: 3, max_results: 5, include_answer: false, include_raw_content: false });
+    expect(await requests("research")).toEqual([]);
+    const answer = (await groqRequests()).at(-1);
+    expect(answer?.systemText).toContain("[1] Agency program");
+    expect(answer?.systemText).toContain("Never give a generic overview");
+  });
+
+  test("weak search results never reach the model", async () => {
+    await control({ reply: "Answer [1].", searchResults: [
+      { ...source, url: "https://weak.gov/program", score: 0.3 },
+      { ...source, url: "https://edge.gov/program", score: 0.45 },
+      { ...source, url: "https://unscored.gov/program", score: null },
+      { ...source, url: "https://strong.gov/program", score: 0.8 }
+    ] });
+    const result = await quick();
+    expect(result.research.sources.map((s) => s.url)).toEqual(["https://strong.gov/program"]);
+    expect((await groqRequests()).at(-1)?.systemText).not.toContain("weak.gov");
+
+    await resetMocks();
+    await control({ searchResults: [{ ...source, score: 0.2 }] });
+    const empty = await quick();
+    expect(empty.streamed).toBe(false);
+    expect(empty.research.status).toBe("no_results");
+    expect(empty.text).toContain("couldn't find relevant sources");
+    expect(await groqRequests()).toHaveLength(0);
+  });
+
+  test("routing runs on Groq's fast model and falls back to GPT", async () => {
+    const routed = await assessResearch(history, AbortSignal.timeout(5000));
+    expect(routed.model.provider).toBe("groq");
+    const first = (await requests("research")).filter((r: any) => r.stage === "research_assessment");
+    expect(first.map((r: any) => [r.provider, r.model])).toEqual([["groq", "openai/gpt-oss-20b"]]);
+
+    await resetMocks();
+    await control({ groqResearchUnavailable: true });
+    const backup = await assessResearch(history, AbortSignal.timeout(8000));
+    expect(backup.model.provider).toBe("openai");
+    expect(backup.data.decision).toBe("search");
+  });
+
   test("unsafe URLs and sensitive queries are rejected before retrieval", async () => {
     for (const url of ["http://agency.gov", "https://127.0.0.1/", "https://[::1]/", "https://metadata.internal/", "https://user:password@agency.gov/"]) expect(publicSourceUrl(url)).toBeNull();
     expect(publicSearchQuery("student@example.com private application")).toBeNull();
@@ -245,6 +300,41 @@ test.describe("research chat experience", () => {
     await expect(responses.last()).toContainText("30 November 2026", { timeout: 15000 });
     await expect(page.locator('section[aria-busy="false"]')).toBeVisible();
     expect((await tableRows("chat_messages")).filter((m) => m.role === "assistant").map((m) => m.research.status)).toEqual(["unavailable", "limited"]);
+  });
+
+  test("an everyday web answer streams with live citations and survives reload", async ({ page }) => {
+    await control({ assessment: { decision: "search", query: "agency program news", clarification: "", consequential: false }, reply: "Applications close on 30 November 2026 [1]. The program is run by the agency [1].", tokenDelayMs: 120 });
+    await page.getByLabel("Chat message").fill("What is the latest on the agency program?");
+    await page.getByLabel("Chat message").press("Enter");
+    const response = page.locator('article[aria-label="Selrano response"]').last();
+    await expect(response).toContainText("Applications close", { timeout: 15000 });
+    // Words appear while the reply is still being written, with working citation markers.
+    await expect(page.locator('section[aria-busy="true"]')).toBeVisible();
+    await expect(response.locator("a.citation-badge").first()).toBeVisible();
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible({ timeout: 15000 });
+    await expect(response).toContainText("run by the agency");
+    await expect(page.getByText("Checking the answer", { exact: true })).toHaveCount(0);
+    const saved = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
+    expect(saved?.research).toMatchObject({ status: "complete", searches: 1 });
+    expect(saved?.citations.map((c: any) => c.marker)).toEqual(["1"]);
+    expect((await requests("research")).map((r: any) => r.stage)).toEqual(["research_assessment"]);
+    await page.reload();
+    await expect(response.locator("a.citation-badge").first()).toBeVisible();
+  });
+
+  test("Stop during an everyday web answer keeps the words shown and their sources", async ({ page }) => {
+    await control({ assessment: { decision: "search", query: "agency program news", clarification: "", consequential: false }, reply: "Applications close on 30 November 2026 [1]. " + "More detail follows here. ".repeat(10), tokenDelayMs: 120 });
+    await page.getByLabel("Chat message").fill("What is the latest on the agency program?");
+    await page.getByLabel("Chat message").press("Enter");
+    const response = page.locator('article[aria-label="Selrano response"]').last();
+    await expect(response.locator("a.citation-badge").first()).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Stop responding" }).click();
+    await expect(page.locator('section[aria-busy="false"]')).toBeVisible();
+    await expect.poll(async () => (await tableRows("chat_messages")).find((m) => m.role === "assistant")?.research?.status, { timeout: 25000 }).toBe("complete");
+    const saved = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
+    expect(saved?.content).toContain("30 November 2026 [1]");
+    expect(saved?.content.length).toBeLessThan(400);
+    expect(saved?.citations.map((c: any) => c.marker)).toEqual(["1"]);
   });
 
   test("progress precedes reviewed text, sources and limitations survive reload", async ({ page }) => {

@@ -23,6 +23,8 @@ test.describe("OpenAI chat", () => {
     expect(requests[0].authorization).toBe("Bearer test-openai-key");
     // Nothing is kept at OpenAI; reasoning comes back encrypted for tool continuations only.
     expect(requests[0].store).toBe(false);
+    // Answers start quickly: low reasoning effort unless OPENAI_REASONING_EFFORT raises it.
+    expect(requests[0].reasoning).toEqual({ effort: "low" });
     expect(requests[0].include).toEqual(["reasoning.encrypted_content"]);
     expect(requests[0].instructions).toContain("Selrano");
     await expect(page.locator("section.chat-page")).toHaveAttribute("data-ai-provider", "openai");

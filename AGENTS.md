@@ -65,7 +65,8 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx` — error reporting to logs (`[server-error]`, `[client-error]`).
 - `e2e/` — Playwright tests and the offline fake Supabase and Groq servers (`e2e/support/mock-servers.mjs`).
 - `vercel.json` — cron schedule and the rule that only `main` deploys.
-- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions plus the `web_search` tool (backed by `lib/web-search.ts`).
+- `lib/ai-tools.ts` — authenticated workspace search/note/deck actions (model tools). Web search is never a model tool.
+- `lib/research.ts` and `lib/web-search.ts` — web research: a fast Groq router before every reply, a streamed quick path for everyday questions, and the checked draft-and-review path for consequential topics (health, legal, finance, education). Tavily `fast` search with a relevance score filter (`MIN_SOURCE_SCORE`).
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable fact extraction, historical backfill (background, at most once a day), explicit recall, and relevance ranking.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.

@@ -37,12 +37,12 @@ function headers() {
 }
 
 /**
- * Optional reasoning effort. Left unset, the model's default applies; set
- * OPENAI_REASONING_EFFORT (for example "low") to trade depth for speed.
+ * Reasoning effort, low by default so answers start quickly (owner decision,
+ * 2026-11-12). Set OPENAI_REASONING_EFFORT (for example "medium") to trade
+ * speed for depth.
  */
 function reasoning() {
-  const effort = process.env.OPENAI_REASONING_EFFORT?.trim();
-  return effort ? { reasoning: { effort } } : {};
+  return { reasoning: { effort: process.env.OPENAI_REASONING_EFFORT?.trim() || "low" } };
 }
 
 function convertMessages(messages: GroqChatMessage[], assistantItems?: OpenAIItem[]) {

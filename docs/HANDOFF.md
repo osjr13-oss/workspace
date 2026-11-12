@@ -1,6 +1,20 @@
 # Selrano production handoff
 
-Last updated: **November 5, 2026**
+Last updated: **November 12, 2026**
+
+## Faster chat and web answers (November 12)
+
+The owner found replies slow and web answers generic. Code review found every message waited on a GPT routing call before anything streamed, and every web answer ran four sequential GPT calls (selection, private draft, review, optional action) plus page extraction before showing anything (about 32 seconds in an October replay). **Owner decision: "Fast, but check serious topics."**
+
+- **Router on Groq:** `assessResearch` (`lib/research.ts`) now calls Groq's background model (`groqBackgroundModel()`, gpt-oss-20b, low reasoning) through `streamGroq(..., { background: true })`. If Groq is unavailable or returns invalid output, it falls back once to GPT within the same 8-second cap. Same prompt, validator and `researchRequired` conflict check; routing still fails closed.
+- **Two web paths.** The router's `consequential` flag (health, legal, finance, education deadlines or eligibility) picks the path:
+  - *Everyday* (`runQuickResearch`): one Tavily search, then the answer streams immediately from `streamChatWithTools` with the numbered sources in a system message. Sources are sent to the page first so citation badges work while text streams. **There is no private draft or evidence review on this path**; the prompt forbids generic summaries, requires specific facts, dates and numbers with `[N]` citations, and tells the model to say plainly when the sources do not answer. A requested note or deck is planned once from the streamed text (`planResearchAction`) and executed once by the route.
+  - *Consequential* (`runResearch`): unchanged checked flow (selection, extraction, private draft, review, evidence validation). Its draft prompt now also asks for concrete facts, dates and numbers.
+- **Tavily** (`lib/web-search.ts`): `search_depth: "fast"`, `chunks_per_source: 3`, `max_results: 5`, `include_answer: false`, `include_raw_content: false`, published dates kept. Snippets are up to about 1,500 characters because the chunks are now the evidence. Results with a relevance score of 0.45 or below, or no score, are dropped (`MIN_SOURCE_SCORE`); if nothing survives, the reply is the existing "couldn't find relevant sources" message. The `[research]` log line now records `path` and `droppedSources`.
+- **GPT reasoning** defaults to `low` for every call (`lib/openai.ts`); set `OPENAI_REASONING_EFFORT` (for example `medium`) in Vercel to trade speed for depth. `stream: true` was already on.
+- The dead `web_search` case in `executeTool` was removed; Tavily is only ever called by the backend, never as a model tool.
+- `EVERYDAY_ANSWER_GUIDE` asks for specific facts, names, dates and numbers over general statements.
+- Tests: new offline cases cover the fast path (one search, no draft or review, sources before the first word, citations persist and survive reload, Stop keeps the shown words and their sources), the Tavily request body, the score filter, Groq routing with GPT fallback, and the low reasoning default. Existing checked-path tests now run as consequential questions. Real OpenAI, Groq and Tavily were not called from the sandbox; real answer speed and quality need the owner's spot checks.
 
 ## Pill badges removed, privacy and context refresh (November 5)
 
