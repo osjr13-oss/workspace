@@ -42,7 +42,7 @@ const branding = ["NEXT_PUBLIC_APP_URL"];
 
 const email = ["RESEND_API_KEY", "EMAIL_FROM"];
 
-const optionalRag = ["TAVILY_API_KEY"];
+const webSearch = ["EXA_API_KEY"];
 
 function status(key) {
   const v = env[key];
@@ -66,8 +66,8 @@ for (const key of email) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }
 
-console.log("\nSemantic search (optional):");
-for (const key of optionalRag) {
+console.log("\nWeb search in chat:");
+for (const key of webSearch) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }
 

@@ -1,6 +1,18 @@
 # Selrano production handoff
 
-Last updated: **November 12, 2026**
+Last updated: **November 17, 2026**
+
+## Exa web search (November 17)
+
+The owner selected Exa to replace Tavily and confirmed saving the server-only `EXA_API_KEY` in Vercel Production. `EXA_BASE_URL` is for offline tests.
+
+- `lib/web-search.ts` sends public subject terms to Exa Search in `auto` mode and requests five ranked results with up to 1,500 characters of highlights per page. Exa's documented result format has no numeric relevance score. The adapter requires a usable passage and retains the URL, recency, duplicate, news diversity and low-value page filters.
+- News uses Exa's news category. Date-limited searches send the earliest publication timestamp. The existing bounded retry and citation behavior are preserved.
+- Checked research reads up to three selected public URLs in one Exa Contents request. Only matching URLs with returned page text qualify as page evidence. The existing quote validation, timeouts and unavailable-source handling still apply. Existing saved citations keep their original links.
+- The privacy policy, terms, setup check, and offline provider fixtures now use Exa.
+- The owner reported a PS5 price question and a US follow-up both yielded questions instead of prices. The router now requests retailer listings without a publication-date cutoff, defaults to new US listings, and retries a skipped price lookup on the other chat provider. The answer prompt asks for model, seller, currency, price and a citation. An offline regression exercises the reported wording and a country-only reply with a simulated listing.
+
+Local validation passed typecheck, lint, the production dependency audit, production build, punctuation scan, and diff check. The final end-to-end suite passed 77 tests with three account-dependent skips. A real routing check selected general web search without a publication cutoff for both “what are PS5 prices looking like?” and the “US” follow-up. All local Exa calls used fixtures because the key was configured in Production.
 
 ## Faster chat and web answers (November 12)
 

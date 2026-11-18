@@ -7,7 +7,7 @@ const endpoint = "http://localhost:54322";
 const requests = async (kind = "web") => (await fetch(`${endpoint}/__${kind}_requests`)).json();
 const history = [{ role: "user" as const, content: "Research the New York agency program deadline" }];
 const assessment = { decision: "search" as const, query: "agency program deadline New York official", consequential: true, clarification: "" };
-const source = { title: "Agency program", url: "https://agency.gov/program", content: "Applications close on 30 November 2026.", published_date: "2026-10-01" };
+const source = { title: "Agency program", url: "https://agency.gov/program", highlights: ["Applications close on 30 November 2026."], publishedDate: "2026-10-01" };
 
 // Calls execute against fixed local evidence, not live providers or customer accounts.
 test.describe("research evidence contract", () => {
@@ -18,8 +18,8 @@ test.describe("research evidence contract", () => {
     process.env.OPENAI_BASE_URL = `${endpoint}/gpt/v1`;
     process.env.GROQ_API_KEY = "test-key";
     process.env.GROQ_BASE_URL = `${endpoint}/openai/v1`;
-    process.env.TAVILY_API_KEY = "test-key";
-    process.env.TAVILY_BASE_URL = `${endpoint}/tavily`;
+    process.env.EXA_API_KEY = "test-key";
+    process.env.EXA_BASE_URL = `${endpoint}/exa`;
   });
   const run = (signal = AbortSignal.timeout(5000)) => runResearch({ assessment, history, signal, offset: 0, progress: () => {} });
 
@@ -30,7 +30,7 @@ test.describe("research evidence contract", () => {
     expect(result.research.status).toBe("limited");
     expect(result.research.sources[0]).toMatchObject({ evidenceKind: "page", publishedAt: "2026-10-01", publisher: "agency.gov" });
     expect(result.research.sources[0].retrievedAt).toBeTruthy();
-    expect((await requests()).map((r: any) => r.path)).toEqual(["/tavily/search", "/tavily/extract"]);
+    expect((await requests()).map((r: any) => r.path)).toEqual(["/exa/search", "/exa/contents"]);
   });
 
   for (const [name, review] of [
@@ -53,7 +53,7 @@ test.describe("research evidence contract", () => {
     expect(result.model?.provider).toBe("groq");
     expect(result.research.searches).toBe(1);
     expect(await tableRows("notes")).toHaveLength(0);
-    expect((await requests()).filter((r: any) => r.path.endsWith("/extract"))).toHaveLength(1);
+    expect((await requests()).filter((r: any) => r.path.endsWith("/contents"))).toHaveLength(1);
   });
 
   test("research flashcard output stays on Groq and does not repeat retrieval", async () => {
@@ -71,7 +71,7 @@ test.describe("research evidence contract", () => {
     if (supported) expect(result.text).toBe("Applications close on 30 November 2026. [1]");
     else expect(result.text).not.toContain("30 November");
     expect((await requests("research")).filter((r: any) => r.stage === "research_review").map((r: any) => r.provider)).toEqual(["openai", "groq"]);
-    expect((await requests()).map((r: any) => r.path)).toEqual(["/tavily/search", "/tavily/extract"]);
+    expect((await requests()).map((r: any) => r.path)).toEqual(["/exa/search", "/exa/contents"]);
     expect(await tableRows("notes")).toHaveLength(0);
   });
 
@@ -113,7 +113,7 @@ test.describe("research evidence contract", () => {
   });
 
   test("missing citations cannot make excerpts support consequential conclusions", async () => {
-    await control({ searchResults: [source, { ...source, url: "https://another.gov/program" }], extractResults: [{ url: source.url, raw_content: source.content }], review: { answer: [{
+    await control({ searchResults: [source, { ...source, url: "https://another.gov/program" }], extractResults: [{ url: source.url, text: source.highlights[0] }], review: { answer: [{
       text: "Applications close on 30 November 2026.", evidence: [{ marker: "2", quote: "Applications close on 30 November 2026." }]
     }], limitations: [] } });
     expect((await run()).research.status).toBe("insufficient_evidence");
@@ -134,9 +134,9 @@ test.describe("research evidence contract", () => {
   });
 
   test("missing credentials, no results and inaccessible pages remain distinct", async () => {
-    delete process.env.TAVILY_API_KEY;
+    delete process.env.EXA_API_KEY;
     expect((await run()).research.status).toBe("unavailable");
-    process.env.TAVILY_API_KEY = "test-key";
+    process.env.EXA_API_KEY = "test-key";
     await control({ searchResults: [] });
     expect((await run()).research.status).toBe("no_results");
     await control({ searchResults: [source], extractFailure: true });
@@ -168,7 +168,7 @@ test.describe("research evidence contract", () => {
     const result = await run();
     expect(result.research.searches).toBe(2);
     expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(2);
-    const extracts = (await requests()).filter((r: any) => r.path.endsWith("/extract"));
+    const extracts = (await requests()).filter((r: any) => r.path.endsWith("/contents"));
     expect(extracts).toHaveLength(1);
     expect(extracts[0].body.urls.length).toBeLessThanOrEqual(3);
   });
@@ -183,7 +183,7 @@ test.describe("research evidence contract", () => {
   });
 
   test("old and conflicting sources yield a bounded qualified answer, unknown dates stay unknown", async () => {
-    await control({ searchResults: [{ ...source, published_date: "2019-01-01" }, { ...source, url: "https://another.gov/program", published_date: null, content: "The program deadline has not been announced." }],
+    await control({ searchResults: [{ ...source, publishedDate: "2019-01-01" }, { ...source, url: "https://another.gov/program", publishedDate: null, highlights: ["The program deadline has not been announced."] }],
       review: { answer: [{ text: "The 2019 source gives 30 November 2026 [1], but I cannot establish the current deadline from these conflicting sources.", evidence: [{ marker: "1", quote: "Applications close on 30 November 2026." }] }], limitations: ["Outdated source and unresolved disagreement. The second source has no known publication date."] } });
     const result = await run();
     expect(result.research.status).toBe("limited");
@@ -222,27 +222,27 @@ test.describe("research evidence contract", () => {
     expect(result.research).toMatchObject({ status: "complete", searches: 1, extractedPages: 0 });
     expect(result.research.sources[0]).toMatchObject({ marker: "1", publisher: "agency.gov", publishedAt: "2026-10-01" });
     const web = await requests();
-    expect(web.map((r: any) => r.path)).toEqual(["/tavily/search"]);
-    expect(web[0].body).toMatchObject({ search_depth: "fast", chunks_per_source: 3, max_results: 5, include_answer: false, include_raw_content: false });
+    expect(web.map((r: any) => r.path)).toEqual(["/exa/search"]);
+    expect(web[0].body).toMatchObject({ query: assessment.query, type: "auto", numResults: 5, contents: { highlights: { maxCharacters: 1500 } } });
     expect(await requests("research")).toEqual([]);
     const answer = (await groqRequests()).at(-1);
     expect(answer?.systemText).toContain("[1] Agency program");
     expect(answer?.systemText).toContain("Never give a generic overview");
   });
 
-  test("weak search results never reach the model", async () => {
+  test("only results with usable source passages reach the model", async () => {
     await control({ reply: "Answer [1].", searchResults: [
-      { ...source, url: "https://weak.gov/program", score: 0.3 },
-      { ...source, url: "https://edge.gov/program", score: 0.45 },
-      { ...source, url: "https://unscored.gov/program", score: null },
-      { ...source, url: "https://strong.gov/program", score: 0.8 }
+      { ...source, url: "https://weak.gov/program", highlights: [] },
+      { ...source, url: "https://edge.gov/program", highlights: ["Brief"] },
+      { ...source, url: "https://unscored.gov/program", highlights: null },
+      { ...source, url: "https://strong.gov/program" }
     ] });
     const result = await quick();
     expect(result.research.sources.map((s) => s.url)).toEqual(["https://strong.gov/program"]);
     expect((await groqRequests()).at(-1)?.systemText).not.toContain("weak.gov");
 
     await resetMocks();
-    await control({ searchResults: [{ ...source, score: 0.2 }] });
+    await control({ searchResults: [{ ...source, highlights: [] }] });
     const empty = await quick();
     expect(empty.streamed).toBe(false);
     expect(empty.research.status).toBe("no_results");
@@ -250,15 +250,43 @@ test.describe("research evidence contract", () => {
     expect(await groqRequests()).toHaveLength(0);
   });
 
+  test("PS5 price question and country-only follow-up search current retail listings", async () => {
+    const question = { role: "user" as const, content: "what are PS5 prices looking like?" };
+    const followUp = [question,
+      { role: "assistant" as const, content: "Are you shopping in the U.S., and are you looking for new or used?" },
+      { role: "user" as const, content: "US" }];
+    for (const conversation of [[question], followUp]) {
+      await resetMocks();
+      const query = "new PS5 console United States retail price PlayStation Direct";
+      await control({
+        groqAssessment: { decision: "ordinary", query: "", clarification: "", consequential: false },
+        assessment: { decision: "search", query, clarification: "", consequential: false, topic: "general", freshness: "any" },
+        searchResults: [{ title: "PS5 console", url: "https://direct.playstation.com/console", highlights: ["Test listing: PS5 console, new, USD 499."] }],
+        reply: "The test listing shows a new PS5 at USD 499 [1]."
+      });
+      const route = await assessResearch(conversation, AbortSignal.timeout(5000));
+      expect(route.model.provider).toBe("openai");
+      const result = await runQuickResearch({ assessment: route.data, history: conversation, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onToken: () => {}, onSources: () => {} });
+      expect(result.text).toContain("USD 499 [1]");
+      expect(result.research.sources[0].publisher).toBe("direct.playstation.com");
+      const web = await requests();
+      expect(web).toHaveLength(1);
+      expect(web[0].body.query).toBe(query);
+      expect(web[0].body).not.toHaveProperty("startPublishedDate");
+      expect(web[0].body).not.toHaveProperty("category");
+    }
+  });
+
   test("news questions search recent news and widen from today to this week once", async () => {
     const recentDate = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
-    await control({ reply: "The agency extended the deadline on 11 November 2026 [1].", searchQueue: [[], [{ ...source, published_date: recentDate }]] });
+    await control({ reply: "The agency extended the deadline on 11 November 2026 [1].", searchQueue: [[], [{ ...source, publishedDate: recentDate }]] });
     const news = { ...assessment, consequential: false, topic: "news" as const, freshness: "day" as const };
     const result = await runQuickResearch({ assessment: news, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources: () => {}, onToken: () => {} });
     expect(result.streamed).toBe(true);
     expect(result.research.searches).toBe(2);
     const bodies = (await requests()).map((r: any) => r.body);
-    expect(bodies.map((b: any) => [b.topic, b.time_range])).toEqual([["news", "day"], ["news", "week"]]);
+    expect(bodies.map((b: any) => b.category)).toEqual(["news", "news"]);
+    expect(bodies.map((b: any) => Math.round((Date.now() - Date.parse(b.startPublishedDate)) / 86_400_000))).toEqual([1, 7]);
     expect((await groqRequests()).at(-1)?.systemText).toContain("Never mention \"the sources provided\"");
 
     await resetMocks();
@@ -269,12 +297,12 @@ test.describe("research evidence contract", () => {
   test("stale dates, roundup spam and single-site news floods are filtered out and RFC-2822 dates keep their year", async () => {
     const todayRfc = new Date().toUTCString();
     await control({ reply: "Latest update [1] [2].", searchResults: [
-      { ...source, url: "https://cleantechnica.com/2025/12/22/old-story", published_date: "Mon, 22 Dec 2025 21:08:01 GMT" },
-      { ...source, url: "https://bestcolleges.indiatoday.in/latest-news/school-assembly-news-headlines-today-12508", title: "School assembly news headlines today", published_date: todayRfc },
-      { ...source, url: "https://telegraphindia.com/world/page-1", title: "World News Today", published_date: todayRfc },
-      { ...source, url: "https://reuters.com/world/story-1", title: "First major report", published_date: todayRfc },
-      { ...source, url: "https://reuters.com/world/story-2", title: "Second major report", published_date: todayRfc },
-      { ...source, url: "https://reuters.com/world/story-3", title: "Third from same site", published_date: todayRfc }
+      { ...source, url: "https://cleantechnica.com/2025/12/22/old-story", publishedDate: "Mon, 22 Dec 2025 21:08:01 GMT" },
+      { ...source, url: "https://bestcolleges.indiatoday.in/latest-news/school-assembly-news-headlines-today-12508", title: "School assembly news headlines today", publishedDate: todayRfc },
+      { ...source, url: "https://telegraphindia.com/world/page-1", title: "World News Today", publishedDate: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-1", title: "First major report", publishedDate: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-2", title: "Second major report", publishedDate: todayRfc },
+      { ...source, url: "https://reuters.com/world/story-3", title: "Third from same site", publishedDate: todayRfc }
     ] });
     const news = { ...assessment, consequential: false, topic: "news" as const, freshness: "day" as const };
     const result = await runQuickResearch({ assessment: news, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources: () => {}, onToken: () => {} });

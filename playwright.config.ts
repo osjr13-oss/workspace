@@ -36,8 +36,8 @@ export default defineConfig({
             NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
             SUPABASE_SERVICE_ROLE_KEY: "test-service-key",
             NEXT_PUBLIC_APP_URL: "http://localhost:3000",
-            TAVILY_API_KEY: "test-tavily-key",
-            TAVILY_BASE_URL: "http://localhost:54322/tavily",
+            EXA_API_KEY: "test-exa-key",
+            EXA_BASE_URL: "http://localhost:54322/exa",
             GROQ_API_KEY: "test-groq-key",
             // Never let offline tests send customer context to a real OpenAI endpoint.
             OPENAI_API_KEY: "test-openai-key",

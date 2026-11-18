@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="eyebrow">Last updated: November 5, 2026</p>
+      <p className="eyebrow">Last updated: November 17, 2026</p>
       <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Privacy Policy</h1>
       <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -54,11 +54,11 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features, relevant portions of your User Content are sent to an AI provider to generate a response. Chat replies come from <strong>OpenAI</strong>. Requests are sent with storage turned off, so OpenAI does not keep the conversation. If OpenAI is unavailable, <strong>Groq, Inc.</strong> answers instead. Groq also handles flashcard generation, text transformations, memory of your preferences, and reading the text in images you upload. When web search is needed, your query may be sent to <strong>Tavily</strong>. This processing is necessary to generate responses and retrieve current sources.</p>
+        <p>When you use AI features, relevant portions of your User Content are sent to an AI provider to generate a response. Chat replies come from <strong>OpenAI</strong>. Requests are sent with storage turned off, so OpenAI does not keep the conversation. If OpenAI is unavailable, <strong>Groq, Inc.</strong> answers instead. Groq also handles flashcard generation, text transformations, memory of your preferences, and reading the text in images you upload. When web search is needed, Selrano sends public search terms to <strong>Exa</strong> and may ask it to read public source pages. This processing is necessary to generate responses and retrieve current sources.</p>
         <ul>
           <li>Data sent to OpenAI is governed by <a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">OpenAI&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
-          <li>Data sent to Tavily is governed by <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Tavily&apos;s Privacy Policy</a>.</li>
+          <li>Learn more in <a href="https://exa.ai/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline">Exa&apos;s Privacy Policy</a>.</li>
           <li>We transmit only the content necessary for the specific AI request (e.g., relevant notes or file excerpts for context).</li>
           <li>We recommend you do not submit sensitive personal information, passwords, financial data, or confidential third-party data through AI features.</li>
         </ul>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
           <li>Previously generated Google Search-grounded replies retain Google attribution and expire within two years. Google is no longer used for new AI requests.</li>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting and cookieless analytics), OpenAI and Groq (AI inference), Tavily (optional web search), Stripe (payments), and Resend (account email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting and cookieless analytics), OpenAI and Groq (AI inference), Exa (optional web search), Stripe (payments), and Resend (account email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>

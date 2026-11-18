@@ -267,7 +267,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson", "searchQueue"]) delete groqState[key];
+  for (const key of ["assessment", "groqAssessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson", "searchQueue"]) delete groqState[key];
   groqState.requests = [];
   groqState.gptRequests = [];
   groqState.gpt = false;
@@ -321,7 +321,7 @@ async function researchReply(req, res, body, gpt) {
   const text = JSON.stringify(v.input);
   if (v.stage === "research_assessment") {
     const need = /latest|current|today|research|verify|look.*up|search the web|applications close|eligibility|what about/i.test(text);
-    answer = groqState.assessment ?? { decision: need ? "search" : "ordinary", query: need ? "agency program deadline New York official" : "", clarification: "", consequential: need };
+    answer = (!gpt ? groqState.groqAssessment : undefined) ?? groqState.assessment ?? { decision: need ? "search" : "ordinary", query: need ? "agency program deadline New York official" : "", clarification: "", consequential: need };
   } else if (v.stage === "research_selection") {
     answer = groqState.selection ?? { urls: v.input.candidates.slice(0, 3).map((s) => s.url), gapQuery: groqState.gapQuery || "" };
   } else if (v.stage === "research_draft") {
@@ -360,16 +360,19 @@ async function handleGroq(req, res) {
   }
   if (url.pathname === "/__research_requests") return sendJson(res, 200, researchRequests);
   if (url.pathname === "/__web_requests") return sendJson(res, 200, webRequests);
-  if (url.pathname.startsWith("/tavily/")) {
+  if (url.pathname.startsWith("/exa/")) {
     const body = JSON.parse(await readBody(req)); webRequests.push({ path: url.pathname, body });
     if (groqState.webDelayMs) await sleep(groqState.webDelayMs);
     if (groqState.webFailure) return sendJson(res, 503, {});
-    // Real Tavily scores every result (0 to 1); fixtures without one get a strong score.
-    // searchQueue answers successive searches in order, for example nothing today, then this week.
-    const queued = url.pathname.endsWith("/search") && groqState.searchQueue?.length ? groqState.searchQueue.shift() : undefined;
-    if (queued) return sendJson(res, 200, { results: queued.map((result) => ({ score: 0.9, ...result })) });
-    if (url.pathname.endsWith("/search")) return sendJson(res, 200, { results: (groqState.searchResults ?? [{ title: "Agency program", url: SOURCE_URL, content: SOURCE_PASSAGE, published_date: "2026-10-01" }]).map((result) => ({ score: 0.9, ...result })) });
-    return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, raw_content: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
+    if (!req.headers["x-api-key"]) return sendJson(res, 401, {});
+    if (url.pathname === "/exa/search") {
+      const results = groqState.searchQueue?.shift() ?? groqState.searchResults ?? [
+        { title: "Agency program", url: SOURCE_URL, highlights: [SOURCE_PASSAGE], publishedDate: "2026-10-01" }
+      ];
+      return sendJson(res, 200, { results });
+    }
+    if (url.pathname !== "/exa/contents" || body.text?.maxCharacters !== 3000) return sendJson(res, 400, {});
+    return sendJson(res, 200, { results: groqState.extractFailure ? [] : groqState.extractResults ?? body.urls.map((url) => ({ url, text: groqState.sourcePassage ?? SOURCE_PASSAGE })) });
   }
   if (url.pathname === "/__requests") return sendJson(res, 200, groqState.requests);
   if (url.pathname === "/__gpt_requests") return sendJson(res, 200, groqState.gptRequests);

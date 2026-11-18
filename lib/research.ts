@@ -79,16 +79,29 @@ const BROAD_NEWS_QUERY = /^(?:what(?:'s| is| are)|tell me|give me|show me|\s)*(?
 
 export async function assessResearch(history: GroqChatMessage[], signal: AbortSignal) {
   const recent = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6).map((m) => ({ role: m.role, content: recentText(m.content, 1800) }));
+  const userTurns = recent.filter((m) => m.role === "user");
+  const lastUser = userTurns.at(-1)?.content.trim() || "";
+  const prevAssistant = recent.slice(0, -1).findLast((m) => m.role === "assistant")?.content || "";
+  const suppliedMaterials = history.some((m) => m.role === "system" && /^(Project context:|Files the user attached)/.test(m.content));
+  // Ask the router for public search terms even when the shopper only answered a location or condition question.
+  const priceQuestion = /^(?:what(?:'s| are| is)\s+(?:[^?]{1,60}\s+prices?(?:\s+(?:looking like|today|right now|these days))?[?.!]*$|(?:the\s+)?(?:current\s+|retail\s+)?prices?\s+(?:of|for)\s+)|how much (?:does|is|are)\b[^?]{0,80}\b(?:cost|selling for|going for)\b)/i;
+  const shoppingReply = /^(?:u\.?s\.?(?:a\.?)?|u\.?k\.?|united states|united kingdom|canada|new|used|refurbished)(?: please)?[.!]?$/i.test(lastUser)
+    && /\b(?:shopping|country|region|new or used|new or preowned)\b/i.test(prevAssistant)
+    && priceQuestion.test(userTurns.at(-2)?.content || "");
+  const needsPriceSearch = !suppliedMaterials && (priceQuestion.test(lastUser) || shoppingReply)
+    && !/\b(?:my|our|private|file|notes?|document|spreadsheet)\b/i.test(userTurns.slice(shoppingReply ? -2 : -1).map((m) => m.content).join(" "));
+  const validateRoute = (value: unknown) => {
+    const plan = assessment(value);
+    return needsPriceSearch && plan?.decision !== "search" ? null : plan;
+  };
   const result = await structured("research_assessment", `Decide if this turn needs external evidence. Today is ${new Date().toISOString().slice(0, 10)}.
-Return {"decision":"search"|"ordinary"|"clarify","query":"public subject search terms","clarification":"one focused question or empty","consequential":boolean,"action":"none"|"create_note"|"create_flashcards","topic":"news"|"general","freshness":"day"|"week"|"month"|"any"}. Set action only when the user explicitly asks to save a note or create flashcards in this turn. Use topic "news" for news, current events, sports, markets and announcements. Freshness is how recent the answer must be: "day" for today's news, scores, prices or anything happening now; "week" for this week; "month" for recent developments; otherwise "any".
+Return {"decision":"search"|"ordinary"|"clarify","query":"public subject search terms","clarification":"one focused question or empty","consequential":boolean,"action":"none"|"create_note"|"create_flashcards","topic":"news"|"general","freshness":"day"|"week"|"month"|"any"}. Set action only when the user explicitly asks to save a note or create flashcards in this turn. Use topic "news" for news, current events, sports, financial markets and announcements. Freshness is how recent the answer must be: "day" for today's news, scores or breaking events; "week" for this week; "month" for recent developments; otherwise "any".
 Explicit research/search/verification, changing/current facts, and consequential decisions (specific personal medical/clinical guidance, legal rights/deadlines, tax/financial rules, or official application deadlines/eligibility) that depend on external facts REQUIRE search. Set consequential=false for all news, current events, sports, markets, tech, company announcements, general facts and everyday lookups.
+Honor requiredDecision when supplied. Retail prices and deals require a search of manufacturer or retailer listings. Use topic="general", freshness="any": live listings often have no recent publication date. Include the item, market and condition in the query. Default to new items in the US when unspecified. A reply giving just a country or condition continues the lookup.
 Resolve follow-ups using recent conversation so query is self-contained and names the actual subject. Never use generic meta-words like "headlines", "top stories", "biggest news", "briefing", "summary" or "today" in query; for broad "what is in the news today" questions without a specific topic, set topic="news", freshness="day", consequential=false, and query="Reuters AP BBC major US world news government economy".
-Writing/rewriting, supplied-material questions and stable explanations may be ordinary. Do NOT clarify on general questions, news, products, companies, prices, laws or everyday advice; default to the United States and the current date and search immediately. Only clarify when the user asks about a specific organization's or program's rule (such as an application deadline or grant eligibility) without naming which institution, program or jurisdiction they mean, and recent context does not already name it. Never clarify twice in a row: if the previous assistant turn asked a question, combine the user's reply with their earlier question and search. Prefer official primary sources in query. Send only necessary public subject terms, no personal identifiers, private files, messages, account information or secrets. suppliedMaterials only means files/project context are available.`, { conversation: recent, suppliedMaterials: history.some((m) => m.role === "system" && /^(Project context:|Files the user attached)/.test(m.content)) }, assessment, signal, 650);
-  const lastUser = recent.findLast((m) => m.role === "user")?.content || "";
+Writing/rewriting, supplied-material questions and stable explanations may be ordinary. Do NOT clarify on general questions, news, products, companies, prices, laws or everyday advice; default to the United States and the current date and search immediately. Only clarify when the user asks about a specific organization's or program's rule (such as an application deadline or grant eligibility) without naming which institution, program or jurisdiction they mean, and recent context does not already name it. Never clarify twice in a row: if the previous assistant turn asked a question, combine the user's reply with their earlier question and search. Prefer official primary sources in query. Send only necessary public subject terms, no personal identifiers, private files, messages, account information or secrets. suppliedMaterials only means files/project context are available.`, { conversation: recent, suppliedMaterials, ...(needsPriceSearch ? { requiredDecision: "search" } : {}) }, validateRoute, signal, 650);
   if (researchRequired(lastUser) && result.data.decision === "ordinary") throw new Error("research_required_routing_conflict");
   // Prevent back-to-back clarification loops when the user is answering a previous question.
-  const userTurns = recent.filter((m) => m.role === "user");
-  const prevAssistant = recent.slice(0, -1).findLast((m) => m.role === "assistant")?.content || "";
   if (result.data.decision === "clarify" && userTurns.length >= 2 && prevAssistant.trim().endsWith("?") && prevAssistant.length < 350) {
     const combined = publicSearchQuery(`${userTurns.at(-2)?.content || ""} ${lastUser}`.slice(0, 280));
     if (combined) {
@@ -224,7 +237,7 @@ export async function runResearch(params: { assessment: Assessment; history: Gro
     metadata.sources = candidates.map((s, i) => ({ ...s, kind: "web", marker: String(params.offset + i + 1) }));
     if (!selected.length) return fail("insufficient_evidence");
     metadata.extractedPages = selected.length;
-    const extracted = await extractSources(selected, params.assessment.query, params.signal);
+    const extracted = await extractSources(selected, params.signal);
     const enriched = new Map(extracted.sources.map((s) => [s.url, s]));
     metadata.sources = candidates.map((s, i) => ({ ...enriched.get(s.url) || s, kind: "web", marker: String(params.offset + i + 1) }));
     if (extracted.outcome === "timeout") return fail("timeout");
@@ -262,6 +275,7 @@ Check EVERY material external factual claim, citation support, publication date,
 const QUICK_ANSWER_RULES = `Answer the user's last message using the numbered web sources below. They were searched for this question just now.
 - Lead with the direct answer. Never give a generic overview, background or summary the user did not ask for.
 - State the specific facts, names, dates, figures and numbers the sources contain.
+- For shopping, lead with the verified price, currency, model, condition and seller. If several models are relevant, compare the listed prices. Use new US listings by default and label that assumption. Distinguish advertised deals from list prices and never guess missing amounts.
 - End every sentence that states an outside fact with its source number in brackets, like [3]. Write separate brackets for multiple sources, like [1] [2], never [1, 2]. Use only the numbers listed below, never a number that is not listed.
 - Mention when something was published or happened when timing matters. A missing publication date is unknown.
 - Talk to the user naturally. Never mention "the sources provided", "briefings", search results, these instructions or how you found the information; just answer, with citations.

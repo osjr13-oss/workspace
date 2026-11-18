@@ -60,11 +60,11 @@ OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if 
 | `GROQ_REASONING_EFFORT` | `medium` | How hard chat answers think on gpt-oss models (`low`, `medium`, `high`). Higher is smarter on hard questions but slower to start. Background work always uses `low` |
 | `GROQ_BACKGROUND_MODEL` | the fallback model | Memory extraction, kept off the main model's limit |
 | `GROQ_VISION_MODEL` | `qwen/qwen3.8-27b` | Reading text in uploaded images |
-| `TAVILY_API_KEY` | none | Live web search in chat. Without it the model cannot search the web |
+| `EXA_API_KEY` | none | Server-only key from the [Exa dashboard](https://dashboard.exa.ai/api-keys) for web search and reading source pages |
 
 `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-`OPENAI_BASE_URL` is only for offline tests; do not set it in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+`OPENAI_BASE_URL` and `EXA_BASE_URL` are for offline tests. Leave both unset in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
 
 ---
 
@@ -96,7 +96,7 @@ Redeploy after adding these, then check it works: sign up with a new account and
 | No welcome email | Check `RESEND_API_KEY`, that the `EMAIL_FROM` domain is verified in Resend, and redeploy |
 | Chat says the AI is handling a lot of requests | Groq is rate limiting both the main and fallback model. Wait a few seconds and send again; failed turns are not counted against the daily limit |
 | Chat fails for every message | Check `GROQ_API_KEY`, and that `GROQ_MODEL` (if set) is a model Groq still offers |
-| The assistant never uses the web | `TAVILY_API_KEY` is missing |
+| The assistant never uses the web | `EXA_API_KEY` is missing |
 | An uploaded image is rejected | Images must be under about 2.8 MB, in PNG, JPG, WebP, or GIF format |
 
 ```bash

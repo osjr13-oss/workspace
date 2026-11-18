@@ -8,7 +8,7 @@ This branch transforms the existing Selrano application into an adaptive, chat-f
 
 - Chat is the primary signed-in destination.
 - Groq is the AI provider. (Originally Claude Sonnet 4.6 was primary with Groq as fallback; if the main Groq model is rate limited, a second Groq model now answers.)
-- Tavily provides current web sources through a `web_search` tool the model calls when it judges a question needs them (see `docs/HANDOFF.md` for the July 25 reliability fixes).
+- Exa provides ranked web passages for everyday questions and page text for checked answers. Selrano decides when to search before generating the reply.
 - Style learning and durable content memory are stored separately.
 - Users can edit a message and regenerate an assistant response.
 - Local autocorrect improves common typing mistakes before submission.
@@ -18,7 +18,7 @@ This branch transforms the existing Selrano application into an adaptive, chat-f
 
 ```txt
 GROQ_API_KEY=
-TAVILY_API_KEY=
+EXA_API_KEY=
 ```
 
 `GROQ_API_KEY` is required. The Groq model variables are optional; see `docs/SETUP.md`.
