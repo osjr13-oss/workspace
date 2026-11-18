@@ -30,7 +30,7 @@ The owner is non-technical (stated 2026-11-05). Explain everything in plain lang
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
 - Owner preference (2026-10-21): push completed changes without asking again. The owner handles post-push deployment verification unless requested.
-- Work on `main` only. There are no feature branches and no preview deployments (`vercel.json` deploys only `main`).
+- Work on `main` only. There are no feature branches and no preview deployments (use the main-only release procedure in `docs/CLOUDFLARE.md`).
 - Chat requests must stay small: Groq limits tokens per minute per model. Keep prompts, history, and tool descriptions lean, and keep model work that is not the answer (memory extraction) off the critical path.
 - Preserve user changes in the working tree and never delete production/test data without explicit approval.
 
@@ -48,7 +48,7 @@ rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq (see `docs/HANDOFF.md`, "Tests"); CI does not run it yet, so run it yourself before pushing chat changes.
+After pushing `main`, confirm the matching Cloudflare release. Until automatic deployment is verified, deploy the Worker as described in `docs/CLOUDFLARE.md`. Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq (see `docs/HANDOFF.md`, "Tests"); CI does not run it yet, so run it yourself before pushing chat changes.
 
 ## Important paths
 
@@ -64,7 +64,7 @@ Pushes to `main` deploy production. Confirm the GitHub Actions run passes, then 
 - `lib/stream-markdown.ts` — tidies half-streamed Markdown so replies never flash raw symbols.
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx` — error reporting to logs (`[server-error]`, `[client-error]`).
 - `e2e/` — Playwright tests and the offline fake Supabase and Groq servers (`e2e/support/mock-servers.mjs`).
-- `vercel.json` — cron schedule and the rule that only `main` deploys.
+- `wrangler.jsonc` and `cloudflare-worker.mjs` configure production web routing and scheduled jobs. Vercel is retained for rollback.
 - `lib/ai-tools.ts` — authenticated workspace search/note/deck actions (model tools). Web search is never a model tool.
 - `lib/research.ts` and `lib/web-search.ts` — web research: a fast Groq router before every reply, a streamed quick path for everyday questions, and the checked draft-and-review path for consequential topics (health, legal, finance, education). Exa returns ranked web passages and reads selected pages for checked answers.
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.

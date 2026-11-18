@@ -4,12 +4,11 @@ Last updated: **November 18, 2026**
 
 ## Cloudflare hosting migration (November 18, in progress)
 
-Production traffic and daily jobs still run on Vercel. The paid Cloudflare account hosts the same app at https://selrano.oosman02.workers.dev. Both hosts use the existing Supabase project. The Worker test address requests no search indexing.
+Production traffic for selrano.com and www.selrano.com now runs on the paid Cloudflare Worker `selrano`. Supabase still hosts the same accounts, database and private files. Namecheap remains the registrar. All 11 DNS records were compared before delegation. Only the two website records are proxied. Cloudflare's HTTPS certificate covers both hosts. The apex redirects to www with HTTP 308, preserving paths and queries.
 
-- The Worker serves public pages and protects chat and billing routes in live checks. The local Workers runtime passed 77 end-to-end tests with three account-dependent skips. Simulated file extraction and signed billing webhook delivery also passed. Signed-in production journeys still need verification.
-- The owner authorized encrypted runtime settings. Supabase, chat, Exa, the subscription price and the Worker schedule secret are configured. Vercel masks the Stripe live key and webhook signing secret, Resend sending key and embedding key. Supply those to the Worker before moving traffic.
-- A pending Cloudflare DNS zone has 11 scanned records, including the existing Vercel web and email records. Namecheap is authoritative. Compare its full records and forwarding settings before changing delegation. GitHub deployment to the Worker, custom domains and the two live schedules are still pending.
-- See [Cloudflare hosting](CLOUDFLARE.md) for build settings, cutover order and rollback.
+- Production credentials are encrypted Worker secrets. The owner signed in at the Worker address. A live Exa search returned PS5 prices with retailer citations, a harmless uploaded text file yielded its expected contents in chat, and signed-in billing loaded with its action enabled. No purchase or email was sent. The local Workers suite passed 77 tests with three account-dependent skips.
+- The Vercel deployment is retained for rollback. Its website targets remain in Cloudflare DNS. See [Cloudflare hosting](CLOUDFLARE.md) for release and rollback procedures. The public Worker test address requests no search indexing.
+- During schedule handover, verify Vercel reports no active jobs before enabling the two Worker schedules. Until Cloudflare's GitHub connection is verified, release from a clean checkout of main using the documented Worker command.
 
 ## Exa web search (November 17)
 

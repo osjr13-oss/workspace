@@ -55,7 +55,7 @@ Stripe Free + Pro tiers: **[docs/BILLING.md](docs/BILLING.md)**
 
 ## First-time setup (env, DB, email)
 
-**Start here if features are not wired yet:** **[docs/SETUP.md](docs/SETUP.md)** for Supabase migrations, Vercel environment variables, Resend on the existing selrano.com domain, and auth redirects.
+**Start here if features are not wired yet:** **[docs/SETUP.md](docs/SETUP.md)** for Supabase migrations, Cloudflare Worker settings, Resend on the existing selrano.com domain, and auth redirects.
 
 ```bash
 npm run setup:check

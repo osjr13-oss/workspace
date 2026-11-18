@@ -12,6 +12,10 @@
     { "binding": "WORKER_SELF_REFERENCE", "service": "selrano" }
   ],
   "keep_vars": true,
+  "routes": [
+    { "pattern": "www.selrano.com/*", "zone_name": "selrano.com" },
+    { "pattern": "selrano.com/*", "zone_name": "selrano.com" }
+  ],
   "workers_dev": true,
   "preview_urls": false
 }

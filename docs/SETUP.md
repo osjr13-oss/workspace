@@ -32,9 +32,9 @@ The `support_requests` table still exists from earlier versions, but nothing wri
 
 ---
 
-## Step 3 - Vercel environment variables
+## Step 3 - Cloudflare Worker settings
 
-**Settings -> Environment Variables -> Production**
+Open **Workers & Pages > selrano > Settings > Variables and Secrets**. Store private keys as secrets. Provide the public build settings listed in [Cloudflare hosting](CLOUDFLARE.md).
 
 ### Core
 
@@ -64,7 +64,7 @@ OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if 
 
 `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-`OPENAI_BASE_URL` and `EXA_BASE_URL` are for offline tests. Leave both unset in Vercel. Save -> **Redeploy**. Vercel only applies changed variables to new deployments.
+`OPENAI_BASE_URL` and `EXA_BASE_URL` are for offline tests. Leave both unset on the production Worker. Save the settings and deploy.
 
 ---
 

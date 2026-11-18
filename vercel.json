@@ -6,14 +6,5 @@
       "main": true
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/lifecycle-emails",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/grounded-history",
-      "schedule": "0 13 * * *"
-    }
-  ]
+  "crons": []
 }

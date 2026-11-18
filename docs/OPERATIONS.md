@@ -13,13 +13,13 @@ The app sends branded email via [Resend](https://resend.com) when `RESEND_API_KE
 | Welcome | After signup (`/api/email/welcome`), retried on the next authenticated app load and by the daily email job |
 | Tips & reminders | Optional lifecycle cron (`/api/cron/lifecycle-emails`) — see below |
 
-**Vercel environment variables:**
+**Cloudflare Worker secrets and settings:**
 
 ```txt
 RESEND_API_KEY=
 EMAIL_FROM=Selrano <noreply@yourdomain.com>
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
-CRON_SECRET=          # random string; Vercel Cron sends Authorization: Bearer <CRON_SECRET>
+CRON_SECRET=          # random string; the Worker schedule handler sends Authorization: Bearer <CRON_SECRET>
 ```
 
 ### Lifecycle tips (cron)
@@ -40,8 +40,8 @@ Users must opt in from **Settings → Email preferences**. Each campaign is logg
 **Setup:**
 
 1. Run migrations `006_lifecycle_emails.sql` and `011_email_preferences_opt_in.sql` in Supabase.
-2. Add `CRON_SECRET` in Vercel (generate a long random string).
-3. Deploy — `vercel.json` registers the cron job automatically on Vercel.
+2. Add `CRON_SECRET` in the Worker settings (generate a long random string).
+3. Deploy the Worker with the schedules in wrangler.jsonc. See [Cloudflare hosting](CLOUDFLARE.md).
 
 Templates: [`lib/email/lifecycle-templates.ts`](../lib/email/lifecycle-templates.ts). Logic: [`lib/lifecycle-emails.ts`](../lib/lifecycle-emails.ts).
 
