@@ -9,7 +9,7 @@ Production traffic for selrano.com and www.selrano.com now runs on the paid Clou
 - Production credentials are encrypted Worker secrets. The owner signed in at the Worker address. A live Exa search returned PS5 prices with retailer citations, a harmless uploaded text file yielded its expected contents in chat, and signed-in billing loaded with its action enabled. No purchase or email was sent. The local Workers suite passed 77 tests with three account-dependent skips.
 - The owner approved immediate retirement after both jobs passed a local simulation. Both website records are now proxied A records with the originless address 192.0.2.0. The Vercel project was deleted and returned 404 on verification. Live HTTPS, the apex redirect, sign-in, static assets, and protected routes passed before and after deletion. See [Cloudflare hosting](CLOUDFLARE.md) for release and rollback procedures. The public Worker test address requests no search indexing.
 - Workers Builds is connected to main on osjr13-oss/workspace with the three public build settings and the OpenNext build and deployment commands. Vercel reported zero jobs on the cutover deployment. The Worker schedule configuration runs grounded-history at 13:00 UTC and lifecycle-emails at 14:00 UTC daily. Verify each job in Worker logs after its scheduled time.
-- Cloudflare's dashboard provides traffic statistics. The signed-in verification created one test chat and the sample file hosting-check.txt in the owner's workspace.
+- Worker logs are now kept (`observability` in `wrangler.jsonc`), so errors and the daily jobs can be searched later instead of only watched live. Cloudflare's dashboard provides traffic statistics. The signed-in verification created one test chat and the sample file hosting-check.txt in the owner's workspace.
 
 ## Exa web search (November 17)
 
@@ -38,7 +38,7 @@ The owner found replies slow and web answers generic. Code review found every me
   - **Filtered SEO headline roundups, section fronts, and single-site news floods (`lib/web-search.ts`):** `isLowValueResult` drops bare `/section/`, `/category/`, `/tag/`, `/page-N` navigation pages, `amp_videoshow` stubs, and `school-assembly-news` / `audio-briefing` roundup spam, and `topic: "news"` caps results at 2 per domain so one blog cannot fill all slots.
   - **Stopped unnecessary `clarify` loops, forced `consequential: false` on news, and rewrote broad news queries (`lib/research.ts`):** `assessment` forces `consequential = false` when `topic === "news"` so news questions never fall into the 20-second checked path. `assessResearch` defaults general questions without a country or date to the US and current date instead of asking for clarification, prevents back-to-back `clarify` turns when the user answers a previous question, and rewrites generic "top news / biggest stories today" queries to `"Reuters AP BBC major US world news government economy"`. If a timed or news quick search still finds nothing, `runQuickResearch` widens once to the general web.
   - **Reduced false refusals on the checked path (`lib/research.ts`, `components/chat-message.tsx`, `app/api/ai/chat/route.ts`):** `validateReview` normalizes curly quotes, dashes, and markdown formatting when checking quotes against source text, expands grouped valid numeric citations (`[1, 2]` to `[1] [2]`) while still rejecting invalid markers (`[1, 99]`), and `runResearch` passes only extracted `page` sources to `research_draft` when `consequential` is `true` so the draft cannot cite an unextracted search excerpt when a full page succeeded.
-- **GPT reasoning** defaults to `low` for every call (`lib/openai.ts`); set `OPENAI_REASONING_EFFORT` (for example `medium`) in Vercel to trade speed for depth. `stream: true` was already on.
+- **GPT reasoning** defaults to `low` for every call (`lib/openai.ts`); set `OPENAI_REASONING_EFFORT` (for example `medium`) in the Worker's Variables and Secrets to trade speed for depth. `stream: true` was already on.
 - The dead `web_search` case in `executeTool` was removed; Tavily is only ever called by the backend, never as a model tool.
 - `EVERYDAY_ANSWER_GUIDE` asks for specific facts, names, dates and numbers over general statements.
 - Tests: new offline cases cover the fast path (one search, no draft or review, sources before the first word, citations persist and survive reload, Stop keeps the shown words and their sources), the Tavily request body, the score filter, Groq routing with GPT fallback, and the low reasoning default. Existing checked-path tests now run as consequential questions. Real OpenAI, Groq and Tavily were not called from the sandbox; real answer speed and quality need the owner's spot checks.
@@ -178,7 +178,7 @@ Real Claude checks with the owner's local key and workspace returned `claude-hai
 - **Security:** `npm audit fix` patched the critical and high advisories (Next.js, sharp, `@xmldom/xmldom`, qs). Three moderate advisories remain (`mammoth` through `argparse` to `sprintf-js`); the only fix is a forced downgrade of `mammoth`, so they are accepted for now. CI's `--audit-level=high` passes.
 - **Support removed (2026-10-08):** see "Support and contact".
 - **Image uploads:** PNG, JPG, WebP, and GIF files are read by a Groq vision model (`lib/ocr.ts`, up to about 2.8 MB each). Scanned PDFs are **not** supported: Groq cannot read PDFs directly, and a PDF with no text layer is rejected with a clear message. See `app/api/files/upload/route.ts`.
-- **Error reporting:** `instrumentation.ts` logs failed server requests as one `[server-error]` JSON line; `/api/client-error` receives browser crashes (rate limited) and logs `[client-error]`; `app/error.tsx` and `app/global-error.tsx` show a friendly page instead of a blank one. Search these tags in Vercel logs. There is no alerting.
+- **Error reporting:** `instrumentation.ts` logs failed server requests as one `[server-error]` JSON line; `/api/client-error` receives browser crashes (rate limited) and logs `[client-error]`; `app/error.tsx` and `app/global-error.tsx` show a friendly page instead of a blank one. Search these tags in the Worker's logs (**Workers & Pages > selrano > Observability**). There is no alerting.
 - **AI:** Groq-only at the time (OpenAI GPT became primary on 2026-10-21), with a streaming, rate-limit-aware request path. See "AI request lifecycle". Chat time to first word, the "no responses after a few messages" failures, and the flashing reply were all fixed on 2026-10-08.
 - **Chat page:** compact orbiting-ring waiting indicator; only one reply can be in flight (Enter is ignored while busy); half-streamed Markdown is tidied; the streamed bubble hands over to the saved message without remounting.
 - **Tailwind config:** `tailwind.config.ts` imports `@tailwindcss/typography` instead of calling `require`, because newer Node versions load TypeScript configs natively and `require` crashed the dev server.
@@ -216,15 +216,15 @@ The owner stopped the iPhone app on 2026-10-14 and asked for it to be deleted: t
 - Groq enforces request and token limits **per model**. That is why the fallback and background models differ from the main one, why prompts are kept small, and why a rate-limited main model hands over to the fallback at once.
 - Chat answers on gpt-oss models are sent `reasoning_effort: "medium"` (owner decision, 2026-10-13, for smarter answers; set `GROQ_REASONING_EFFORT` to `low` or `high` to change it) with room for 4,096 completion tokens, since hidden reasoning counts toward that limit. Background work (memory extraction, structured output) stays at `low`. Reasoning is never shown (`include_reasoning: false`). gpt-oss models do not support parallel tool calls.
 - Model decision (owner, 2026-10-21): **OpenAI GPT primary, Groq fallback**. Claude is no longer used and Gemini models remain ruled out. Do not add another provider without the owner asking.
-- `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in Vercel.
+- `GROQ_BASE_URL` overrides the API address. It exists for the offline tests; do not set it in production.
 
 ## Hosting and deploys
 
-- Vercel project `workspace`, deployed from `main`.
-- `vercel.json` sets `git.deploymentEnabled` to `{"**": false, "main": true}` so only `main` builds. Both halves are confirmed: pushes to `main` deploy production, and the redesign branch was skipped until a temporary exception was added on 2026-11-04 (removed before merging).
-- Vercel does not create a **production** deployment for a commit SHA it has already built as a preview. With no previews every push to `main` builds as production; if one is ever missing, push a new commit.
-- Check a deploy with the GitHub commit status named "Vercel" or `gh api repos/osjr13-oss/workspace/deployments`, then open the live site.
-- CI (GitHub Actions, Node 20) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
+- Cloudflare Worker `selrano` (since November 18; Vercel is retired and its project deleted). Workers Builds builds and deploys every push to `main`; non-production branch builds are off. Build, release, rollback and recreation steps are in [Cloudflare hosting](CLOUDFLARE.md).
+- Check a release under **Workers & Pages > selrano > Deployments** for the matching commit, then open the live site. Roll back by selecting a known-good version there.
+- Server credentials are encrypted Worker secrets under **Settings > Variables and Secrets**. Only the three public settings are build variables.
+- `observability` is enabled in `wrangler.jsonc` so Worker logs (including `[server-error]`, `[client-error]`, `[chat] reply`, and the daily jobs) are stored and searchable under **Observability**.
+- CI (GitHub Actions, Node 22) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
 
 ## Private access (October 13 to 21, ended)
 
@@ -360,7 +360,7 @@ The July 24 memory investigation found historical user messages but no content-m
 10. After the response (`after()`): update the thread timestamp, extract new durable memories (only when the message is personal; background model `GROQ_BACKGROUND_MODEL`), and bootstrap memories from history at most once a day. None of this is ever in front of an answer.
 11. The page keeps one reply in flight (Enter is ignored while busy), tidies half-streamed Markdown (`lib/stream-markdown.ts`), and hands the streamed bubble over to the saved row without remounting it. Opening another chat mid-reply stops listening (the server still saves the answer); Stop saves what was shown.
 
-Each finished reply logs one `[chat] reply` line with time to first word, total time, length, tool count, and whether the browser left, which is the quickest way to check speed in Vercel logs.
+Each finished reply logs one `[chat] reply` line with time to first word, total time, length, tool count, and whether the browser left, which is the quickest way to check speed in the Worker's logs.
 
 ## Tests
 
@@ -389,7 +389,7 @@ rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-Push to `main`, watch GitHub Actions, allow the Vercel deployment to turn over, and verify the real production flow. A passing Next.js build or the offline tests do not validate Supabase migrations, Storage, Stripe webhooks, real Groq behavior, or Resend delivery.
+Push to `main`, watch GitHub Actions, confirm the matching Workers Builds deployment under **Workers & Pages > selrano > Deployments**, and verify the real production flow. A passing Next.js build or the offline tests do not validate Supabase migrations, Storage, Stripe webhooks, real Groq behavior, or Resend delivery.
 
 ## Known limitations and next priorities
 

@@ -12,6 +12,10 @@
     { "binding": "WORKER_SELF_REFERENCE", "service": "selrano" }
   ],
   "keep_vars": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "triggers": {
     "crons": ["0 13 * * *", "0 14 * * *"]
   },

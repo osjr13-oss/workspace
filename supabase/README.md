@@ -45,7 +45,10 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 - Email/password auth enabled.
 - `workspace-files` bucket is created by migration 001 and remains private.
 
-## Vercel environment variables
+## Production settings
+
+Set these as Cloudflare Worker secrets or variables (**Workers & Pages > selrano > Settings > Variables and Secrets**). The three `NEXT_PUBLIC_` values are also build variables; see `docs/CLOUDFLARE.md`.
+
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`

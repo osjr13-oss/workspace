@@ -1,6 +1,6 @@
 /**
  * Server error reporting. Failed requests are logged as one structured line so
- * they can be searched in Vercel logs (`[server-error]`). Request bodies,
+ * they can be searched in the Cloudflare Worker logs (`[server-error]`). Request bodies,
  * headers, and cookies are never logged.
  */
 export async function onRequestError(
