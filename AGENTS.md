@@ -48,7 +48,7 @@ rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-After pushing `main`, confirm the matching Cloudflare release. Until automatic deployment is verified, deploy the Worker as described in `docs/CLOUDFLARE.md`. Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq (see `docs/HANDOFF.md`, "Tests"); CI does not run it yet, so run it yourself before pushing chat changes.
+After pushing `main`, confirm the matching Cloudflare release (Workers Builds deploys `main` automatically, verified 2026-11-18; deploy manually per `docs/CLOUDFLARE.md` only if it is missing). Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq (see `docs/HANDOFF.md`, "Tests"); CI runs it on every push to `main` since 2026-11-18, but run it yourself before pushing chat changes so failures never reach production.
 
 ## Important paths
 

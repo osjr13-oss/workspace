@@ -224,7 +224,7 @@ The owner stopped the iPhone app on 2026-10-14 and asked for it to be deleted: t
 - Check a release under **Workers & Pages > selrano > Deployments** for the matching commit, then open the live site. Roll back by selecting a known-good version there.
 - Server credentials are encrypted Worker secrets under **Settings > Variables and Secrets**. Only the three public settings are build variables.
 - `observability` is enabled in `wrangler.jsonc` so Worker logs (including `[server-error]`, `[client-error]`, `[chat] reply`, and the daily jobs) are stored and searchable under **Observability**.
-- CI (GitHub Actions, Node 22) runs typecheck, lint, the production dependency audit at `high`, and build. It does **not** run the Playwright tests. The development machine used Node 26, so keep both in mind.
+- CI (GitHub Actions, Node 22) runs typecheck, lint, the production dependency audit at `high`, the Worker build, and (as a parallel `e2e` job since November 18) the offline Playwright suite. A failing run saves its traces as the `playwright-results` artifact for seven days. The development machine used Node 26, so keep both in mind.
 
 ## Private access (October 13 to 21, ended)
 
@@ -373,7 +373,7 @@ Each finished reply logs one `[chat] reply` line with time to first word, total 
 
 On a Mac, install the browser once with `npx playwright install chromium`, then `npm run test:e2e`. If a machine's preinstalled Chromium does not match this Playwright version, point the tests at it with `PW_CHROMIUM_PATH` (in Claude Code cloud sessions: `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run test:e2e`).
 
-To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), send bursts (`chunkChars`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). The tests are not part of CI yet.
+To reproduce a chat bug before changing code, use the rig: the fake Groq can be told to fail, rate limit, return nothing, call a tool, wait before the first word (`firstTokenDelayMs`), send bursts (`chunkChars`), or stream slowly (`POST http://localhost:54322/__control`, see `e2e/support/session.ts`). CI runs the same suite on every push to `main`.
 
 ## Validation and release
 
@@ -397,7 +397,7 @@ Push to `main`, watch GitHub Actions, confirm the matching Workers Builds deploy
 2. Watch production logs for `[chat] tool-enabled stream failed` entries (a tool-enabled request that failed and was retried without tools) and for `[groq] ... unavailable` lines, which show how often the fallback model is used.
 3. Supabase `HEAD .../select=id` count queries (`projects`, `notes`, `files`, `flashcards`) were observed returning 503 in production logs during the 2026-07-25 investigation. Not root-caused. The August 8 migrations (hot-path indexes, scalar-subquery RLS policies) are in the repo, but their application to production has not been verified. The owner chose not to pursue this on 2026-10-08.
 4. Confirm the next scheduled lifecycle-email run creates a `weekly_digest_YYYY-MM-DD` log entry and delivers to the opted-in account.
-5. Update GitHub Actions from `actions/checkout@v4` and `actions/setup-node@v4`; GitHub currently warns that their Node 20 action runtime is deprecated.
+5. Done November 18: GitHub Actions use `actions/checkout@v7`, `actions/setup-node@v7`, and `actions/upload-artifact@v7`, clearing the Node 20 runtime warning.
 6. The Supabase performance-advisor warnings (missing foreign-key indexes, RLS policies calling `auth.uid()` without a scalar subquery) are addressed by the August 8 migrations in the repo. Confirm they are applied and re-run the advisor.
 7. Supabase leaked-password protection is unavailable on the current plan. Sign-ups are closed and visitors join the waitlist (see "Redesign and waitlist"); when they reopen, email confirmation is disabled, so signup creates an immediate session and the Resend welcome email is the first account email.
 8. Monitoring is logs only: `[server-error]`, `[client-error]`, and the `[chat] reply` timing line. There is no alerting, error grouping, or product analytics beyond Vercel Web Analytics. Add them before scaling paid acquisition.

@@ -1,7 +1,8 @@
 name: CI
 
-# Runs on every push and pull request to main. If typecheck or build fails,
-# the check goes red — a safety net that catches broken code before it deploys.
+# Runs on every push and pull request to main. If a check, the build, or the
+# end-to-end tests fail, the run goes red: a safety net that catches broken
+# code before it reaches customers.
 on:
   push:
     branches: [main]
@@ -13,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -42,3 +43,35 @@ jobs:
 
       - name: Check Worker packaging
         run: npx --no-install wrangler deploy --dry-run
+
+  e2e:
+    # Offline end-to-end tests: the real app against fake Supabase, OpenAI, Groq
+    # and Exa (e2e/support/mock-servers.mjs). No secrets or network accounts.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: npm run test:e2e
+
+      - name: Save test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
