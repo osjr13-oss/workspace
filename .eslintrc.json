@@ -1,3 +1,4 @@
 {
+  "ignorePatterns": [".open-next/", ".wrangler/"],
   "extends": ["next/core-web-vitals"]
 }

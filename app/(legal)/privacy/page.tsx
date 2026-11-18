@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="eyebrow">Last updated: November 17, 2026</p>
+      <p className="eyebrow">Last updated: November 18, 2026</p>
       <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Privacy Policy</h1>
       <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
 
         <h3 className="mt-4 font-semibold text-[var(--text)]">b. Information collected automatically</h3>
         <ul>
-          <li><strong>Usage data:</strong> basic interaction logs such as which features you use, collected to improve the Service, and page-view statistics from Vercel Web Analytics, which does not use cookies.</li>
+          <li><strong>Usage data:</strong> basic interaction logs such as which features you use, collected to improve the Service, and cookieless page-view statistics when the site is served by Vercel.</li>
           <li><strong>Technical data:</strong> IP address, browser type, and device information transmitted as part of standard web requests and handled by our infrastructure provider (Vercel).</li>
         </ul>
 
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
           <li>Previously generated Google Search-grounded replies retain Google attribution and expire within two years. Google is no longer used for new AI requests.</li>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Vercel (hosting and cookieless analytics), OpenAI and Groq (AI inference), Exa (optional web search), Stripe (payments), and Resend (account email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Cloudflare (hosting), Vercel (hosting and cookieless analytics), OpenAI and Groq (AI inference), Exa (optional web search), Stripe (payments), and Resend (account email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>

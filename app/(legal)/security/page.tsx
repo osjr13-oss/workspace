@@ -50,7 +50,7 @@ export default function SecurityPage() {
 
       <Section title="Operational practices">
         <ul className="list-disc space-y-2 pl-5">
-          <li>Environment secrets stored in Vercel, never committed to source control.</li>
+          <li>Hosting credentials are stored in private server settings.</li>
           <li>Audit logging for sensitive actions such as account deletion.</li>
           <li>Transactional email via a dedicated provider with domain authentication (SPF/DKIM).</li>
           <li>Regular dependency updates and production builds on every main-branch deploy.</li>

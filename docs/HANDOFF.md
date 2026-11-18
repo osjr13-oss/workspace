@@ -1,6 +1,15 @@
 # Selrano production handoff
 
-Last updated: **November 17, 2026**
+Last updated: **November 18, 2026**
+
+## Cloudflare hosting migration (November 18, in progress)
+
+Production traffic and daily jobs still run on Vercel. The paid Cloudflare account hosts the same app at https://selrano.oosman02.workers.dev. Both hosts use the existing Supabase project. The Worker test address requests no search indexing.
+
+- The Worker serves public pages and protects chat and billing routes in live checks. The local Workers runtime passed 77 end-to-end tests with three account-dependent skips. Simulated file extraction and signed billing webhook delivery also passed. Signed-in production journeys still need verification.
+- The owner authorized encrypted runtime settings. Supabase, chat, Exa, the subscription price and the Worker schedule secret are configured. Vercel masks the Stripe live key and webhook signing secret, Resend sending key and embedding key. Supply those to the Worker before moving traffic.
+- A pending Cloudflare DNS zone has 11 scanned records, including the existing Vercel web and email records. Namecheap is authoritative. Compare its full records and forwarding settings before changing delegation. GitHub deployment to the Worker, custom domains and the two live schedules are still pending.
+- See [Cloudflare hosting](CLOUDFLARE.md) for build settings, cutover order and rollback.
 
 ## Exa web search (November 17)
 

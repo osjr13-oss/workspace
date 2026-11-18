@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="prose-selrano">
-      <p className="eyebrow">Last updated: November 17, 2026</p>
+      <p className="eyebrow">Last updated: November 18, 2026</p>
       <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Terms of Service</h1>
       <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Selrano (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
@@ -78,7 +78,7 @@ export default function TermsPage() {
           <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
           <li><strong>Groq, Inc.</strong>: AI inference for chat, content generation, and workspace tools.</li>
           <li><strong>Exa</strong>: optional live web search.</li>
-          <li><strong>Vercel</strong>: hosting and infrastructure.</li>
+          <li><strong>Cloudflare and Vercel</strong> provide hosting and infrastructure.</li>
         </ul>
         <p>Your use of the Service is also subject to the terms and privacy policies of these third-party providers. We are not responsible for the practices of any third-party service.</p>
       </Section>

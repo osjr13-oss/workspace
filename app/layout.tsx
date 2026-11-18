@@ -66,7 +66,7 @@ export default function RootLayout({
       <body>
         {children}
         <PwaProvider />
-        <Analytics />
+        {process.env.VERCEL === "1" && <Analytics />}
       </body>
     </html>
   );
