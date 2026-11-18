@@ -12,6 +12,9 @@
     { "binding": "WORKER_SELF_REFERENCE", "service": "selrano" }
   ],
   "keep_vars": true,
+  "triggers": {
+    "crons": ["0 13 * * *", "0 14 * * *"]
+  },
   "routes": [
     { "pattern": "www.selrano.com/*", "zone_name": "selrano.com" },
     { "pattern": "selrano.com/*", "zone_name": "selrano.com" }

@@ -2,13 +2,14 @@
 
 Last updated: **November 18, 2026**
 
-## Cloudflare hosting migration (November 18, in progress)
+## Cloudflare production hosting (November 18)
 
 Production traffic for selrano.com and www.selrano.com now runs on the paid Cloudflare Worker `selrano`. Supabase still hosts the same accounts, database and private files. Namecheap remains the registrar. All 11 DNS records were compared before delegation. Only the two website records are proxied. Cloudflare's HTTPS certificate covers both hosts. The apex redirects to www with HTTP 308, preserving paths and queries.
 
 - Production credentials are encrypted Worker secrets. The owner signed in at the Worker address. A live Exa search returned PS5 prices with retailer citations, a harmless uploaded text file yielded its expected contents in chat, and signed-in billing loaded with its action enabled. No purchase or email was sent. The local Workers suite passed 77 tests with three account-dependent skips.
 - The Vercel deployment is retained for rollback. Its website targets remain in Cloudflare DNS. See [Cloudflare hosting](CLOUDFLARE.md) for release and rollback procedures. The public Worker test address requests no search indexing.
-- During schedule handover, verify Vercel reports no active jobs before enabling the two Worker schedules. Until Cloudflare's GitHub connection is verified, release from a clean checkout of main using the documented Worker command.
+- Workers Builds is connected to main on osjr13-oss/workspace with the three public build settings and the OpenNext build and deployment commands. Vercel reported zero jobs on the cutover deployment. The Worker schedule configuration runs grounded-history at 13:00 UTC and lifecycle-emails at 14:00 UTC daily. Verify each job in Worker logs after its scheduled time.
+- Vercel page-view analytics only runs on the rollback host. Cloudflare's dashboard provides traffic statistics. The signed-in verification created one test chat and the sample file hosting-check.txt in the owner's workspace.
 
 ## Exa web search (November 17)
 

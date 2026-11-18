@@ -11,7 +11,11 @@ Build in a clean checkout. OpenNext copies local .env files into its generated s
 - Use `npx --no-install wrangler deploy --dry-run` to inspect bundle size. This step does not publish.
 - Publish with `npm run deploy:worker` from the clean checkout with public build variables set. This builds and runs the OpenNext deploy command, including populating the static cache.
 
-## Prepare the live Worker
+## Production releases
+
+Pushes to main trigger Workers Builds for osjr13-oss/workspace. Review the matching commit under **Workers & Pages > selrano > Deployments** and the GitHub Actions result. Build-time configuration contains the three public settings only. Server credentials stay in encrypted Worker secrets. The Vercel project follows main for rollback and has no scheduled jobs. Its original apex target is 216.198.79.1 and its www target is eeeb6987a61954d6.vercel-dns-017.com.
+
+## Recreate the hosting setup
 
 1. Use the owner's paid Workers account. Deploy the Worker named selrano and verify the workers.dev address before attaching either live domain. Keep production schedules on Vercel during this step.
 2. In **Workers & Pages > selrano > Settings > Variables and Secrets**, enter production server credentials as secrets. Match the production settings for Supabase service access, OpenAI, Groq, Exa, Stripe, Resend and scheduled jobs. Preserve configured model, sender, price and embedding settings. Use .env.example for names. Test provider base URLs belong only in local tests.
