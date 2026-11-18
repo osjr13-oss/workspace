@@ -73,7 +73,7 @@ for (const key of webSearch) {
 
 const missingRequired = required.filter((k) => status(k) === "missing");
 if (missingRequired.length) {
-  console.log("\n→ Fix required vars in Vercel (Production) or copy .env.example → .env.local\n");
+  console.log("\n→ Fix required vars in the production Cloudflare Worker settings or copy .env.example → .env.local\n");
 } else {
   console.log("\n→ Core env looks set. Compare production migration history and schema before applying SQL.\n");
 }

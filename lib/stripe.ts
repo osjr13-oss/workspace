@@ -32,7 +32,7 @@ export async function assertFoundingProPrice() {
     throw new Error(
       `STRIPE_PRO_PRICE_ID must be a monthly price of ${expectedCents} cents (founding Pro). ` +
         `Got unit_amount=${actualCents ?? "null"}, interval=${interval ?? "none"} for ${priceId}. ` +
-        `Create a new $6.99/mo price in Stripe and update the Vercel env var. See docs/BILLING.md.`
+        `Create a new $6.99/mo price in Stripe and update STRIPE_PRO_PRICE_ID on the Cloudflare Worker. See docs/BILLING.md.`
     );
   }
 

@@ -78,7 +78,7 @@ export default function TermsPage() {
           <li><strong>Supabase</strong>: database, authentication, and file storage.</li>
           <li><strong>Groq, Inc.</strong>: AI inference for chat, content generation, and workspace tools.</li>
           <li><strong>Exa</strong>: optional live web search.</li>
-          <li><strong>Cloudflare and Vercel</strong> provide hosting and infrastructure.</li>
+          <li><strong>Cloudflare</strong> provides hosting and infrastructure.</li>
         </ul>
         <p>Your use of the Service is also subject to the terms and privacy policies of these third-party providers. We are not responsible for the practices of any third-party service.</p>
       </Section>

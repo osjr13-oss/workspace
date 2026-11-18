@@ -9,12 +9,12 @@ Selrano uses Free and Pro. Pro is currently a **founding / introductory** price 
 3. Add a new recurring price: **$6.99 / month**.
 4. Optional: nickname the price `Pro founding` so it is easy to spot later.
 5. Copy the new Price ID (`price_...`).
-6. Set Vercel `STRIPE_PRO_PRICE_ID` to that ID (production and preview).
+6. Set `STRIPE_PRO_PRICE_ID` to that ID on the production Cloudflare Worker.
 7. Archive or leave unused the old $19/mo price so new checkouts cannot pick it up. Existing subscribers on the old price stay on it until you migrate them in Stripe.
 
 Checkout calls `assertFoundingProPrice()` and refuses to start if `STRIPE_PRO_PRICE_ID` is not a monthly price of **699 cents**.
 
-## 2. Vercel environment variables
+## 2. Cloudflare Worker settings
 
 ```txt
 STRIPE_SECRET_KEY=sk_live_...
@@ -28,7 +28,7 @@ Redeploy after adding or changing.
 
 Stripe > Developers > Webhooks > Add endpoint
 
-- URL: `https://selrano.com/api/billing/webhook`
+- URL: `https://www.selrano.com/api/billing/webhook`
 - Events:
   - `checkout.session.completed`
   - `customer.subscription.updated`

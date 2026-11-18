@@ -160,7 +160,7 @@ Email HTML: shared layout [`lib/email/layout.ts`](../lib/email/layout.ts); trans
 There is **no support page, contact form, or support inbox** (removed 2026-10-08, because the inbox could not be reached). Nothing in the app asks users to email anyone.
 
 - The `support_requests` table and its history remain in the database (migration `004_ops_support.sql`); nothing writes to it now.
-- `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read. They can be deleted from Vercel.
+- `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer read.
 - The Privacy, Terms, and Security pages say that no public email address is offered and that a contact channel will be published.
 
 When a contact channel exists, update `app/(legal)/privacy/page.tsx`, `terms/page.tsx`, and `security/page.tsx`. A privacy policy normally needs one for data requests. If it is a mailbox, set it up first (Cloudflare Email Routing to a personal inbox is the cheapest option), and decide whether to bring back a form.

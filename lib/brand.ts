@@ -1,6 +1,6 @@
 /**
  * Single source of truth for product branding.
- * Override via environment variables in production (Vercel).
+ * Override via environment variables on the production Worker.
  */
 export const brand = {
   name: "Selrano",

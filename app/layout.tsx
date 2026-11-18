@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { PwaProvider } from "@/components/pwa-provider";
 import { brand, absoluteUrl } from "@/lib/brand";
 import "./globals.css";
@@ -66,7 +65,6 @@ export default function RootLayout({
       <body>
         {children}
         <PwaProvider />
-        {process.env.VERCEL === "1" && <Analytics />}
       </body>
     </html>
   );
