@@ -6,6 +6,7 @@ import {
   installRecorder,
   readSamples,
   resetMocks,
+  seed,
   seedConversation,
   setLatency,
   signIn,
@@ -157,6 +158,36 @@ test.describe("chat", () => {
     const answerIndex = requests.findIndex((r) => r.stream);
     expect(answerIndex, "the answer should be the first model call").toBe(0);
     await expect.poll(async () => (await groqRequests()).length, { timeout: 15_000 }).toBeGreaterThan(1);
+  });
+
+  test("an earlier cited answer goes back with its sources named, not dangling numbers", async ({ page }) => {
+    const threadId = "22222222-2222-4222-8222-222222222222";
+    const user = "00000000-0000-4000-8000-000000000001";
+    await seed("chat_threads", [{ id: threadId, user_id: user, project_id: null, title: "Game release" }]);
+    const base = Date.now() - 60_000;
+    await seed("chat_messages", [
+      { thread_id: threadId, user_id: user, role: "user", content: "Did the game come out today?", created_at: new Date(base).toISOString() },
+      {
+        thread_id: threadId,
+        user_id: user,
+        role: "assistant",
+        content: "Yes, it launched today on consoles. [1] A PC version comes later. [2]",
+        citations: [
+          { kind: "web", marker: "1", title: "Launch day announcement", url: "https://example.com/a", snippet: "", publisher: "Example Studio" },
+          { kind: "web", marker: "2", title: "PC version plans", url: "https://example.com/b", snippet: "" }
+        ],
+        created_at: new Date(base + 1000).toISOString()
+      }
+    ]);
+    await page.goto(`/chats?thread=${threadId}`);
+    await expect(page.locator(bubbles)).toHaveCount(1);
+    await control({ assessment: { decision: "ordinary", query: "", clarification: "", consequential: false } });
+    await sendAndSettle(page, "not even that. I have nothing.");
+    const [answer] = (await groqRequests()).filter((r) => r.stream);
+    expect(answer.assistantText).toContain("Yes, it launched today on consoles. A PC version comes later.");
+    expect(answer.assistantText).not.toMatch(/\[\d+\]/);
+    expect(answer.assistantText).toContain("Checked at the time against: Launch day announcement, Example Studio; PC version plans.");
+    expect(answer.systemText).toContain("stand by them unless newer evidence contradicts them");
   });
 
   test("long conversations keep each request small enough for Groq's per-minute limit", async ({ page }) => {

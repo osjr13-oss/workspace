@@ -480,6 +480,10 @@ async function handleGroq(req, res) {
     max_completion_tokens: body.max_completion_tokens ?? body.max_tokens,
     lastUser: lastUserText.slice(0, 80),
     system: typeof messages[0]?.content === "string" ? messages[0].content.slice(0, 60) : "",
+    assistantText: messages
+      .filter((m) => m.role === "assistant" && typeof m.content === "string")
+      .map((m) => m.content)
+      .join("\n"),
     systemText: messages
       .filter((m) => m.role === "system" && typeof m.content === "string")
       .map((m) => m.content)

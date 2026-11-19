@@ -2,6 +2,10 @@
 
 Last updated: **November 19, 2026**
 
+## Follow-ups no longer retract verified answers (November 19)
+
+The owner saw a correct, cited answer (a game launch) retracted in the next turn as having "invalid citations". Cause: history sent earlier answers back with their `[1]` markers but without the sources, while the system prompt forbids citing ids that were not supplied, so the model concluded its own citations were fabricated. Fix in `app/api/ai/chat/route.ts`: history now selects `citations`, and `withSourceNote` strips `[n]` and `[M1]` markers from earlier answers and appends "(Checked at the time against: title, publisher; ...)" for web and file sources (up to four). The system prompt adds that earlier answers were checked when written and should stand unless newer evidence contradicts them. Regression test: "an earlier cited answer goes back with its sources named" in `e2e/chat.spec.ts`; the fake Groq now logs `assistantText`.
+
 ## Faster, calmer chat (November 19)
 
 First pass on the owner's second priority, informed by the owner's screenshots of Claude and ChatGPT (centered greeting with the composer, a small moving mark with one changing word while thinking, a quiet sidebar).
