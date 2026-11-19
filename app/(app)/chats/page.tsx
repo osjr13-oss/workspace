@@ -89,6 +89,9 @@ function ChatsContent() {
   const [status, setStatus] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [firstName, setFirstName] = useState("");
+  // The floating composer's height, so the end of the conversation can always scroll clear of it.
+  const [composerHeight, setComposerHeight] = useState(120);
+  const composerAreaRef = useRef<HTMLDivElement>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -189,6 +192,15 @@ function ChatsContent() {
     observer.observe(content);
     return () => observer.disconnect();
   }, [hasMessages]);
+
+  const hasConversation = messages.length > 0 || loadingThread;
+  useEffect(() => {
+    const area = composerAreaRef.current;
+    if (!area || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setComposerHeight(Math.ceil(entry.contentRect.height)));
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, [hasConversation]);
 
   function onListScroll() {
     const list = listRef.current;
@@ -505,15 +517,18 @@ function ChatsContent() {
   );
 
   return (
-    <section className="chat-page" aria-busy={loading} data-ai-provider={modelMetadata?.provider} data-ai-model={modelMetadata?.model} data-ai-fallback={modelMetadata?.fallbackReason}>
-      <ChatHeader
-        title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
-        canManage={Boolean(threadId && activeThread)}
-        onRename={(title) => (threadId ? rename(threadId, title) : Promise.resolve(null))}
-        onDelete={deleteCurrent}
-      />
+    <section className="chat-page relative" aria-busy={loading} data-ai-provider={modelMetadata?.provider} data-ai-model={modelMetadata?.model} data-ai-fallback={modelMetadata?.fallbackReason}>
+      {/* The conversation fills the whole height and scrolls under the floating title bar and composer. */}
+      <div className="chat-overlay-top">
+        <ChatHeader
+          title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
+          canManage={Boolean(threadId && activeThread)}
+          onRename={(title) => (threadId ? rename(threadId, title) : Promise.resolve(null))}
+          onDelete={deleteCurrent}
+        />
+      </div>
 
-      <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={listRef} onScroll={onListScroll} className="chat-scroll min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 pb-16 pt-10 sm:px-6">
             <h1 className="title-display text-center text-[34px] sm:text-[42px]">{greeting(firstName)}</h1>
@@ -537,7 +552,7 @@ function ChatsContent() {
             </div>
           </div>
         ) : (
-          <div ref={contentRef} className="mx-auto w-full max-w-[46rem] space-y-6 px-4 pb-10 pt-6 sm:px-6">
+          <div ref={contentRef} className="mx-auto w-full max-w-[46rem] space-y-6 px-4 pt-16 sm:px-6" style={{ paddingBottom: composerHeight + 32 }}>
             {messages.map((message) => (
               <ChatMessageBubble
                 key={message.clientKey ?? message.id}
@@ -553,7 +568,7 @@ function ChatsContent() {
       </div>
 
       {empty ? null : (
-        <div className="relative px-3 pb-3 sm:px-6 sm:pb-5">
+        <div ref={composerAreaRef} className="chat-overlay-bottom px-3 pb-3 sm:px-6 sm:pb-5">
           {!atBottom ? (
             <button type="button" onClick={jumpToLatest} className="jump-button" aria-label="Jump to latest">
               <ArrowDown size={17} />

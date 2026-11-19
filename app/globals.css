@@ -542,6 +542,44 @@ select {
   }
 }
 
+/* Floating title bar and composer: the conversation scrolls underneath and fades out behind them. */
+.chat-overlay-top,
+.chat-overlay-bottom {
+  position: absolute;
+  left: 0;
+  right: 12px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.chat-overlay-top {
+  top: 0;
+  background: linear-gradient(to bottom, var(--background) 55%, transparent);
+}
+
+.chat-overlay-bottom {
+  bottom: 0;
+  padding-top: 28px;
+  background: linear-gradient(to bottom, transparent, var(--background) 28px);
+}
+
+.chat-overlay-top > *,
+.chat-overlay-bottom > * {
+  pointer-events: auto;
+}
+
+.chat-scroll {
+  scrollbar-gutter: stable;
+}
+
+/* Phones and touch screens use overlay scrollbars, so the overlays span the full width. */
+@media (max-width: 1023px), (pointer: coarse) {
+  .chat-overlay-top,
+  .chat-overlay-bottom {
+    right: 0;
+  }
+}
+
 .chat-header {
   display: flex;
   min-height: 52px;
