@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
-import { clientIp } from "@/lib/audit";
-import { sendWelcomeEmailOnce } from "@/lib/email/welcome";
-import { captureReferral } from "@/lib/referrals";
+import { isAllowedEmail } from "@/lib/access";
 
-const REFERRAL_COOKIE = "selrano_ref";
+function safeNextPath(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/chats";
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/chats";
-  // Prefer the cookie set on /signup. Supabase's confirmation redirect
-  // doesn't reliably preserve the "ref" query param through emailRedirectTo,
-  // so the query param is a best-effort fallback, not the primary source.
-  const ref = request.cookies.get(REFERRAL_COOKIE)?.value || searchParams.get("ref");
+  const next = safeNextPath(searchParams.get("next"));
 
   if (!code) {
     return NextResponse.redirect(`${origin}/signin?error=auth`);
@@ -44,18 +40,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/signin?error=auth`);
   }
 
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await sendWelcomeEmailOnce(user, { ip: clientIp(request) });
-    if (user && ref) await captureReferral(ref, user.id);
-  } catch (welcomeError) {
-    console.error("[auth/callback] welcome email failed", welcomeError);
-  }
-
-  // Clear the referral cookie so it can't be reattributed to a later,
-  // unrelated signup from the same browser (e.g. a shared computer).
-  if (request.cookies.get(REFERRAL_COOKIE)) {
-    response.cookies.set(REFERRAL_COOKIE, "", { path: "/", maxAge: 0 });
+  // Selrano is private: an account that is not on the allowlist is signed out at once.
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user || !isAllowedEmail(user.email)) {
+    await supabase.auth.signOut({ scope: "local" });
+    const refused = NextResponse.redirect(`${origin}/signin?private=1`);
+    response.cookies.getAll().forEach((cookie) => refused.cookies.set(cookie));
+    return refused;
   }
 
   return response;

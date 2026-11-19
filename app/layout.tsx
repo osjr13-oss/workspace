@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import { PwaProvider } from "@/components/pwa-provider";
-import { brand, absoluteUrl } from "@/lib/brand";
+import { brand } from "@/lib/brand";
 import "./globals.css";
 
 // Inter for interface text, Newsreader for display headlines. Both are variable
@@ -41,9 +41,8 @@ export const metadata: Metadata = {
     title: brand.name,
     description: brand.tagline
   },
-  alternates: {
-    canonical: absoluteUrl("/")
-  },
+  // Selrano is private: no page should appear in search results.
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
   appleWebApp: {
     capable: true,
     title: brand.name,

@@ -1,3 +1,5 @@
+> **Retired 2026-11-19.** Selrano is a private personal AI with no plans or billing. The Stripe code, routes and package were removed; this page is kept only as history.
+
 # Stripe billing setup
 
 Selrano uses Free and Pro. Pro is currently a **founding / introductory** price of **$6.99/mo** (internal label: `priceKind: "founding"` in `lib/plans.ts`). Pro unlocks via Stripe Checkout; limits live in `user_limits` and are enforced in API routes plus Postgres triggers/RPCs.

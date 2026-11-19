@@ -2,7 +2,6 @@ import { assessResearch, planResearchAction, runQuickResearch, runResearch, rese
 import { EVERYDAY_ANSWER_GUIDE } from "@/lib/chat-guidance";
 import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
-import { refundAiRequest, reserveAiRequest } from "@/lib/ai-usage";
 import { executeTool, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
 import { configuredAiModel, streamAi, streamChatWithTools } from "@/lib/ai";
 import { extractMemories, maybeBootstrapMemories, retrieveMemories } from "@/lib/content-memory";
@@ -94,16 +93,14 @@ export async function POST(request: Request) {
 
     if (!userContent) return NextResponse.json({ error: "Message is required" }, { status: 400 });
 
-    // Ownership checks, attached files, and the quota reservation do not depend on each other.
+    // Ownership checks and attached files do not depend on each other.
     const fileIds = Array.isArray(body.fileIds) ? body.fileIds.filter((id) => typeof id === "string").slice(0, MAX_ATTACHMENTS) : [];
-    const [ownership, attachments, limitError] = await Promise.all([
+    const [ownership, attachments] = await Promise.all([
       resolveConversation(supabase, user.id, threadId, projectId),
-      loadAttachments(supabase, user.id, fileIds),
-      reserveAiRequest(supabase, user.id, "chat", { model: configuredAiModel(true), input_chars: userContent.length })
+      loadAttachments(supabase, user.id, fileIds)
     ]);
     if ("response" in ownership) return ownership.response;
     projectId = ownership.projectId;
-    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     if (editTarget) {
       const { error: updateError } = await supabase
@@ -334,7 +331,7 @@ export async function POST(request: Request) {
         return result;
       };
 
-      // A requested note or deck runs once, and never after Stop or a newer turn.
+      // A requested note runs once, and never after Stop or a newer turn.
       const runResearchAction = async (action: { name: string; args: Record<string, unknown> }) => {
         const { data: latest } = await supabase.from("chat_messages").select("role").eq("thread_id", finalThreadId).order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (latest?.role === "user" && !(await savedReply())) {
@@ -564,10 +561,7 @@ export async function POST(request: Request) {
       // for memory, runs once the response is done.
       const finalAnswer = answer;
       runAfterResponse(async () => {
-        if (!finalAnswer.trim() && !stopped) {
-          await refundAiRequest(user!.id, "chat");
-          return;
-        }
+        if (!finalAnswer.trim() && !stopped) return;
         await supabase.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", finalThreadId);
         if (stopped) return;
         await extractMemories(supabase, user!.id, userContent, finalAnswer);
@@ -593,7 +587,7 @@ export async function POST(request: Request) {
 const ACTION_GUIDE = {
   role: "system" as const,
   content:
-    "Tools: search the user's notes and files, create a note, create a flashcard deck. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
+    "Tools: search the user's notes and files, create a note. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
 // Groq limits tokens per minute, so every request is kept lean.
@@ -688,8 +682,6 @@ function describeToolCall(name: string, args: Record<string, unknown>) {
       return `Searching your materials${quoted(args.query)}`;
     case "create_note":
       return "Writing a note";
-    case "create_flashcards":
-      return "Making flashcards";
     default:
       return "Working on it";
   }
@@ -773,7 +765,7 @@ async function loadProjectContext(
 
   const needsFallbackChunks = !semanticChunks.length && !ftsChunks.length;
 
-  const [notes, fallbackChunks, cards] = await Promise.all([
+  const [notes, fallbackChunks] = await Promise.all([
     supabase.from("notes").select("title, content").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(6),
     needsFallbackChunks
       ? supabase
@@ -782,8 +774,7 @@ async function loadProjectContext(
           .eq("project_id", projectId)
           .order("chunk_index")
           .limit(10)
-      : Promise.resolve({ data: [] as FallbackChunkRow[] }),
-    supabase.from("flashcards").select("front, back").eq("project_id", projectId).order("updated_at", { ascending: false }).limit(12)
+      : Promise.resolve({ data: [] as FallbackChunkRow[] })
   ]);
 
   // Ranked hits (semantic or full-text) are treated as strong evidence; the
@@ -823,8 +814,7 @@ async function loadProjectContext(
 
   const parts = [
     ...((notes.data || []) as Array<{ title: string; content: string }>).map((note) => `Note: ${note.title}\n${note.content.slice(0, 1800)}`),
-    ...fileExcerpts,
-    ...((cards.data || []) as Array<{ front: string; back: string }>).map((card) => `Flashcard: ${card.front}\nAnswer: ${card.back}`)
+    ...fileExcerpts
   ];
 
   return { text: parts.join("\n\n---\n\n").slice(0, 9000), citations };

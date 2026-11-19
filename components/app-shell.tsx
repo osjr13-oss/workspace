@@ -6,8 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
-  Brain,
-  BrainCircuit,
   Files,
   FolderOpen,
   Home,
@@ -29,9 +27,7 @@ const nav = [
   { href: "/dashboard", label: "Workspace", icon: Home },
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/files", label: "Files", icon: Files },
-  { href: "/notes", label: "Notes", icon: BookOpen },
-  { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/study", label: "Study", icon: BrainCircuit }
+  { href: "/notes", label: "Notes", icon: BookOpen }
 ];
 
 const COLLAPSED_KEY = "selrano.sidebar.collapsed";

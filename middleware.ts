@@ -1,30 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAllowedEmail, isOpenPath } from "@/lib/access";
 
-const protectedPrefixes = [
-  "/dashboard",
-  "/chats",
-  "/projects",
-  "/notes",
-  "/files",
-  "/flashcards",
-  "/study",
-  "/settings"
-];
-
-const authOnlyPaths = ["/signin", "/signup"];
-
-function isProtectedPath(pathname: string) {
-  return protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
+// Selrano is private (lib/access.ts): every page except the open ones needs an
+// allowed account. Pages that redirect a signed-in visitor to the workspace.
+const authOnlyPaths = ["/signin"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
   const hasSupabaseConfig = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
+  // Retired public pages.
+  if (pathname === "/signup") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/signin";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   if (!hasSupabaseConfig) {
-    return response;
+    // Fail closed: without auth configured, only the open pages load.
+    if (pathname.startsWith("/api/") || isOpenPath(pathname)) return response;
+    const url = request.nextUrl.clone();
+    url.pathname = "/signin";
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   // API routes check the session themselves. Skipping it here saves a full
@@ -50,7 +51,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
+  let {
     data: { user }
   } = await supabase.auth.getUser();
 
@@ -65,7 +66,13 @@ export async function middleware(request: NextRequest) {
     return redirect;
   };
 
-  if (!user && isProtectedPath(pathname)) {
+  if (user && !isAllowedEmail(user.email)) {
+    await supabase.auth.signOut({ scope: "local" });
+    user = null;
+    if (pathname !== "/signin") return redirectTo("/signin", { private: "1" });
+  }
+
+  if (!user && !isOpenPath(pathname)) {
     return redirectTo("/signin", { next: pathname });
   }
 

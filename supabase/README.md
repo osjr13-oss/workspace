@@ -49,6 +49,7 @@ Password reset flow: email link → `/auth/callback` → `/auth/update-password`
 
 Set these as Cloudflare Worker secrets or variables (**Workers & Pages > selrano > Settings > Variables and Secrets**). The three `NEXT_PUBLIC_` values are also build variables; see `docs/CLOUDFLARE.md`.
 
+- `ALLOWED_EMAILS` (secret; comma-separated emails allowed to sign in. Empty lets nobody in.)
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -61,6 +62,5 @@ Set these as Cloudflare Worker secrets or variables (**Workers & Pages > selrano
 - `EMBEDDING_API_KEY` (optional, enables RAG over uploaded files)
 - `EMBEDDING_MODEL` (optional, default `text-embedding-3-small`)
 - `EMBEDDING_BASE_URL` (optional, default OpenAI)
-- `AI_DAILY_LIMIT` (optional, default `100`)
-- `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (email — see `docs/OPERATIONS.md`)
+- `RESEND_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (weekly summary email and scheduled jobs, see `docs/OPERATIONS.md`)
 - `NEXT_PUBLIC_APP_URL`

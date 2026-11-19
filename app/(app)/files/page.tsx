@@ -149,7 +149,7 @@ function FilesContent() {
           </table>
         </section>
       ) : (
-        <EmptyState icon={<FileUp size={20} />} title="No files uploaded" description="Upload source material to make it available for project-aware chat and flashcard generation." />
+        <EmptyState icon={<FileUp size={20} />} title="No files uploaded" description="Upload source material to make it available for project-aware chat." />
       )}
     </div>
   );

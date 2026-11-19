@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, Check, FileText, Globe2, ImageIcon, KeyRound, Lock, ShieldCheck, Trash2, Type } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { HeroDemo } from "@/components/marketing/hero-demo";
-import { WaitlistForm } from "@/components/marketing/waitlist-form";
 import {
   AskVignette,
   CitationVignette,
@@ -14,7 +13,6 @@ import {
 } from "@/components/marketing/vignettes";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
-import { formatPlanPrice, PLANS } from "@/lib/plans";
 
 const formats = [
   { icon: <FileText size={16} />, label: "PDF" },
@@ -28,7 +26,7 @@ const steps = [
   {
     n: "1",
     title: "Gather",
-    body: "Put lecture slides, readings, drafts, and photos of the whiteboard into a project. Selrano reads them so you do not have to paste anything twice.",
+    body: "Put documents, drafts, receipts, and screenshots into a project. Selrano reads them so you do not have to paste anything twice.",
     Vignette: GatherVignette
   },
   {
@@ -40,7 +38,7 @@ const steps = [
   {
     n: "3",
     title: "Keep",
-    body: "Save a good answer as a note, or turn a reading into review cards. What you learn stays in the project for next time.",
+    body: "Save a good answer as a note, or turn a long document into a summary or checklist. What you learn stays in the project for next time.",
     Vignette: KeepVignette
   }
 ];
@@ -62,9 +60,9 @@ const features = [
   },
   {
     eyebrow: "Transformations",
-    title: "Turn reading into something you keep.",
-    body: "Summarize a chapter, pull out notes, or make a flashcard deck from any file or answer. Study mode brings the cards back when they are due, so review fits into a few minutes a day.",
-    points: ["Summaries and structured notes", "Flashcard decks from any source", "Spaced review in Study"],
+    title: "Turn long reading into something you keep.",
+    body: "Summarize a contract, pull out notes, draft a reply, or make a checklist from any file or answer. The result is saved next to the material it came from.",
+    points: ["Summaries and structured notes", "Drafts and checklists from any source", "Saved alongside your files"],
     Vignette: TransformVignette
   },
   {
@@ -85,8 +83,8 @@ const privacy = [
 
 const faqs = [
   {
-    q: "When can I sign up?",
-    a: "New accounts are paused while we finish this version. Join the waitlist and we will email you as soon as sign-ups open. If you already have an account, you can sign in as usual."
+    q: "Can I get an account?",
+    a: "Selrano is a private workspace, and accounts are by invitation only. If you already have one, you can sign in as usual."
   },
   {
     q: "What can I upload?",
@@ -95,10 +93,6 @@ const faqs = [
   {
     q: "Is my content used to train AI models?",
     a: "No. Your notes, files, and chats are used only to give you answers inside Selrano. See the Privacy and Security pages for the details."
-  },
-  {
-    q: "Is there a free plan?",
-    a: "Yes. The free plan includes chat with your sources, projects, uploads, notes, and flashcards. Pro adds unlimited projects and decks and larger uploads."
   },
   {
     q: "Can Selrano search the web?",
@@ -126,18 +120,15 @@ export default function LandingPage() {
               Your notes, files, and the web, in one <em className="italic text-[var(--accent)]">calm</em> place to think.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-[17px] leading-[1.65] text-[var(--muted-strong)] sm:text-lg">
-              Selrano is an AI workspace for the material you already have. Ask a question and get an answer that points to the exact page
-              it came from, then keep what matters as notes and review cards.
+              Selrano is a personal AI for the material you already have. Ask a question and get an answer that points to the exact page
+              it came from, then keep what matters as notes.
             </p>
-            <div className="mx-auto mt-9 max-w-lg text-left">
-              <WaitlistForm />
-            </div>
-            <p className="mt-3 text-sm text-[var(--muted)]">
-              Already have an account?{" "}
-              <Link href="/signin" className="font-medium text-[var(--accent)] underline decoration-[var(--accent-ring)] underline-offset-4 hover:decoration-current">
-                Sign in
+            <div className="mt-9 flex justify-center">
+              <Link href="/signin" className="btn-primary">
+                Sign in <ArrowRight size={16} />
               </Link>
-            </p>
+            </div>
+            <p className="mt-3 text-sm text-[var(--muted)]">Private workspace. Accounts are by invitation only.</p>
           </div>
 
           <div className="mx-auto max-w-6xl px-3 sm:px-8">
@@ -228,7 +219,7 @@ export default function LandingPage() {
                 <p className="text-[13px] font-medium text-white/60">Privacy</p>
                 <h2 className="mt-3 font-display text-4xl font-medium leading-[1.08] tracking-[-0.02em] text-balance sm:text-5xl">Your material stays yours.</h2>
                 <p className="mt-4 max-w-md text-[16px] leading-[1.7] text-white/72">
-                  Selrano is built to work with private coursework, drafts, and notes. Here is what that means in practice.
+                  Selrano is built to work with private documents, drafts, and notes. Here is what that means in practice.
                 </p>
                 <Link href="/security" className="mt-7 inline-flex items-center gap-2 text-[15px] font-medium text-white hover:underline">
                   How we protect your data <ArrowRight size={16} />
@@ -244,44 +235,6 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section className="mx-auto max-w-6xl px-5 pt-32 sm:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow eyebrow-accent">Pricing</p>
-            <h2 className="title-display mt-3 text-4xl sm:text-5xl">Start free. Grow into Pro.</h2>
-          </div>
-          <div className="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
-            <PlanCard
-              name={PLANS.free.name}
-              price="$0"
-              note={PLANS.free.tagline}
-              items={[
-                "Chat grounded in your sources",
-                `${PLANS.free.maxProjects} projects`,
-                `Uploads up to ${PLANS.free.maxFileMb} MB`,
-                `${PLANS.free.maxDecks} flashcard decks`
-              ]}
-              cta={
-                <Link href="#waitlist" className="btn-secondary w-full">
-                  Join the waitlist
-                </Link>
-              }
-            />
-            <PlanCard
-              featured
-              name={PLANS.pro.name}
-              price={formatPlanPrice(PLANS.pro.priceMonthly)}
-              note={PLANS.pro.tagline}
-              items={["Everything in Free", "Unlimited projects", `Uploads up to ${PLANS.pro.maxFileMb} MB`, "Unlimited flashcard decks"]}
-              cta={
-                <Link href="/pricing" className="btn-primary w-full">
-                  See Pro details
-                </Link>
-              }
-            />
           </div>
         </section>
 
@@ -305,61 +258,18 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section id="waitlist" className="scroll-mt-24 px-5 pb-24 pt-32 sm:px-8">
+        <section className="px-5 pb-24 pt-32 sm:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="title-display text-balance text-4xl sm:text-[56px]">Be first in when Selrano opens.</h2>
-            <p className="mx-auto mt-4 max-w-lg text-[17px] leading-[1.65] text-[var(--muted-strong)]">
-              Leave your email and we will let you know the moment new accounts are available.
-            </p>
-            <div className="mx-auto mt-8 max-w-lg text-left">
-              <WaitlistForm />
+            <h2 className="title-display text-balance text-4xl sm:text-[56px]">Your workspace is waiting.</h2>
+            <div className="mt-8 flex justify-center">
+              <Link href="/signin" className="btn-primary">
+                Sign in <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </section>
       </main>
       <SiteFooter />
     </>
-  );
-}
-
-function PlanCard({
-  name,
-  price,
-  note,
-  items,
-  cta,
-  featured = false
-}: {
-  name: string;
-  price: string;
-  note: string;
-  items: string[];
-  cta: React.ReactNode;
-  featured?: boolean;
-}) {
-  return (
-    <div
-      className={`flex flex-col rounded-[22px] border bg-[var(--surface)] p-7 ${
-        featured ? "border-[var(--accent)] shadow-[var(--shadow-lift)]" : "border-[var(--border)] shadow-[var(--shadow-tight)]"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-[15px] font-semibold">{name}</p>
-      </div>
-      <p className="mt-4 flex items-baseline gap-1">
-        <span className="font-display text-[46px] font-medium leading-none tracking-[-0.02em]">{price}</span>
-        <span className="text-[15px] text-[var(--muted)]">/ month</span>
-      </p>
-      <p className="mt-3 text-[15px] text-[var(--muted-strong)]">{note}</p>
-      <ul className="mt-6 flex-1 space-y-2.5 border-t border-[var(--border)] pt-6">
-        {items.map((item) => (
-          <li key={item} className="flex items-start gap-3 text-[15px]">
-            <Check size={16} className="mt-[3px] shrink-0 text-[var(--accent)]" strokeWidth={2.25} />
-            {item}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-8">{cta}</div>
-    </div>
   );
 }

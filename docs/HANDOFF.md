@@ -1,6 +1,19 @@
 # Selrano production handoff
 
-Last updated: **November 18, 2026**
+Last updated: **November 19, 2026**
+
+## Private personal AI (November 19)
+
+The owner retired the public student product. Selrano is now a private personal AI for the owner, and will grow into the consumer features the big labs are not shipping. Owner decisions: only approved emails get in; keep the landing page design but sell nothing; hide the whole site from search engines; remove flashcards and study; keep only the opt-in weekly summary email; remove billing, plan limits, referrals, the waitlist and public deck links.
+
+- **Access:** `lib/access.ts` restores the allowlist from `a133058`, now keyed on the `ALLOWED_EMAILS` Worker secret (the owner saved it on November 19 with their sign-in email). An empty list lets nobody in. `middleware.ts` is now an allowlist of open pages (`/`, `/signin`, `/reset-password`, `/auth/*`, `/privacy`, `/terms`, `/security`, `/robots.txt`); everything else redirects to sign in, `/signup` redirects to `/signin`, a signed-in account that is not on the list is signed out and sent to `/signin?private=1`, and missing Supabase settings fail closed. `getAuthenticatedUser` and the auth callback refuse accounts that are not on the list. Supabase sign-ups stay off. To add a login: Supabase **Authentication > Users > Add user**, then add the email to `ALLOWED_EMAILS`.
+- **Not indexed:** `app/robots.ts` disallows everything, the root metadata sets `noindex, nofollow` (canonical removed), the Worker sets `X-Robots-Tag: noindex, nofollow` on every host, and `app/sitemap.ts` is deleted.
+- **Removed:** pricing, guides, changelog, the shared deck page `/d/[slug]`, `/signup`, `/api/waitlist`, `/api/billing/*` (including the Stripe webhook), `/api/referrals/*`, `/api/email/welcome`, `/api/ai/flashcards`, `/api/flashcard-decks/*`, the Flashcards and Study pages, the `create_flashcards` chat tool and research action, flashcards in project chat context, the welcome email and its trigger, tip and nudge emails, `lib/stripe.ts`, `lib/billing.ts`, `lib/plans.ts`, `lib/tier.ts`, `lib/ai-usage.ts` (no more AI quota or `reserve_ai_usage` calls), `lib/referrals.ts`, `lib/slug.ts`, `lib/flashcards.ts`, `lib/guides.ts`, `lib/changelog.ts`, and the `stripe` package. Uploads use a fixed 100 MB cap (`lib/limits.ts`).
+- **Landing page:** same design, now with a sign-in call to action, no pricing, waitlist or Pro, and everyday examples (a lease, a cover letter, renters insurance, travel) in place of the biology coursework. Legal pages drop Stripe, payments, the waitlist and flashcards.
+- **Email:** `lib/lifecycle-emails.ts` sends only the weekly summary (messages, notes and files from the past seven days), once per Monday-keyed week, to allowed accounts with `profiles.lifecycle_emails` on. The Settings toggle is now **Weekly summary**; the owner must turn it on.
+- **Database:** `supabase/migrations/20261119000000_private_personal_ai.sql` drops the `projects_plan_limit` and `decks_plan_limit` triggers, the anonymous deck and card read policies, and the browser insert policies on `pro_waitlist` and `support_requests`. It changes no rows: decks, cards, waitlist and support data stay. The owner applies it in the Supabase SQL Editor.
+- **Stripe:** owner to cancel any active subscription and delete the webhook endpoint in Stripe, then delete the `STRIPE_*` Worker secrets.
+- **Tests:** `e2e/public.spec.ts` is replaced by `e2e/private.spec.ts`. The fake test account is the only allowed email in `playwright.config.ts`. The quota and flashcard tests are removed.
 
 ## Cloudflare production hosting (November 18)
 

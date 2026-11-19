@@ -1,18 +1,18 @@
 # Selrano
 
-Selrano is a calm AI workspace for your own material: notes, files, and the web in one place. Ask a question and get an answer that cites the exact page it came from, then keep what matters as notes and review cards. Chat is the signed-in home, supported by projects, private uploads, web search, flashcards, and study review.
+Selrano is a private personal AI for its owner: notes, files, and the web in one place. Ask a question and get an answer that cites the exact page it came from, then keep what matters as notes. Chat is the signed-in home, supported by projects, private uploads, web search, memory, and transformations.
 
-Chat streams from OpenAI GPT, with Groq as the fallback; Groq also runs background work, flashcards, transformations, and image OCR. Selrano learns writing preferences, stores durable memories, and uses owned workspace material through authenticated tools. Public pricing describes capabilities without advertising exact AI message allowances.
+Chat streams from OpenAI GPT, with Groq as the fallback; Groq also runs background work, transformations, and image OCR. Selrano learns writing preferences, stores durable memories, and uses owned workspace material through authenticated tools.
 
-Sign-ups are currently closed; the public pages are open and offer a waitlist.
+Access is private: only emails listed in `ALLOWED_EMAILS` can sign in, sign-ups are off, and the whole site asks search engines not to index it.
 
 ## Local Setup
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env.local` and fill in Supabase, OpenAI, and Groq values.
+2. Copy `.env.example` to `.env.local` and fill in `ALLOWED_EMAILS` plus the Supabase, OpenAI, and Groq values.
 3. Review the migration history and live schema before applying anything. The personalization tables are defined in `20260724000000_selrano_personalization.sql`, but the production tables already exist even though that filename is not present in tracked production migration history.
 4. Configure Supabase redirect URLs (see `supabase/README.md`).
-5. Optional: configure Resend for transactional email (see `docs/OPERATIONS.md`).
+5. Optional: configure Resend for the weekly summary email (see `docs/OPERATIONS.md`).
 6. Start the app with `npm run dev`.
 
 ## Environment
@@ -20,6 +20,7 @@ Sign-ups are currently closed; the public pages are open and offer a waitlist.
 See `.env.example` for the full list. Core variables:
 
 ```txt
+ALLOWED_EMAILS=                     # who may sign in, comma-separated
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -32,16 +33,14 @@ RESEND_API_KEY=
 EMAIL_FROM=
 ```
 
-## Public pages
+## Open pages
+
+Everything else requires an allowed account.
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Landing page with the live product demo and waitlist |
-| `/pricing` | Free vs Pro plans |
-| `/guides`, `/changelog` | Guides and release notes |
-| `/signup` | Sign-ups are closed; joins the waitlist |
+| `/` | Landing page with the product demo and a sign-in link |
 | `/signin`, `/reset-password` | Account access |
-| `/d/[slug]` | Shared flashcard decks |
 | `/security` | Security practices and disclosure |
 | `/terms`, `/privacy` | Legal |
 

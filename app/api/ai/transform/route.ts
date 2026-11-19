@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { reserveAiRequest } from "@/lib/ai-usage";
-import { completeAi, configuredAiModel } from "@/lib/ai";
+import { completeAi } from "@/lib/ai";
 import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { removeEmDashes } from "@/lib/text";
@@ -14,25 +13,19 @@ const allowedActions = new Set([
   "Sharpen",
   "Turn into outline",
   "Turn into bullet points",
-  "Turn into study notes",
+  "Turn into notes",
   "Turn into email"
 ]);
 
 export async function POST(request: Request) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = (await request.json()) as { action?: string; text?: string };
     const sourceText = removeEmDashes(body.text || "").trim();
     if (!sourceText) return NextResponse.json({ error: "Text is required" }, { status: 400 });
     if (!body.action || !allowedActions.has(body.action)) return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
-
-    const limitError = await reserveAiRequest(supabase, user.id, "transform", {
-      model: configuredAiModel(),
-      input_chars: sourceText.length
-    });
-    if (limitError) return NextResponse.json({ error: limitError }, { status: 429 });
 
     const result = await completeAi([
       {

@@ -32,6 +32,8 @@ export default defineConfig({
           timeout: 300_000,
           env: {
             NEXT_DIST_DIR: process.env.E2E_DEV ? ".next" : ".next-e2e",
+            // Selrano is private: only the fake test account may sign in.
+            ALLOWED_EMAILS: "student@example.test",
             NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321",
             NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
             SUPABASE_SERVICE_ROLE_KEY: "test-service-key",

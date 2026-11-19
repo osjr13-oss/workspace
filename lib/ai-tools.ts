@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createDeckWithCards, normalizeCards } from "@/lib/flashcards";
 import { searchChunksFullText } from "@/lib/retrieve-context";
 import type { Citation } from "@/lib/types";
 
@@ -40,32 +39,6 @@ export const toolDefinitions = [
         required: ["title", "content"]
       }
     }
-  },
-  {
-    type: "function",
-    function: {
-      name: "create_flashcards",
-      description: "Create a flashcard deck. Only when the user asks for flashcards.",
-      parameters: {
-        type: "object",
-        properties: {
-          deck_name: { type: "string", description: "Deck name." },
-          cards: {
-            type: "array",
-            description: "Cards.",
-            items: {
-              type: "object",
-              properties: {
-                front: { type: "string", description: "Question." },
-                back: { type: "string", description: "Answer." }
-              },
-              required: ["front", "back"]
-            }
-          }
-        },
-        required: ["deck_name", "cards"]
-      }
-    }
   }
 ];
 
@@ -86,8 +59,6 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
       return searchWorkspace(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
-    case "create_flashcards":
-      return createFlashcards(ctx, String(args.deck_name ?? "New deck"), Array.isArray(args.cards) ? args.cards : []);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -132,20 +103,4 @@ async function createNote(ctx: ToolContext, title: string, content: string): Pro
 
   if (error) return `Could not create the note: ${error.message}`;
   return `Created note "${title}".`;
-}
-
-async function createFlashcards(ctx: ToolContext, deckName: string, rawCards: unknown[]): Promise<string> {
-  const cards = normalizeCards(rawCards);
-  if (!cards.length) return "No valid flashcards were provided (each needs a front and a back).";
-
-  const result = await createDeckWithCards(ctx.supabase, {
-    userId: ctx.userId,
-    projectId: ctx.projectId,
-    name: deckName,
-    cards
-  });
-
-  if ("deckError" in result) return `Could not create the deck: ${result.deckError}`;
-  if ("cardsError" in result) return `Created the deck, but adding cards failed: ${result.cardsError}`;
-  return `Created deck "${deckName}" with ${result.count} flashcards.`;
 }

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <article className="prose-selrano">
-      <p className="eyebrow">Last updated: November 18, 2026</p>
+      <p className="eyebrow">Last updated: November 19, 2026</p>
       <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Privacy Policy</h1>
       <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         This Privacy Policy explains how Selrano (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) collects, uses, stores, and shares information about you when you use our Service. We take your privacy seriously. We will never sell your personal data.
@@ -20,8 +20,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account information:</strong> your email address and password (stored securely via Supabase Auth with hashed passwords).</li>
           <li><strong>Profile information:</strong> your full name, if you choose to provide it.</li>
-          <li><strong>Waitlist:</strong> if you join the waitlist without an account, your email address, used only to tell you when sign-ups open.</li>
-          <li><strong>User content:</strong> notes, uploaded files (PDF, Word documents, plain text, Markdown, and PNG, JPG, WebP, or GIF images), flashcards, flashcard decks, project names and descriptions, and chat messages you create within the Service.</li>
+          <li><strong>User content:</strong> notes, uploaded files (PDF, Word documents, plain text, Markdown, and PNG, JPG, WebP, or GIF images), project names and descriptions, and chat messages you create within the Service.</li>
         </ul>
 
         <h3 className="mt-4 font-semibold text-[var(--text)]">b. Information collected automatically</h3>
@@ -32,7 +31,7 @@ export default function PrivacyPage() {
 
         <h3 className="mt-4 font-semibold text-[var(--text)]">c. Information we do NOT collect</h3>
         <ul>
-          <li>We do not see or store your card number. Pro payments are processed by <strong>Stripe</strong>, under <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Stripe&apos;s Privacy Policy</a>. We keep only your subscription status: your plan, your Stripe customer and subscription IDs, and your renewal date.</li>
+          <li>We do not collect payment details. Selrano is a private workspace with no paid plans.</li>
           <li>We do not use tracking cookies or third-party advertising trackers.</li>
           <li>We do not build advertising profiles or sell data to data brokers.</li>
         </ul>
@@ -54,7 +53,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. AI Processing and Third-Party AI Providers">
-        <p>When you use AI features, relevant portions of your User Content are sent to an AI provider to generate a response. Chat replies come from <strong>OpenAI</strong>. Requests are sent with storage turned off, so OpenAI does not keep the conversation. If OpenAI is unavailable, <strong>Groq, Inc.</strong> answers instead. Groq also handles flashcard generation, text transformations, memory of your preferences, and reading the text in images you upload. When web search is needed, Selrano sends public search terms to <strong>Exa</strong> and may ask it to read public source pages. This processing is necessary to generate responses and retrieve current sources.</p>
+        <p>When you use AI features, relevant portions of your User Content are sent to an AI provider to generate a response. Chat replies come from <strong>OpenAI</strong>. Requests are sent with storage turned off, so OpenAI does not keep the conversation. If OpenAI is unavailable, <strong>Groq, Inc.</strong> answers instead. Groq also handles text transformations, memory of your preferences, and reading the text in images you upload. When web search is needed, Selrano sends public search terms to <strong>Exa</strong> and may ask it to read public source pages. This processing is necessary to generate responses and retrieve current sources.</p>
         <ul>
           <li>Data sent to OpenAI is governed by <a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">OpenAI&apos;s Privacy Policy</a>.</li>
           <li>Data sent to Groq is governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="underline">Groq&apos;s Privacy Policy</a>.</li>
@@ -68,7 +67,7 @@ export default function PrivacyPage() {
         <p>We do not sell, rent, or trade your personal information. We share your information only in the following limited circumstances:</p>
         <ul>
           <li>Previously generated Google Search-grounded replies retain Google attribution and expire within two years. Google is no longer used for new AI requests.</li>
-          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Cloudflare (hosting), OpenAI and Groq (AI inference), Exa (optional web search), Stripe (payments), and Resend (account email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
+          <li><strong>Infrastructure providers:</strong> Supabase (database, authentication, file storage), Cloudflare (hosting), OpenAI and Groq (AI inference), Exa (optional web search), and Resend (the optional weekly summary email) receive data as necessary to operate the Service. Each is bound by their own privacy and data processing terms.</li>
           <li><strong>Legal compliance:</strong> We may disclose your information if required by law, subpoena, court order, or other governmental request, or if we believe in good faith that disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
           <li><strong>Business transfers:</strong> If Selrano is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you via email and/or a prominent notice on the Service before your data is transferred and becomes subject to a different privacy policy.</li>
         </ul>
@@ -103,7 +102,7 @@ export default function PrivacyPage() {
           <li><strong>Portability:</strong> request your data in a portable, machine-readable format.</li>
           <li><strong>Objection:</strong> object to certain uses of your data.</li>
         </ul>
-        <p>You can exercise most of these rights directly in the app: delete your account and data, and manage email preferences, from the Settings page.</p>
+        <p>You can exercise most of these rights directly in the app: delete your account and data, and turn the weekly summary email on or off, from the Settings page.</p>
         <p><strong>California residents:</strong> under the California Consumer Privacy Act (CCPA), you have the right to know what personal information we collect, request deletion, and opt out of any sale of personal information (we do not sell personal information). You can delete your account and its data from Settings; for other requests, see Contact Us below.</p>
       </Section>
 

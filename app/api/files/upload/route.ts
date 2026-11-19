@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { embedChunksForFile } from "@/lib/embeddings";
 import { chunkTextWithLocations } from "@/lib/chunk";
 import { serializeError } from "@/lib/serialize-error";
-import { assertFileSizeLimit, getUserLimits } from "@/lib/tier";
+import { assertUploadSize } from "@/lib/limits";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -33,9 +33,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid storage path" }, { status: 403 });
     }
 
-    const limits = await getUserLimits(supabase, user.id);
-    const sizeError = assertFileSizeLimit(declaredSize, limits);
-    if (sizeError) return NextResponse.json({ error: sizeError, code: "plan_limit" }, { status: 403 });
+    const sizeError = assertUploadSize(declaredSize);
+    if (sizeError) return NextResponse.json({ error: sizeError }, { status: 413 });
 
     if (projectId) {
       const { data: project, error: projectError } = await supabase

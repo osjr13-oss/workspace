@@ -24,7 +24,9 @@ function SignInForm() {
   const nextPath = safeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    searchParams.get("private") === "1" ? "This Selrano is private. That account does not have access." : ""
+  );
   const [loading, setLoading] = useState(false);
 
   async function submit(event: React.FormEvent) {
@@ -65,10 +67,7 @@ function SignInForm() {
         ) : null}
       </form>
       <p className="mt-8 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)]">
-        New to Selrano? Accounts are paused for now.{" "}
-        <Link href="/signup" className="font-medium text-[var(--accent)] hover:underline">
-          Join the waitlist
-        </Link>
+        Selrano is a private workspace. Accounts are by invitation only.
       </p>
     </AuthFrame>
   );

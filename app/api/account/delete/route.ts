@@ -4,29 +4,13 @@ import { serializeError } from "@/lib/serialize-error";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { deleteStoragePrefix } from "@/lib/storage";
-import { getStripe } from "@/lib/stripe";
-import { getUserLimits } from "@/lib/tier";
 
 export const runtime = "nodejs";
 
 export async function DELETE(request: Request) {
   try {
-    const { supabase, user } = await getAuthenticatedUser();
+    const { user } = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const limits = await getUserLimits(supabase, user.id);
-    if (limits.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
-      try {
-        const stripe = getStripe();
-        const subscription = await stripe.subscriptions.retrieve(limits.stripe_subscription_id);
-        if (subscription.status !== "canceled") {
-          await stripe.subscriptions.cancel(subscription.id);
-        }
-      } catch (billingError) {
-        const code = typeof billingError === "object" && billingError && "code" in billingError ? billingError.code : null;
-        if (code !== "resource_missing") throw billingError;
-      }
-    }
 
     await logAudit({
       user_id: user.id,

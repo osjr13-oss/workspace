@@ -181,7 +181,7 @@ function NotesContent() {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {["Summarize", "Rewrite", "Turn into outline", "Turn into study notes"].map((action) => (
+            {["Summarize", "Rewrite", "Turn into outline", "Turn into notes"].map((action) => (
               <button key={action} type="button" onClick={() => transform(action)} className="btn-secondary min-h-10 text-sm">
                 <Wand2 size={16} />
                 {action}

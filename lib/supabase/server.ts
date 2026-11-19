@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { requireEnv } from "@/lib/env";
+import { isAllowedEmail } from "@/lib/access";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -34,7 +35,8 @@ export async function getAuthenticatedUser() {
     error
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  // Selrano is private: an account that is not on the allowlist is treated as signed out.
+  if (error || !user || !isAllowedEmail(user.email)) {
     return { supabase, user: null };
   }
 

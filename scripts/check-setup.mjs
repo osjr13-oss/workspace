@@ -30,6 +30,7 @@ function loadEnvFile(path) {
 const env = { ...process.env, ...loadEnvFile(resolve(root, ".env.local")) };
 
 const required = [
+  "ALLOWED_EMAILS",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -61,7 +62,7 @@ for (const key of branding) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }
 
-console.log("\nTransactional email (Resend):");
+console.log("\nWeekly summary email (Resend):");
 for (const key of email) {
   console.log(`  ${status(key) === "ok" ? "✓" : "○"} ${key}`);
 }

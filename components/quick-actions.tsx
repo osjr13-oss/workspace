@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Wand2 } from "lucide-react";
 
-const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Turn into bullet points", "Turn into study notes", "Turn into email"];
+const actions = ["Rewrite", "Summarize", "Expand", "Sharpen", "Turn into outline", "Turn into bullet points", "Turn into notes", "Turn into email"];
 
 export function QuickActions({ initialText = "" }: { initialText?: string }) {
   const [text, setText] = useState(initialText);

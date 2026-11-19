@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { runLifecycleEmailBatch } from "@/lib/lifecycle-emails";
-import { runWelcomeEmailRecoveryBatch } from "@/lib/email/welcome";
 import { serializeError } from "@/lib/serialize-error";
 
 export const runtime = "nodejs";
@@ -19,12 +18,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [welcome, lifecycle] = await Promise.all([
-      runWelcomeEmailRecoveryBatch(),
-      runLifecycleEmailBatch()
-    ]);
-    console.info("[cron/lifecycle-emails] completed", { welcome, lifecycle });
-    return NextResponse.json({ success: true, welcome, lifecycle });
+    // Sends only the opt-in weekly summary (lib/lifecycle-emails.ts).
+    const weekly = await runLifecycleEmailBatch();
+    console.info("[cron/lifecycle-emails] completed", { weekly });
+    return NextResponse.json({ success: true, weekly });
   } catch (error) {
     const msg = serializeError(error);
     console.error("[cron/lifecycle-emails]", msg, error);

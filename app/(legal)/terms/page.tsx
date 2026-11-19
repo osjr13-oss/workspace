@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="prose-selrano">
-      <p className="eyebrow">Last updated: November 18, 2026</p>
+      <p className="eyebrow">Last updated: November 19, 2026</p>
       <h1 className="title-display mt-3 text-balance text-[40px] sm:text-[50px]">Terms of Service</h1>
       <p className="mt-5 text-[17px] leading-[1.7] text-[var(--muted-strong)]">
         Please read these Terms of Service (&quot;Terms&quot;) carefully before using Selrano (&quot;Service&quot;, &quot;we&quot;, &quot;us&quot;). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
@@ -20,7 +20,7 @@ export default function TermsPage() {
       </Section>
 
       <Section title="2. Account Registration">
-        <p>To access Selrano you must register for an account with a valid email address and password. You are responsible for:</p>
+        <p>Selrano is a private workspace. Accounts are created by invitation only, and access requires a valid email address and password. You are responsible for:</p>
         <ul>
           <li>Maintaining the confidentiality of your login credentials.</li>
           <li>All activity that occurs under your account.</li>
@@ -30,11 +30,10 @@ export default function TermsPage() {
       </Section>
 
       <Section title="3. Description of Service">
-        <p>Selrano is an AI-powered workspace that allows users to chat with an adaptive assistant, create projects, write and organize notes, upload files, generate flashcards, and review material. Features include but are not limited to:</p>
+        <p>Selrano is an AI-powered workspace that allows users to chat with an adaptive assistant, create projects, write and organize notes, upload files, and transform material into summaries and notes. Features include but are not limited to:</p>
         <ul>
           <li>AI-assisted chat powered by third-party large language model providers.</li>
           <li>Document upload, text extraction, and storage.</li>
-          <li>Flashcard generation and spaced-repetition study tools.</li>
           <li>Markdown note editing with AI transformations.</li>
         </ul>
         <p>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with or without notice.</p>
@@ -50,13 +49,12 @@ export default function TermsPage() {
           <li>Reverse-engineer, decompile, or disassemble any part of the Service.</li>
           <li>Use automated bots, scrapers, or scripts to access the Service without our express written permission.</li>
           <li>Circumvent or attempt to circumvent any authentication or security mechanism.</li>
-          <li>Use the AI features to generate academic work intended to deceive educational institutions in violation of their academic integrity policies. We are a study aid, not a cheating tool.</li>
         </ul>
         <p>Violation of this section may result in immediate termination of your account.</p>
       </Section>
 
       <Section title="5. User Content">
-        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, flashcards, and chat messages.</p>
+        <p><strong>Ownership.</strong> You retain all ownership rights to the content you create, upload, or store within Selrano (&quot;User Content&quot;), including notes, files, and chat messages.</p>
         <p><strong>License to us.</strong> By using the Service, you grant Selrano a limited, non-exclusive, royalty-free license to access, store, process, and transmit your User Content solely as necessary to provide and improve the Service. We do not claim ownership of your content and do not sell it to third parties.</p>
         <p><strong>AI processing.</strong> When you use AI features, your User Content (or relevant portions of it) is transmitted to third-party AI providers (currently OpenAI and Groq, Inc.) for processing. By using AI features, you acknowledge and consent to this transmission. Please do not include sensitive personal information, financial data, passwords, or any information you are obligated to keep confidential in content submitted to AI features.</p>
         <p><strong>Your responsibility.</strong> You are solely responsible for the legality, accuracy, and appropriateness of your User Content. We have no obligation to monitor content but reserve the right to remove any content that violates these Terms.</p>
@@ -91,8 +89,8 @@ export default function TermsPage() {
         <p>Your use of the Service is governed by our <a href="/privacy" className="underline font-semibold">Privacy Policy</a>, which is incorporated into these Terms by reference. By using the Service, you consent to the data practices described in the Privacy Policy.</p>
       </Section>
 
-      <Section title="10. Fees and Payment">
-        <p>Selrano offers free and paid features. We reserve the right to change paid plans or features in the future. We will provide advance notice of material pricing changes. If you do not accept new pricing terms, you may terminate your account prior to the effective date.</p>
+      <Section title="10. Fees">
+        <p>Selrano has no paid plans and does not charge for access.</p>
       </Section>
 
       <Section title="11. Disclaimers">

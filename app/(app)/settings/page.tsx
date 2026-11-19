@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
-import { BillingSection } from "@/components/billing-section";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
@@ -58,7 +57,7 @@ export default function SettingsPage() {
         setMessage(payload?.error || "Could not update email preferences.");
       } else {
         setLifecycleEmails(enabled);
-        setMessage(enabled ? "Tips & reminders enabled." : "Tips & reminders turned off.");
+        setMessage(enabled ? "Weekly summary turned on." : "Weekly summary turned off.");
       }
     } catch {
       setMessage("Could not update email preferences. Please try again.");
@@ -99,8 +98,6 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-5 py-8 sm:px-6 lg:py-10">
       <WorkspaceHeader title="Settings" eyebrow="Account" />
-      <BillingSection />
-      {/* The referral card (components/referral-section.tsx) is hidden while sign-ups are closed: nobody can earn its reward. */}
       <form onSubmit={save} className="panel space-y-4 p-6">
         <div>
           <label className="eyebrow text-[var(--muted)]">Full name</label>
@@ -118,9 +115,9 @@ export default function SettingsPage() {
       </form>
 
       <section className="panel p-6">
-        <h2 className="text-base font-semibold tracking-[-0.01em]">Email preferences</h2>
+        <h2 className="text-base font-semibold tracking-[-0.01em]">Weekly summary</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-          A useful weekly workspace check-in plus occasional feature tips. The welcome email is always sent.
+          One email a week about what changed in your workspace. Selrano sends no other email except password resets.
         </p>
         <label className="mt-5 flex cursor-pointer items-center gap-3">
           <input
@@ -130,7 +127,7 @@ export default function SettingsPage() {
             disabled={savingEmailPrefs}
             onChange={(event) => toggleLifecycleEmails(event.target.checked)}
           />
-          <span className="text-sm font-semibold">Send weekly check-ins and feature tips</span>
+          <span className="text-sm font-semibold">Send me the weekly summary email</span>
         </label>
       </section>
 

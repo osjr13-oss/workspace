@@ -85,31 +85,6 @@ export type ChatMessage = {
   created_at: string;
 };
 
-export type FlashcardDeck = {
-  id: string;
-  user_id: string;
-  project_id: string | null;
-  name: string;
-  is_public: boolean;
-  share_slug: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type Flashcard = {
-  id: string;
-  user_id: string;
-  deck_id: string;
-  project_id: string | null;
-  front: string;
-  back: string;
-  source_type: string | null;
-  source_id: string | null;
-  due_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 export type Profile = {
   id: string;
   full_name: string | null;

@@ -49,7 +49,7 @@ export default function ProjectsPage() {
 
   async function deleteProject(event: React.MouseEvent, id: string) {
     event.preventDefault();
-    if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
+    if (!confirm("Delete this project? Notes and files linked to it will be unlinked but not deleted.")) return;
     setDeletingId(id);
     setError("");
     try {
@@ -77,10 +77,7 @@ export default function ProjectsPage() {
         </button>
         {error ? (
           <p className="w-full text-sm font-semibold text-[var(--critical)]">
-            {error}{" "}
-            <Link href="/pricing" className="text-[var(--text)] underline">
-              View plans
-            </Link>
+            {error}
           </p>
         ) : null}
       </form>
@@ -107,7 +104,7 @@ export default function ProjectsPage() {
           ))}
         </section>
       ) : (
-        <EmptyState icon={<FolderOpen size={20} />} title="No projects yet" description="Create a project to group notes, files, chats, and flashcards around one class or thesis." />
+        <EmptyState icon={<FolderOpen size={20} />} title="No projects yet" description="Create a project to group notes, files, and chats around one part of your life or work." />
       )}
     </div>
   );

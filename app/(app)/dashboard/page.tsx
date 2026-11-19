@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowUp, BookOpen, Files, FileUp, FolderOpen, Layers, MessageSquare, Plus } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpen, Files, FileUp, FolderOpen, MessageSquare, Plus } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { QuickActions } from "@/components/quick-actions";
@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [chats, setChats] = useState<ChatThread[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
-  const [counts, setCounts] = useState({ projects: 0, notes: 0, files: 0, flashcards: 0 });
+  const [counts, setCounts] = useState({ projects: 0, notes: 0, files: 0 });
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -29,17 +29,13 @@ export default function DashboardPage() {
         if (profile?.full_name) displayName = profile.full_name;
       }
       setName(displayName.split(" ")[0] || "there");
-      // flashcards also has a public-read policy (for the /d/[slug] share
-      // page), so its count needs an explicit user_id filter. Otherwise
-      // every public deck's cards from every user get counted here too.
-      const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult, cardsResult] = await Promise.all([
+      const [projectsResult, chatsResult, filesResult, projectCountResult, notesResult, fileCountResult] = await Promise.all([
         supabase.from("projects").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("chat_threads").select("*").order("updated_at", { ascending: false }).limit(3),
         supabase.from("files").select("*").order("created_at", { ascending: false }).limit(3),
         supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("notes").select("id", { count: "exact", head: true }),
-        supabase.from("files").select("id", { count: "exact", head: true }),
-        user ? supabase.from("flashcards").select("id", { count: "exact", head: true }).eq("user_id", user.id) : Promise.resolve({ count: 0 })
+        supabase.from("files").select("id", { count: "exact", head: true })
       ]);
       setProjects((projectsResult.data as Project[]) || []);
       setChats((chatsResult.data as ChatThread[]) || []);
@@ -47,8 +43,7 @@ export default function DashboardPage() {
       setCounts({
         projects: projectCountResult.count || 0,
         notes: notesResult.count || 0,
-        files: fileCountResult.count || 0,
-        flashcards: cardsResult.count || 0
+        files: fileCountResult.count || 0
       });
     }
     load();
@@ -73,18 +68,17 @@ export default function DashboardPage() {
         <MessageSquare size={19} className="shrink-0 text-[var(--accent)]" />
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] font-medium">Ask your workspace a question</span>
-          <span className="block truncate text-[13px] text-[var(--muted)]">Pick a project to include its notes, files, and flashcards as context.</span>
+          <span className="block truncate text-[13px] text-[var(--muted)]">Pick a project to include its notes and files as context.</span>
         </span>
         <span className="send-button shrink-0">
           <ArrowUp size={16} />
         </span>
       </Link>
 
-      <section aria-label="Workspace totals" className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] md:grid-cols-4">
+      <section aria-label="Workspace totals" className="grid grid-cols-3 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
         <Stat href="/projects" icon={<FolderOpen size={16} />} label="Projects" value={counts.projects} />
         <Stat href="/notes" icon={<BookOpen size={16} />} label="Notes" value={counts.notes} />
         <Stat href="/files" icon={<Files size={16} />} label="Files" value={counts.files} />
-        <Stat href="/flashcards" icon={<Layers size={16} />} label="Flashcards" value={counts.flashcards} />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { BookOpen, Brain, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate, formatRelative } from "@/lib/format";
 import { useRouter } from "next/navigation";
-import type { ChatThread, FlashcardDeck, Note, Project, WorkspaceFile } from "@/lib/types";
+import type { ChatThread, Note, Project, WorkspaceFile } from "@/lib/types";
 
-type Tab = "notes" | "files" | "chats" | "flashcards";
+type Tab = "notes" | "files" | "chats";
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,7 +20,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [notes, setNotes] = useState<Note[]>([]);
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [threads, setThreads] = useState<ChatThread[]>([]);
-  const [decks, setDecks] = useState<FlashcardDeck[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -28,26 +27,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     async function load() {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      // flashcard_decks also has a public-read policy (for the /d/[slug]
-      // share page); an explicit user_id filter keeps this project's deck
-      // list from ever picking up another user's public deck by a stray
-      // project_id match.
-      const [projectResult, notesResult, filesResult, threadsResult, decksResult] = await Promise.all([
+      const [projectResult, notesResult, filesResult, threadsResult] = await Promise.all([
         supabase.from("projects").select("*").eq("id", id).single(),
         supabase.from("notes").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
         supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-        supabase.from("chat_threads").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
-        supabase
-          .from("flashcard_decks")
-          .select("*")
-          .eq("project_id", id)
-          .eq("user_id", user?.id || "")
-          .order("updated_at", { ascending: false }),
+        supabase.from("chat_threads").select("*").eq("project_id", id).order("updated_at", { ascending: false })
       ]);
-      const firstError = projectResult.error || notesResult.error || filesResult.error || threadsResult.error || decksResult.error;
+      const firstError = projectResult.error || notesResult.error || filesResult.error || threadsResult.error;
       if (firstError) {
         setError(firstError.message || "Could not load this project.");
         setLoaded(true);
@@ -57,14 +43,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setNotes((notesResult.data as Note[]) || []);
       setFiles((filesResult.data as WorkspaceFile[]) || []);
       setThreads((threadsResult.data as ChatThread[]) || []);
-      setDecks((decksResult.data as FlashcardDeck[]) || []);
       setLoaded(true);
     }
     load();
   }, [id]);
 
   async function deleteProject() {
-    if (!confirm("Delete this project? Notes, files, and flashcards linked to it will be unlinked but not deleted.")) return;
+    if (!confirm("Delete this project? Notes and files linked to it will be unlinked but not deleted.")) return;
     setDeleting(true);
     setError("");
     try {
@@ -89,8 +74,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { key: "notes", label: "Notes", icon: <BookOpen size={16} />, count: notes.length },
     { key: "files", label: "Files", icon: <Files size={16} />, count: files.length },
-    { key: "chats", label: "Chats", icon: <MessageSquare size={16} />, count: threads.length },
-    { key: "flashcards", label: "Flashcards", icon: <Brain size={16} />, count: decks.length },
+    { key: "chats", label: "Chats", icon: <MessageSquare size={16} />, count: threads.length }
   ];
 
   return (
@@ -202,25 +186,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </section>
       )}
 
-      {tab === "flashcards" && (
-        <section className="space-y-4">
-          <div className="flex justify-end">
-            <Link href={`/flashcards?project=${id}`} className="btn-primary"><Plus size={16} /> New deck</Link>
-          </div>
-          {decks.length ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {decks.map((deck) => (
-                <Link key={deck.id} href={`/flashcards?project=${id}`} className="glass-card p-5">
-                  <p className="font-semibold">{deck.name}</p>
-                  <p className="mt-2 text-xs text-[var(--muted)]">Updated {formatRelative(deck.updated_at)}</p>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Empty label="No flashcard decks yet" action={{ href: `/flashcards?project=${id}`, label: "Create first deck" }} />
-          )}
-        </section>
-      )}
     </div>
   );
 }

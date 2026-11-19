@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUp, Check, FileText, FolderOpen, Layers, MessageSquare, NotebookPen, Paperclip } from "lucide-react";
+import { ArrowUp, Check, FileText, FolderOpen, MessageSquare, NotebookPen, Paperclip } from "lucide-react";
 
 /**
  * A scripted, looping picture of Selrano answering from a user's own sources.
@@ -12,14 +12,14 @@ import { ArrowUp, Check, FileText, FolderOpen, Layers, MessageSquare, NotebookPe
 
 type Segment = string | { cite: 1 | 2 };
 
-const QUESTION = "Why does the reaction rate level off at high substrate concentration?";
+const QUESTION = "What happens if I move out before my lease ends?";
 
 const ANSWER: Segment[] = [
-  "Because almost every enzyme is already busy. At low concentrations, extra substrate quickly finds a free active site, so the rate climbs.",
+  "You can leave early, but the lease asks for 60 days of written notice and a break fee equal to two months of rent.",
   { cite: 1 },
-  " Once nearly every active site is occupied, the enzyme is saturated and the rate settles near its maximum, Vmax.",
+  " Your deposit comes back within 30 days once the apartment passes the move-out inspection.",
   { cite: 1 },
-  " Your reading notes put it simply: the bottleneck moves from finding substrate to processing it.",
+  " Your notes from the call with your landlord say the carpet cleaning charge will be waived.",
   { cite: 2 }
 ];
 
@@ -88,7 +88,7 @@ export function HeroDemo() {
     <div
       ref={rootRef}
       role="img"
-      aria-label="Selrano answering a biology question from a lecture PDF and reading notes. Each claim is numbered, and the cited passage on page 4 is highlighted. The answer is then saved as a note and turned into twelve review cards."
+      aria-label="Selrano answering a question about breaking a lease from the lease PDF and personal notes. Each claim is numbered, and the cited passage on page 9 is highlighted. The answer is then saved as a note."
       className="relative"
     >
       <div aria-hidden="true" className="overflow-hidden rounded-[22px] border border-[var(--border-strong)] bg-[var(--surface)] shadow-[var(--shadow-lift)]">
@@ -96,9 +96,9 @@ export function HeroDemo() {
         <div className="flex h-11 items-center justify-between border-b border-[var(--border)] bg-[var(--background-elevated)] px-4">
           <div className="flex items-center gap-2 text-[13px] text-[var(--muted)]">
             <FolderOpen size={14} />
-            <span className="font-medium text-[var(--muted-strong)]">Biology 201</span>
+            <span className="font-medium text-[var(--muted-strong)]">Apartment</span>
             <span className="text-[var(--border-strong)]">/</span>
-            <span className="truncate">Enzyme saturation</span>
+            <span className="truncate">Moving out early</span>
           </div>
         </div>
 
@@ -106,11 +106,11 @@ export function HeroDemo() {
           {/* Sources rail */}
           <aside className="hidden border-r border-[var(--border)] bg-[var(--surface-sunken)] p-3 lg:block">
             <p className="px-2 pb-2 pt-1 text-[12px] font-medium text-[var(--muted)]">Sources</p>
-            <SourceRow icon={<FileText size={15} />} name="Lecture 4, Enzymes.pdf" meta="12 pages" active={activeSource === 1} />
-            <SourceRow icon={<NotebookPen size={15} />} name="Reading notes" meta="Note" active={activeSource === 2} />
-            <SourceRow icon={<FileText size={15} />} name="Lab 3 handout.docx" meta="4 pages" active={false} />
+            <SourceRow icon={<FileText size={15} />} name="Lease agreement.pdf" meta="14 pages" active={activeSource === 1} />
+            <SourceRow icon={<NotebookPen size={15} />} name="Move-out notes" meta="Note" active={activeSource === 2} />
+            <SourceRow icon={<FileText size={15} />} name="Renters insurance.pdf" meta="6 pages" active={false} />
             <p className="px-2 pb-2 pt-5 text-[12px] font-medium text-[var(--muted)]">Chats</p>
-            {["Enzyme saturation", "Lab 3 prep", "Exam review plan"].map((title, index) => (
+            {["Moving out early", "Packing checklist", "Insurance questions"].map((title, index) => (
               <div
                 key={title}
                 className={`flex items-center gap-2 rounded-[10px] px-2 py-1.5 text-[13px] ${
@@ -139,7 +139,7 @@ export function HeroDemo() {
                 {searching ? (
                   <div className="tool-status text-[13px]">
                     <span className="tool-status-dot" />
-                    Reading Lecture 4 and your notes
+                    Reading your lease and notes
                   </div>
                 ) : null}
                 {shownSteps > 0 ? (
@@ -177,15 +177,6 @@ export function HeroDemo() {
                         <Check size={13} className="text-[var(--low)]" strokeWidth={2.5} />
                         Saved to Notes
                       </span>
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.35, duration: 0.4 }}
-                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--muted-strong)]"
-                      >
-                        <Layers size={13} className="text-[var(--accent)]" />
-                        12 review cards
-                      </motion.span>
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
@@ -208,27 +199,27 @@ export function HeroDemo() {
             <AnimatePresence mode="wait" initial={false}>
               {activeSource === 2 ? (
                 <motion.div key="notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="p-5">
-                  <PreviewHeader icon={<NotebookPen size={14} />} title="Reading notes" tag="Note" />
-                  <p className="mt-5 font-display text-[19px] leading-tight text-[var(--text)]">Enzymes, chapter 6</p>
+                  <PreviewHeader icon={<NotebookPen size={14} />} title="Move-out notes" tag="Note" />
+                  <p className="mt-5 font-display text-[19px] leading-tight text-[var(--text)]">Call with landlord, Nov 3</p>
                   <ul className="mt-3 space-y-2.5 text-[13px] leading-[1.6] text-[var(--muted-strong)]">
-                    <li>Km is the substrate concentration at half of Vmax.</li>
+                    <li>Move-out date can be any day of the month.</li>
                     <li>
-                      <Highlight on>Saturation: the bottleneck moves from finding substrate to processing it.</Highlight>
+                      <Highlight on>Carpet cleaning charge waived since the carpet is original.</Highlight>
                     </li>
-                    <li>Ask about competitive inhibitors before the lab.</li>
+                    <li>Send the notice by email and keep a copy.</li>
                   </ul>
                 </motion.div>
               ) : (
                 <motion.div key="pdf" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="p-5">
-                  <PreviewHeader icon={<FileText size={14} />} title="Lecture 4, Enzymes.pdf" tag="Page 4" />
-                  <p className="mt-5 font-display text-[19px] leading-tight text-[var(--text)]">4.2 Saturation</p>
+                  <PreviewHeader icon={<FileText size={14} />} title="Lease agreement.pdf" tag="Page 9" />
+                  <p className="mt-5 font-display text-[19px] leading-tight text-[var(--text)]">12. Early termination</p>
                   <p className="mt-3 text-[13px] leading-[1.7] text-[var(--muted-strong)]">
-                    Reaction rate depends on how often a substrate meets a free active site. At low concentrations the rate rises almost in
-                    step with substrate.{" "}
+                    Tenant may end this lease before the term expires.{" "}
                     <Highlight on={activeSource === 1}>
-                      When nearly every active site is occupied, the enzyme is saturated and the rate approaches its maximum, Vmax.
+                      Tenant must give 60 days of written notice and pay a fee equal to two months of rent. The deposit is returned within
+                      30 days after the move-out inspection.
                     </Highlight>{" "}
-                    Past this point, adding substrate changes very little.
+                    Rent is due through the notice period.
                   </p>
                   <div className="mt-5 space-y-2">
                     <div className="h-2 w-full rounded-full bg-[var(--surface-subtle)]" />

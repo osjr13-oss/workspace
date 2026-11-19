@@ -8,7 +8,6 @@ import {
   resetMocks,
   seedConversation,
   setLatency,
-  setQuota,
   signIn,
   tableRows
 } from "./support/session";
@@ -185,7 +184,7 @@ test.describe("chat", () => {
     const before = await bubbleCount(page);
     await send(page, "Tell me something long");
     await expect(page.locator(bubbles)).toHaveCount(before + 1, { timeout: 25_000 });
-    await page.goto("/pricing"); // leave while it is still streaming
+    await page.goto("/settings"); // leave while it is still streaming
     await expect
       .poll(async () => (await tableRows("chat_messages")).filter((m) => m.role === "assistant").some((m) => String(m.content).includes("Sentence number 30")), {
         timeout: 30_000
@@ -209,12 +208,5 @@ test.describe("chat", () => {
     expect(await page.locator(bubbles).count()).toBe(2);
     expect((await tableRows("chat_threads")).length, "the follow-up must stay in the same conversation").toBe(1);
     await expect(page.locator(composer)).toHaveValue("Second question sent too early");
-  });
-
-  test("a daily-limit refusal explains itself and keeps the text", async ({ page }) => {
-    await setQuota(false);
-    await send(page, "One more question");
-    await expect(page.getByText(/limit reached/i)).toBeVisible({ timeout: 25_000 });
-    await expect(page.locator(composer)).toHaveValue("One more question");
   });
 });

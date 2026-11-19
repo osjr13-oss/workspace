@@ -18,9 +18,9 @@ Pushes to main trigger Workers Builds for osjr13-oss/workspace. Review the match
 ## Recreate the hosting setup
 
 1. Use the owner's paid Workers account. Deploy the Worker named selrano and verify the workers.dev address before attaching either live domain.
-2. In **Workers & Pages > selrano > Settings > Variables and Secrets**, enter production server credentials as secrets. Match the production settings for Supabase service access, OpenAI, Groq, Exa, Stripe, Resend and scheduled jobs. Preserve configured model, sender, price and embedding settings. Use .env.example for names. Test provider base URLs belong only in local tests.
+2. In **Workers & Pages > selrano > Settings > Variables and Secrets**, enter production server credentials as secrets. Match the production settings for the `ALLOWED_EMAILS` access list, Supabase service access, OpenAI, Groq, Exa, Resend and scheduled jobs. Preserve configured model, sender and embedding settings. Without `ALLOWED_EMAILS` nobody can sign in. Use .env.example for names. Test provider base URLs belong only in local tests.
 3. In **Settings > Builds**, connect the existing GitHub repository, choose main, and disable non-production branch builds. Use `npm run build:worker` for the build command and `npx --no-install opennextjs-cloudflare deploy` for deployment. Set the public build variables separately under build settings.
-4. On the deployed Worker, verify sign-in, streamed and cited answers, a private file upload with text extraction, and authenticated billing status. Verify Stripe delivery using a test event without creating a customer charge. Confirm each required production setting before cutover.
+4. On the deployed Worker, verify sign-in, streamed and cited answers, and a private file upload with text extraction. Confirm an account that is not on the list is refused. Confirm each required production setting before cutover.
 
 ## Domain and schedule cutover
 

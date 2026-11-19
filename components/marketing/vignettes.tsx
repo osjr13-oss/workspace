@@ -6,12 +6,10 @@ import {
   FolderOpen,
   Globe2,
   ImageIcon,
-  Layers,
   ListChecks,
+  Mail,
   NotebookPen,
-  Paperclip,
-  RotateCcw,
-  Wand2
+  Paperclip
 } from "lucide-react";
 
 /* Small, static pictures of real Selrano surfaces used on the landing page.
@@ -39,9 +37,9 @@ function Cite({ n, active = false }: { n: number; active?: boolean }) {
 
 export function GatherVignette() {
   const rows = [
-    { icon: <FileText size={15} />, name: "Lecture 4, Enzymes.pdf", status: "Ready" },
-    { icon: <FileText size={15} />, name: "Lab report draft.docx", status: "Ready" },
-    { icon: <ImageIcon size={15} />, name: "Whiteboard photo.jpg", status: "Text read" }
+    { icon: <FileText size={15} />, name: "Lease agreement.pdf", status: "Ready" },
+    { icon: <FileText size={15} />, name: "Cover letter draft.docx", status: "Ready" },
+    { icon: <ImageIcon size={15} />, name: "Receipt photo.jpg", status: "Text read" }
   ];
   return (
     <Frame>
@@ -68,23 +66,23 @@ export function AskVignette() {
   return (
     <Frame>
       <div className="flex justify-end">
-        <div className="user-bubble max-w-[92%] text-[13px] leading-[1.55]">What does my lab report still need?</div>
+        <div className="user-bubble max-w-[92%] text-[13px] leading-[1.55]">What does my cover letter still need?</div>
       </div>
       <p className="mt-3 text-[13px] leading-[1.65] text-[var(--text)]">
-        The methods are complete, but the discussion never links your results back to the{" "}
+        Your experience section is strong, but the letter never names the team from the{" "}
         <span className="whitespace-nowrap">
-          hypothesis<Cite n={1} />.
+          posting<Cite n={1} />.
         </span>{" "}
-        The handout also asks for an error{" "}
+        The posting also asks you to mention your start{" "}
         <span className="whitespace-nowrap">
-          analysis<Cite n={2} />.
+          date<Cite n={2} />.
         </span>
       </p>
       <div className="composer mt-3 flex items-center gap-2 px-2.5 py-2 shadow-none">
         <Paperclip size={14} className="text-[var(--muted)]" />
         <span className="project-chip project-chip-select min-h-[26px] px-2 text-[12px]">
           <FolderOpen size={12} />
-          Biology 201
+          Job search
         </span>
         <span className="flex-1" />
         <span className="send-button h-7 w-7">
@@ -102,20 +100,17 @@ export function KeepVignette() {
         <p className="flex items-center gap-1.5 text-[11.5px] text-[var(--muted)]">
           <NotebookPen size={12} /> Note
         </p>
-        <p className="mt-1.5 font-display text-[17px] leading-tight">Enzyme saturation</p>
+        <p className="mt-1.5 font-display text-[17px] leading-tight">Moving out early</p>
         <div className="mt-2 space-y-1.5">
           <div className="h-1.5 w-full rounded-full bg-[var(--surface-subtle)]" />
           <div className="h-1.5 w-4/5 rounded-full bg-[var(--surface-subtle)]" />
         </div>
       </div>
       <div className="-mt-1 ml-6 mr-[-6px] translate-y-2 rotate-[1.5deg] rounded-[12px] border border-[var(--border)] bg-[var(--surface-strong)] p-3 shadow-[var(--shadow-tight)]">
-        <p className="flex items-center justify-between text-[11.5px] text-[var(--muted)]">
-          <span className="flex items-center gap-1.5">
-            <Layers size={12} className="text-[var(--accent)]" /> Card 3 of 12
-          </span>
-          <RotateCcw size={12} />
+        <p className="flex items-center gap-1.5 text-[11.5px] text-[var(--muted)]">
+          <ListChecks size={12} className="text-[var(--accent)]" /> Checklist
         </p>
-        <p className="mt-1.5 text-[13.5px] font-medium">What happens to the rate once an enzyme is saturated?</p>
+        <p className="mt-1.5 text-[13.5px] font-medium">Email the 60 day notice and keep a copy.</p>
       </div>
       <div className="h-3" />
     </Frame>
@@ -126,9 +121,9 @@ export function CitationVignette() {
   return (
     <Frame className="p-5">
       <p className="text-[14px] leading-[1.75] text-[var(--text)]">
-        Competitive inhibitors raise the apparent Km but leave Vmax unchanged, because enough substrate can still outcompete{" "}
+        Your plan covers the replacement cost of a stolen laptop, minus the $500 deductible, as long as you file within{" "}
         <span className="whitespace-nowrap">
-          them<Cite n={1} active />.
+          30 days<Cite n={1} active />.
         </span>
       </p>
       <div className="relative mt-4 rounded-[14px] border border-[var(--accent-ring)] bg-[var(--background-elevated)] p-4 shadow-[var(--shadow-soft)]">
@@ -136,15 +131,15 @@ export function CitationVignette() {
         <div className="flex items-center justify-between gap-3 text-[12.5px]">
           <span className="flex min-w-0 items-center gap-2 font-medium text-[var(--muted-strong)]">
             <FileText size={14} className="text-[var(--accent)]" />
-            <span className="truncate">Lecture 5, Inhibition.pdf</span>
+            <span className="truncate">Renters insurance.pdf</span>
           </span>
-          <span className="shrink-0 text-[12px] text-[var(--muted)]">Page 7</span>
+          <span className="shrink-0 text-[12px] text-[var(--muted)]">Page 3</span>
         </div>
         <p className="mt-3 text-[13px] leading-[1.7] text-[var(--muted-strong)]">
           <span className="rounded-[3px] bg-[var(--highlight)] px-0.5 text-[var(--text)] [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
-            A competitive inhibitor increases Km without changing Vmax
+            Personal property is covered at replacement cost, less the deductible,
           </span>{" "}
-          since high substrate concentrations can still displace it.
+          when a claim is filed within 30 days of the loss.
         </p>
         <p className="mt-3 text-[12.5px] font-medium text-[var(--accent)]">Open at this passage</p>
       </div>
@@ -154,9 +149,9 @@ export function CitationVignette() {
 
 export function WebVignette() {
   const sources = [
-    { title: "Course schedule, spring term", host: "Your university site" },
-    { title: "Enzyme kinetics, a review", host: "Journal article, 2026" },
-    { title: "Michaelis-Menten explained", host: "Encyclopedia entry" }
+    { title: "Holiday hours and returns", host: "Store help page" },
+    { title: "Price tracker, laptops", host: "Retail listing, this week" },
+    { title: "Laptop buying guide", host: "Consumer review site" }
   ];
   return (
     <Frame className="p-5">
@@ -165,13 +160,13 @@ export function WebVignette() {
         Searched the web
       </div>
       <p className="mt-3 text-[14px] leading-[1.75] text-[var(--text)]">
-        The final exam moved to{" "}
+        Returns are open until{" "}
         <span className="whitespace-nowrap">
-          May 14<Cite n={1} />,
+          January 15<Cite n={1} />,
         </span>{" "}
-        and the newest review agrees with your lecture on{" "}
+        and the model you saved dropped $120 this{" "}
         <span className="whitespace-nowrap">
-          saturation<Cite n={2} />.
+          week<Cite n={2} />.
         </span>
       </p>
       <div className="mt-4 grid gap-2">
@@ -195,20 +190,20 @@ export function TransformVignette() {
   const actions = [
     { icon: <BookOpen size={13} />, label: "Summarize" },
     { icon: <NotebookPen size={13} />, label: "Make notes" },
-    { icon: <Layers size={13} />, label: "Make a deck", active: true },
-    { icon: <ListChecks size={13} />, label: "Quiz me" }
+    { icon: <Mail size={13} />, label: "Draft a reply", active: true },
+    { icon: <ListChecks size={13} />, label: "Make a checklist" }
   ];
   return (
     <Frame className="p-5">
       <div className="flex items-center gap-2 text-[12.5px] text-[var(--muted)]">
         <FileText size={14} />
-        Lecture 4, Enzymes.pdf
+        Landlord email.pdf
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {actions.map((action) => (
           <span
             key={action.label}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium ${
+            className={`inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-[12.5px] font-medium ${
               action.active
                 ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--on-accent)]"
                 : "border-[var(--border)] bg-[var(--background-elevated)] text-[var(--muted-strong)]"
@@ -219,26 +214,12 @@ export function TransformVignette() {
           </span>
         ))}
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface-strong)] p-3">
-          <p className="text-[11.5px] text-[var(--muted)]">Front</p>
-          <p className="mt-1 text-[13px] font-medium leading-snug">What does Km tell you about an enzyme?</p>
-        </div>
-        <div className="rounded-[12px] border border-[var(--border)] bg-[var(--background-elevated)] p-3">
-          <p className="text-[11.5px] text-[var(--muted)]">Back</p>
-          <p className="mt-1 text-[13px] leading-snug text-[var(--muted-strong)]">How much substrate it needs to reach half its top speed.</p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-[12px] text-[var(--muted)]">
-          <span className="flex items-center gap-1.5">
-            <Wand2 size={12} className="text-[var(--accent)]" /> Review today
-          </span>
-          <span>8 of 12</span>
-        </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-subtle)]">
-          <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
-        </div>
+      <div className="mt-4 rounded-[12px] border border-[var(--border)] bg-[var(--surface-strong)] p-3">
+        <p className="text-[11.5px] text-[var(--muted)]">Draft</p>
+        <p className="mt-1 text-[13px] leading-[1.6] text-[var(--text)]">
+          Thanks for confirming the carpet charge is waived. I will send my 60 day notice by Friday and can schedule the inspection any
+          weekday after the 20th.
+        </p>
       </div>
     </Frame>
   );
@@ -253,11 +234,11 @@ export function StyleVignette() {
       <p className="mt-4 text-[11.5px] text-[var(--muted)]">A week later, in a new chat</p>
       <div className="mt-2 rounded-[12px] border border-[var(--border)] bg-[var(--background-elevated)] p-3.5">
         <ul className="list-disc space-y-1 pl-4 text-[13px] leading-[1.6] text-[var(--text)] marker:text-[var(--muted)]">
-          <li>Glycolysis happens in the cytoplasm</li>
-          <li>Net gain: 2 ATP, 2 NADH</li>
-          <li>No oxygen needed</li>
+          <li>Book the flight on Tuesday</li>
+          <li>Carry-on only fits the cheaper fare</li>
+          <li>Window seats are still open</li>
         </ul>
-        <p className="mt-2 text-[13px] leading-[1.6] text-[var(--muted-strong)]">Why it matters: it is the first step whether or not oxygen is around.</p>
+        <p className="mt-2 text-[13px] leading-[1.6] text-[var(--muted-strong)]">Why: Tuesday fares are $60 lower for your dates.</p>
       </div>
     </Frame>
   );

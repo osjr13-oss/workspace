@@ -327,7 +327,7 @@ async function researchReply(req, res, body, gpt) {
   } else if (v.stage === "research_draft") {
     answer = { answer: "UNREVIEWED_DRAFT Applications close on 30 November 2026 [1]. Everyone qualifies. The grant pays $9000." };
   } else if (v.stage === "research_action") {
-    answer = v.input.action === "create_flashcards" ? { deck_name: "Agency program", cards: [{ front: "When do applications close?", back: "30 November 2026" }] } : { title: "Agency program research" };
+    answer = { title: "Agency program research" };
   } else {
     const source = v.input.evidence.find((s) => s.evidenceKind === "page");
     const marker = source?.marker || "1";

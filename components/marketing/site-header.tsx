@@ -16,12 +16,8 @@ export function SiteHeader() {
 
   const links = [
     { href: onHome ? "#how" : "/#how", label: "How it works" },
-    { href: onHome ? "#features" : "/#features", label: "Features" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/guides", label: "Guides" },
-    { href: "/changelog", label: "Changelog" }
+    { href: onHome ? "#features" : "/#features", label: "Features" }
   ];
-  const waitlistHref = onHome ? "#waitlist" : "/signup";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -73,11 +69,8 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/signin" className="btn-ghost btn-sm">
+          <Link href="/signin" className="btn-primary btn-sm">
             Sign in
-          </Link>
-          <Link href={waitlistHref} className="btn-primary btn-sm">
-            Join the waitlist
           </Link>
         </div>
         <button
@@ -106,12 +99,9 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <Link href="/signin" className="btn-secondary" onClick={() => setOpen(false)}>
+          <div className="mt-5 grid gap-3">
+            <Link href="/signin" className="btn-primary" onClick={() => setOpen(false)}>
               Sign in
-            </Link>
-            <Link href={waitlistHref} className="btn-primary" onClick={() => setOpen(false)}>
-              Join the waitlist
             </Link>
           </div>
         </div>

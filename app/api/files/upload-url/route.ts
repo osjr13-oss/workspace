@@ -3,7 +3,7 @@ import { IMAGE_EXTENSIONS } from "@/lib/ocr";
 import { serializeError } from "@/lib/serialize-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
-import { assertFileSizeLimit, getUserLimits } from "@/lib/tier";
+import { assertUploadSize } from "@/lib/limits";
 
 export const runtime = "nodejs";
 
@@ -32,9 +32,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unsupported file type. Upload a PDF, DOCX, TXT, Markdown, or image file." }, { status: 415 });
     }
 
-    const limits = await getUserLimits(supabase, user.id);
-    const sizeError = assertFileSizeLimit(size, limits);
-    if (sizeError) return NextResponse.json({ error: sizeError, code: "plan_limit" }, { status: 403 });
+    const sizeError = assertUploadSize(size);
+    if (sizeError) return NextResponse.json({ error: sizeError }, { status: 413 });
 
     if (projectId) {
       const { data: project, error: projectError } = await supabase

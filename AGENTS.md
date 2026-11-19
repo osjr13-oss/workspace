@@ -14,19 +14,20 @@ The owner is non-technical (stated 2026-11-05). Explain everything in plain lang
 
 ## Product contract
 
-- Selrano is a production AI workspace at `https://selrano.com` for projects, notes, private file uploads, project-aware chat, flashcards, study review, and Stripe billing.
-- Selrano is also an adaptive personal AI. It learns durable facts and writing preferences over time while keeping the Selrano brand across the product, domain, and email.
-- Position Selrano as a calm materials workspace: source files, notes, grounded chat, review, and transformations together. Do not make the product revolve entirely around flashcards or frame it as a Quizlet competitor; flashcards are one useful output inside the broader workspace.
+- Selrano is a **private personal AI for the owner** (owner decision, 2026-11-19), at `https://selrano.com`: projects, notes, private file uploads, grounded project-aware chat with citations, web search, memory, transformations, and an opt-in weekly summary email. The public student product (flashcards, study mode, plans, billing, waitlist, public deck links, referrals) is retired; the old code is in git history before this change.
+- Direction: build the consumer features the big AI labs are not shipping as they move toward enterprise. Do not try to recreate a general ChatGPT or Claude clone. Selrano learns durable facts and writing preferences over time.
+- **Private by default.** Only emails on `ALLOWED_EMAILS` (a Cloudflare Worker secret, comma-separated; `lib/access.ts`) can use the app or API; an empty list lets nobody in. Supabase sign-ups stay off; the owner creates extra accounts in Supabase and adds them to the list. Open pages are only `/`, `/signin`, `/reset-password`, `/auth/*` and the legal pages (`isOpenPath`); middleware sends everything else to sign in and signs out accounts that are not allowed, and `getAuthenticatedUser` treats them as signed out. Nothing is indexed: `robots.txt` disallows all, every page carries `noindex`, and the Worker adds `X-Robots-Tag: noindex, nofollow`. Do not add public pages, sign-up, pricing, sharing, or anything crawlable without the owner asking.
+- The landing page keeps the editorial design but sells nothing: no pricing, plans, waitlist, or student copy. Its examples are everyday personal material.
 - Avoid generic emoji-style visual language in product and marketing UI. Prefer restrained copy, real UI structure, and intentional iconography only where it clarifies an action or navigation.
 - Follow `DESIGN_SYSTEM.md` for all UI (editorial calm, shipped 2026-11-04): warm paper surfaces, the logo navy `#1b2d50` as the only accent, Newsreader for titles, Inter for interface text, and plain-text labels. Check `design-qa.md` before shipping UI changes.
 - No pill badges or status patches (owner decision, 2026-11-05): no small rounded labels such as "New", "Founding price", "Coming soon", "Beta", or counts and statuses in a capsule, in marketing or in the app. Use plain text instead.
-- Do not market exact AI message allowances on public pricing or acquisition pages. Authenticated billing may show a user's current usage and plan limit for transparency.
-- There are no product feature flags. If a capability is present in the interface or changelog, it must be usable in production.
-- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, create notes, or create flashcard decks, then stream the final response.
+- There are no plans, quotas, or billing. Uploads have one fixed cap (`lib/limits.ts`, 100 MB). Abuse rate limits in `lib/rate-limit.ts` stay.
+- There are no product feature flags. If a capability is present in the interface, it must be usable in production.
+- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, or create notes, then stream the final response.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
-- Never expose `SUPABASE_SERVICE_ROLE_KEY`, Stripe secrets, OpenAI and Groq keys, Resend keys, customer content, or browser-session data.
-- OpenAI GPT is the primary chat model and Groq is the fallback (owner decision 2026-10-21; it replaced Claude Haiku). Background work, transformations, flashcards, and OCR remain on Groq. Do not add another provider without asking.
-- Selrano's pages are public again (owner decision, 2026-10-21) and marketing pages are indexed, but sign-ups stay closed (Supabase setting off; `/signup` says so and offers the waitlist). The 2026-10-13 private allowlist is removed. App pages stay behind sign-in (middleware) and API routes behind `getAuthenticatedUser`.
+- Never expose `ALLOWED_EMAILS`, `SUPABASE_SERVICE_ROLE_KEY`, OpenAI and Groq keys, Resend keys, customer content, or browser-session data.
+- OpenAI GPT is the primary chat model and Groq is the fallback (owner decision 2026-10-21; it replaced Claude Haiku). Background work, transformations, and OCR remain on Groq. Do not add another provider without asking.
+- Email: the only recurring email is the opt-in weekly summary (`lib/lifecycle-emails.ts`), sent to allowed accounts. No welcome, tip, or marketing email. Password resets come from Supabase Auth.
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
 - There is no support page, form, or inbox (removed 2026-10-08). Do not link to `/support` or print a support email address; the legal pages say a contact channel will be published.
 - Owner preference (2026-10-21): push completed changes without asking again. The owner handles post-push deployment verification unless requested.
@@ -48,15 +49,15 @@ rg -n '\x{2014}' app components lib
 git diff --check
 ```
 
-After pushing `main`, confirm the matching Cloudflare release (Workers Builds deploys `main` automatically, verified 2026-11-18; deploy manually per `docs/CLOUDFLARE.md` only if it is missing). Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq (see `docs/HANDOFF.md`, "Tests"); CI runs it on every push to `main` since 2026-11-18, but run it yourself before pushing chat changes so failures never reach production.
+After pushing `main`, confirm the matching Cloudflare release (Workers Builds deploys `main` automatically, verified 2026-11-18; deploy manually per `docs/CLOUDFLARE.md` only if it is missing). Confirm the GitHub Actions run passes, then smoke-test the affected customer journey on `https://www.selrano.com`. `npm run test:e2e` runs the app against fake Supabase, OpenAI and Groq, with `ALLOWED_EMAILS` set to the fake test account (see `docs/HANDOFF.md`, "Tests"); CI runs it on every push to `main` since 2026-11-18, but run it yourself before pushing chat changes so failures never reach production.
 
 ## Important paths
 
 - `app/api/ai/chat/route.ts` — authentication, quota reservation, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
 - `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
-- `app/page.tsx` and `components/marketing/*` — the landing page, shared public header, hero demo, illustrations, and waitlist form. `DESIGN_SYSTEM.md` describes the tokens and primitives.
-- `app/api/waitlist/route.ts` — public waitlist sign-up while accounts are closed (stores into `pro_waitlist`, source `signup_waitlist`).
-- `app/(marketing)` and `app/(legal)` — public pages with the wide and reading layouts.
+- `app/page.tsx` and `components/marketing/*` — the landing page, shared public header, hero demo, and illustrations. `DESIGN_SYSTEM.md` describes the tokens and primitives.
+- `lib/access.ts` and `middleware.ts` — the private allowlist and the list of open pages.
+- `app/(legal)` — the open legal pages (reading layout).
 - `lib/upload-file.ts` — the browser side of file uploads (signed resumable upload, then server extraction), used by Files and chat attachments.
 - `lib/ai.ts` and `lib/openai.ts` — OpenAI-first chat streaming (Responses API, `store: false`) with Groq fallback; Groq completion and structured output for other AI work.
 - `lib/groq.ts` — Groq Chat Completions: SSE parsing, tool-call transport, recovery from malformed tool-call output, the model list (main, fallback, background) with a guard for shut-down models, and rate-limit handling (next model at once, short waits honored).
@@ -70,11 +71,11 @@ After pushing `main`, confirm the matching Cloudflare release (Workers Builds de
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable fact extraction, historical backfill (background, at most once a day), explicit recall, and relevance ranking.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.
-- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — opted-in tips, weekly workspace check-ins, deduplication, and failure recovery.
+- `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — the opt-in weekly summary, deduplicated per week, with failure recovery.
 - `app/(app)/files/page.tsx` and `app/api/files/*` — signed TUS upload plus server-side extraction.
 - `supabase/migrations/20260710214928_reconcile_launch_contracts.sql` — production ownership, quota, RPC, email-default, grant, and index reconciliation.
 - `supabase/migrations/20260724000000_selrano_personalization.sql` — style profiles and content memories. The live tables currently exist even though this migration is not in tracked production migration history.
-- `docs/SETUP.md`, `docs/OPERATIONS.md`, `docs/BILLING.md` — service setup and operating runbooks.
+- `docs/SETUP.md`, `docs/OPERATIONS.md` — service setup and operating runbooks. `docs/BILLING.md` is retired.
 
 ## Database caution
 

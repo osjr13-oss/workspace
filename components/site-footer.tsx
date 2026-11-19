@@ -7,31 +7,20 @@ const columns = [
     title: "Product",
     links: [
       { href: "/#how", label: "How it works" },
-      { href: "/#features", label: "Features" },
-      { href: "/pricing", label: "Pricing" },
-      { href: brand.urls.changelog, label: "Changelog" }
-    ]
-  },
-  {
-    title: "Learn",
-    links: [
-      { href: "/guides", label: "Guides" },
-      { href: brand.urls.security, label: "Security" }
+      { href: "/#features", label: "Features" }
     ]
   },
   {
     title: "Legal",
     links: [
       { href: brand.urls.privacy, label: "Privacy" },
-      { href: brand.urls.terms, label: "Terms" }
+      { href: brand.urls.terms, label: "Terms" },
+      { href: brand.urls.security, label: "Security" }
     ]
   },
   {
     title: "Account",
-    links: [
-      { href: "/signin", label: "Sign in" },
-      { href: "/signup", label: "Join the waitlist" }
-    ]
+    links: [{ href: "/signin", label: "Sign in" }]
   }
 ] as const;
 
@@ -39,11 +28,11 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-[var(--border)]">
       <div className="mx-auto max-w-6xl px-5 pb-10 pt-14 sm:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.3fr_repeat(4,1fr)]">
+        <div className="grid gap-10 md:grid-cols-[1.3fr_repeat(3,1fr)]">
           <div className="max-w-xs">
             <SelranoLogo />
             <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-              A calm AI workspace for your own notes, files, and research.
+              A private personal AI for your own notes, files, and research.
             </p>
           </div>
           {columns.map((column) => (

@@ -13,9 +13,9 @@ export default {
       return Response.redirect(url.toString(), 308);
     }
     const response = await app.fetch(request, env, ctx);
-    if (!url.hostname.endsWith(".workers.dev")) return response;
+    // Selrano is private: every response asks search engines not to index it.
     const unlisted = new Response(response.body, response);
-    unlisted.headers.set("X-Robots-Tag", "noindex");
+    unlisted.headers.set("X-Robots-Tag", "noindex, nofollow");
     return unlisted;
   },
   async scheduled(event, env) {

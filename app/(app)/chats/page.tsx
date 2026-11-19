@@ -4,7 +4,7 @@ import type { ResearchMetadata } from "@/lib/types";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown, Check, Globe2, Layers, ListChecks, MoreHorizontal, NotebookPen, Pencil, Trash2, X } from "lucide-react";
+import { ArrowDown, Check, Globe2, ListChecks, Mail, MoreHorizontal, NotebookPen, Pencil, Trash2, X } from "lucide-react";
 import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
@@ -25,8 +25,8 @@ const MAX_ATTACHMENTS = 4;
 
 const STARTERS = [
   { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on.", Icon: NotebookPen },
-  { title: "Quiz me", prompt: "Quiz me on what I have been studying. Ask one question at a time.", Icon: ListChecks },
-  { title: "Make flashcards", prompt: "Turn my latest notes into a flashcard deck.", Icon: Layers },
+  { title: "Plan my week", prompt: "Help me plan my week. Ask me what I have coming up first.", Icon: ListChecks },
+  { title: "Draft a reply", prompt: "Help me draft a reply to a message. I will paste it next.", Icon: Mail },
   { title: "What changed today", prompt: "What are the most important news stories today?", Icon: Globe2 }
 ];
 

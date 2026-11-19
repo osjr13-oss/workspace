@@ -46,10 +46,6 @@ export async function groqRequests(): Promise<Array<Record<string, any>>> {
   return (await fetch(`${GROQ}/__requests`)).json();
 }
 
-export async function setQuota(allow: boolean) {
-  await fetch(`${SUPABASE}/__quota?allow=${allow}`);
-}
-
 /** Makes the mock Supabase report the signed-in account under another email. */
 export async function setUserEmail(email: string) {
   await fetch(`${SUPABASE}/__user?email=${encodeURIComponent(email)}`);

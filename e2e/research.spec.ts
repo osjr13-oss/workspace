@@ -56,14 +56,6 @@ test.describe("research evidence contract", () => {
     expect((await requests()).filter((r: any) => r.path.endsWith("/contents"))).toHaveLength(1);
   });
 
-  test("research flashcard output stays on Groq and does not repeat retrieval", async () => {
-    const result = await runResearch({ assessment: { ...assessment, action: "create_flashcards" }, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {} });
-    expect(result.action?.name).toBe("create_flashcards");
-    const stages = await requests("research");
-    expect(stages.find((r: any) => r.stage === "research_action").provider).toBe("groq");
-    expect((await requests()).filter((r: any) => r.path.endsWith("/search"))).toHaveLength(1);
-  });
-
   for (const supported of [true, false]) test(`incomplete review falls back once and ${supported ? "retains supported points" : "rejects unsupported points"}`, async () => {
     await control({ gptReviewInvalidJson: true, review: { answer: [{ text: "Applications close on 30 November 2026.", evidence: [{ marker: "1", quote: supported ? "Applications close on 30 November 2026." : "Applications close on 99 November 2026." }] }], limitations: [] } });
     const result = await run();
@@ -454,7 +446,6 @@ test.describe("research chat experience", () => {
     await expect(response.locator("a.citation-badge").first()).toBeVisible();
     const saved = (await tableRows("chat_messages")).find((m) => m.role === "assistant");
     expect(saved?.research.status).toBe("limited");
-    expect((await (await fetch("http://localhost:54321/__quota-reservations")).json()).count).toBe(1);
     await page.reload();
     await expect(page.getByLabel("Research limitations")).toContainText("not supported");
     await expect(response.getByText("Sources", { exact: true })).toHaveCount(0);
