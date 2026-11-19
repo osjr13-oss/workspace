@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
+import { GoogleConnection } from "@/components/google-connection";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
@@ -113,6 +114,8 @@ export default function SettingsPage() {
         </button>
         {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
       </form>
+
+      <GoogleConnection />
 
       <section className="panel p-6">
         <h2 className="text-base font-semibold tracking-[-0.01em]">Weekly summary</h2>

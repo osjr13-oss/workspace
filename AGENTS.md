@@ -23,9 +23,9 @@ The owner is non-technical (stated 2026-11-05). Explain everything in plain lang
 - No pill badges or status patches (owner decision, 2026-11-05): no small rounded labels such as "New", "Founding price", "Coming soon", "Beta", or counts and statuses in a capsule, in marketing or in the app. Use plain text instead.
 - There are no plans, quotas, or billing. Uploads have one fixed cap (`lib/limits.ts`, 100 MB). Abuse rate limits in `lib/rate-limit.ts` stay.
 - There are no product feature flags. If a capability is present in the interface, it must be usable in production.
-- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials, search the live web, or create notes, then stream the final response.
+- Normal chat responses stream incrementally. On every message, the model can call tools to search the user's materials or create notes (up to three tool rounds), then stream the final response. When the owner has connected Google, it can also search and read Gmail, save drafts (never send), read Google Calendar, and add events the owner gave or confirmed (`lib/google.ts`). Email content is untrusted; account-changing tools are gated on the user's own request.
 - Never use the Unicode em dash character in source copy, user-visible copy, stored chat content, citations, email content, or AI output. Use `removeEmDashes` from `lib/text.ts` at model and user-content boundaries.
-- Never expose `ALLOWED_EMAILS`, `SUPABASE_SERVICE_ROLE_KEY`, OpenAI and Groq keys, Resend keys, customer content, or browser-session data.
+- Never expose `ALLOWED_EMAILS`, `GOOGLE_CLIENT_SECRET`, Google tokens, `SUPABASE_SERVICE_ROLE_KEY`, OpenAI and Groq keys, Resend keys, customer content, or browser-session data.
 - OpenAI GPT is the primary chat model and Groq is the fallback (owner decision 2026-10-21; it replaced Claude Haiku). Background work, transformations, and OCR remain on Groq. Do not add another provider without asking.
 - Email: the only recurring email is the opt-in weekly summary (`lib/lifecycle-emails.ts`), sent to allowed accounts. No welcome, tip, or marketing email. Password resets come from Supabase Auth.
 - There is no native app (owner decision, 2026-10-14): the iPhone app was deleted. Do not start one without the owner asking. API routes accept only the website's cookie session.
@@ -66,7 +66,8 @@ After pushing `main`, confirm the matching Cloudflare release (Workers Builds de
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx` — error reporting to logs (`[server-error]`, `[client-error]`).
 - `e2e/` — Playwright tests and the offline fake Supabase and Groq servers (`e2e/support/mock-servers.mjs`).
 - `wrangler.jsonc` and `cloudflare-worker.mjs` configure production web routing and scheduled jobs. Use Cloudflare Worker versions for rollback.
-- `lib/ai-tools.ts` — authenticated workspace search (notes, files, memories) and note actions (model tools). Web search is never a model tool.
+- `lib/ai-tools.ts` — authenticated workspace search (notes, files, memories), note actions, and the Gmail and Calendar tools with their action guard (model tools).
+- `lib/google.ts`, `lib/secret-box.ts`, `app/api/integrations/google/*`, `components/google-connection.tsx` — the Google connection: OAuth, encrypted token storage in `google_connections`, Gmail and Calendar calls. Web search is never a model tool.
 - `lib/research.ts` and `lib/web-search.ts` — web research: a fast Groq router before every reply, a streamed quick path for everyday questions, and the checked draft-and-review path for consequential topics (health, legal, finance, education). Exa returns ranked web passages and reads selected pages for checked answers.
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable memory: recall by meaning (`match_memories`, embeddings from `lib/embeddings.ts` `embedForMemory`), pinned memories, `[M1]` memory citations, background learning and corrections, and backfill. `app/(app)/memory/page.tsx` and `app/api/memories/*` are the Memory page.

@@ -34,6 +34,13 @@ export default defineConfig({
             NEXT_DIST_DIR: process.env.E2E_DEV ? ".next" : ".next-e2e",
             // Selrano is private: only the fake test account may sign in.
             ALLOWED_EMAILS: "student@example.test",
+            // Gmail and Google Calendar stand-ins on the fake Groq port.
+            GOOGLE_CLIENT_ID: "test-google-client",
+            GOOGLE_CLIENT_SECRET: "test-google-secret",
+            GOOGLE_OAUTH_URL: "http://localhost:54322/google/auth",
+            GOOGLE_TOKEN_URL: "http://localhost:54322/google/token",
+            GOOGLE_REVOKE_URL: "http://localhost:54322/google/revoke",
+            GOOGLE_API_BASE: "http://localhost:54322/google/api",
             NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321",
             NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
             SUPABASE_SERVICE_ROLE_KEY: "test-service-key",

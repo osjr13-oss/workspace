@@ -82,6 +82,17 @@ Redeploy after adding these, then check it works: sign up with a new account and
 
 ---
 
+## Step 4b - Gmail and Google Calendar (optional)
+
+Lets the owner connect Google in **Settings > Connected accounts**. Selrano reads mail and the calendar, saves drafts (never sends) and adds events the owner confirms. No Google verification is needed for a personal app; the owner clicks through Google's "unverified app" screen once.
+
+1. At **console.cloud.google.com**, create a project (for example "Selrano").
+2. **APIs & Services > Library**: enable **Gmail API** and **Google Calendar API**.
+3. **Google Auth Platform** (OAuth consent screen): choose **External**, app name Selrano, the owner's email for support and developer contact. Under **Data Access**, add the scopes `gmail.readonly`, `gmail.compose` and `calendar.events`. Under **Audience**, click **Publish app** so it is "In production" (apps left in Testing lose access every 7 days).
+4. **Clients > Create client**: type **Web application**, authorized redirect URI `https://www.selrano.com/api/integrations/google/callback`.
+5. Copy the client ID and secret into the Worker as secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (**Workers & Pages > selrano > Settings > Variables and Secrets**).
+6. Apply `supabase/migrations/20261120000000_google_connections.sql` in the Supabase SQL Editor.
+
 ## Step 5 - Optional later
 
 - **Supabase custom SMTP** - branded password-reset emails (Resend SMTP in Supabase auth settings). See `docs/OPERATIONS.md`.
