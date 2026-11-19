@@ -2,6 +2,10 @@
 
 Last updated: **November 19, 2026**
 
+## Eastern Time everywhere the model looks (November 19)
+
+Owner decision: "make the model stop using UTC. Only EST for now." `lib/time.ts` fixes the owner's clock at `America/New_York` (EST in winter, EDT in summer) with `ownerToday`, `ownerDaysAgo`, `ownerMonthStart` and `ownerNow`. The chat system prompt now says "It is now <weekday, date, time> Eastern Time. Use Eastern Time for every date and time, never UTC." The research router, quick answers and checked research use the Eastern date; money tool defaults and the Money page's "this month" and "last month" start on the 1st in Eastern Time; Google tools and the Google note use Eastern Time whatever the calendar's own setting (`time_zone` is still stored). The weekly summary's dedup key and dates on web sources are unchanged. `e2e/gpt.spec.ts` now expects `tool_choice: "auto"` after a tool round (multi-round tools), which had made that test fail since the Gmail release.
+
 ## Account questions: no clarifying, no retracting, real "remember" (November 19)
 
 From the owner's first real-bank test ("how much did I spend this month?"):

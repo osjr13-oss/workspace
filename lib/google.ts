@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { openSecret, sealSecret } from "@/lib/secret-box";
 import { removeEmDashes } from "@/lib/text";
+import { OWNER_TIME_ZONE } from "@/lib/time";
 
 /**
  * Google account connection (Gmail and Google Calendar) for the private owner.
@@ -152,7 +153,8 @@ export async function getGoogleConnection(userId: string): Promise<GoogleConnect
     return cached;
   };
 
-  return { email: row.email, timeZone: row.time_zone || "UTC", accessToken };
+  // The owner's clock is Eastern Time for now, whatever the calendar's own setting says.
+  return { email: row.email, timeZone: OWNER_TIME_ZONE, accessToken };
 }
 
 export async function disconnectGoogle(userId: string) {

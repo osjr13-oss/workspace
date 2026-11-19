@@ -4,6 +4,7 @@ import { isPlaidConfigured, plaidEnvironment, syncAllIfStale } from "@/lib/plaid
 import { serializeError } from "@/lib/serialize-error";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { ownerMonthStart } from "@/lib/time";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -21,9 +22,8 @@ export async function GET() {
 
     await syncAllIfStale(user.id);
 
-    const today = new Date();
-    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10);
-    const lastMonthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1)).toISOString().slice(0, 10);
+    const monthStart = ownerMonthStart();
+    const lastMonthStart = ownerMonthStart(-1);
 
     const admin = createSupabaseAdminClient();
     const [items, accounts, transactions] = await Promise.all([

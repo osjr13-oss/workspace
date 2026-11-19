@@ -39,7 +39,8 @@ test.describe("OpenAI chat", () => {
     await expect(page.locator('article[aria-label="Selrano response"]')).toContainText("together.", { timeout: 25000 });
     const requests = await (await fetch("http://localhost:54322/__gpt_requests")).json();
     expect(requests).toHaveLength(2);
-    expect(requests[1].tool_choice).toBe("none");
+    // After a tool round the model may look something else up (up to three rounds), so tools stay available.
+    expect(requests[1].tool_choice).toBe("auto");
     const continuation = requests[1].input;
     expect(continuation).toContainEqual({ type: "reasoning", id: "rs_1", summary: [], encrypted_content: "PRIVATE_REASONING" });
     expect(continuation.at(-1)).toMatchObject({ type: "function_call_output", call_id: "call_1" });

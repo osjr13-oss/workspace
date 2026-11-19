@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ownerDaysAgo, ownerMonthStart, ownerToday } from "@/lib/time";
 
 /**
  * Reading the owner's synced finance data (plaid_accounts, plaid_transactions)
@@ -122,8 +123,8 @@ export function summarize(transactions: TransactionRow[]) {
 
 /** Spending by category and income between two dates. */
 export async function spendingSummaryText(supabase: SupabaseClient, userId: string, startRaw: string, endRaw: string) {
-  const today = new Date().toISOString().slice(0, 10);
-  const start = isoDate(startRaw, today.slice(0, 8) + "01");
+  const today = ownerToday();
+  const start = isoDate(startRaw, ownerMonthStart());
   const end = isoDate(endRaw, today);
   const transactions = await transactionsBetween(supabase, userId, start, end);
   if (!transactions.length) return `No transactions between ${start} and ${end}.`;
@@ -140,8 +141,8 @@ export async function findTransactionsText(
   userId: string,
   args: { query?: string; category?: string; start?: string; end?: string; min_amount?: number }
 ) {
-  const today = new Date().toISOString().slice(0, 10);
-  const start = isoDate(args.start || "", new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10));
+  const today = ownerToday();
+  const start = isoDate(args.start || "", ownerDaysAgo(90));
   const end = isoDate(args.end || "", today);
   const query = (args.query || "").trim().toLowerCase();
   const category = (args.category || "").trim().toLowerCase();
