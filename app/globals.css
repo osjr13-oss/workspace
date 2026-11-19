@@ -211,21 +211,20 @@ select {
   color: var(--text);
 }
 
+/* New chat: the first row of the sidebar, in the accent color, without a filled button. */
 .side-item-strong {
-  background: var(--accent);
-  color: var(--on-accent);
+  color: var(--accent);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(27, 45, 80, 0.2), 0 6px 14px -8px rgba(27, 45, 80, 0.5);
 }
 
 .side-item-strong svg,
 .side-item-strong:hover svg {
-  color: var(--on-accent);
+  color: var(--accent);
 }
 
 .side-item-strong:hover {
-  background: var(--accent-hover);
-  color: var(--on-accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .side-item-active {
@@ -582,24 +581,26 @@ select {
   background: var(--surface-subtle);
 }
 
+/* Suggestions under the empty-chat composer: quiet one-line rows. */
 .starter-card {
   display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  padding: 13px 15px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--muted-strong);
+  font-size: 14px;
+  font-weight: 500;
   text-align: left;
-  box-shadow: 0 1px 2px rgba(40, 36, 28, 0.04);
-  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  transition: background 140ms ease, color 140ms ease;
 }
 
 .starter-card:hover,
 .starter-card:focus-visible {
   outline: none;
-  border-color: var(--accent-ring);
-  background: var(--surface-strong);
-  box-shadow: var(--shadow-tight);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border);
 }
 
 .user-bubble {
@@ -1056,6 +1057,89 @@ article[aria-label="Your message"] .message-actions:focus-within {
   .thinking-orbit-arc,
   .thinking-orbit-dot {
     animation-duration: 4s;
+  }
+}
+
+/* Waiting line: a small mark of three drifting dots and one shimmering word. */
+.thinking-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--muted-strong);
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.thinking-mark {
+  flex-shrink: 0;
+  overflow: visible;
+  color: var(--accent);
+  animation: selrano-mark-turn 7s linear infinite;
+}
+
+.thinking-mark-dot {
+  fill: currentColor;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: selrano-mark-drift 1.5s ease-in-out infinite;
+}
+
+.thinking-mark-b {
+  animation-delay: 0.18s;
+}
+
+.thinking-mark-c {
+  animation-delay: 0.36s;
+}
+
+.thinking-word {
+  background: linear-gradient(100deg, var(--muted) 30%, var(--text) 50%, var(--muted) 70%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    selrano-shimmer 2.2s linear infinite,
+    selrano-word-in 0.35s ease-out;
+}
+
+@keyframes selrano-mark-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes selrano-mark-drift {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1.5px) scale(1.1);
+  }
+}
+
+@keyframes selrano-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes selrano-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

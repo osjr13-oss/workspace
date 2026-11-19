@@ -136,7 +136,7 @@ test.describe("chat experience", () => {
     expect((await tableRows("chat_threads"))[0].title).toBe("Weekly plan");
 
     await sidebar.getByRole("link", { name: "New chat" }).click();
-    await expect(page.getByText("What are we working on?")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^(Good (morning|afternoon|evening)|Still up)/ })).toBeVisible();
     await expect(page).toHaveURL(/\/chats$/);
 
     await sidebar.getByRole("link", { name: "Weekly plan" }).click();

@@ -150,13 +150,41 @@ export async function POST(request: Request) {
     // Everything the prompt needs is loaded at the same time, including saving
     // the new message. History may or may not already contain that message
     // depending on which finishes first, so it is normalised below.
+    const historyPromise = supabase
+      .from("chat_messages")
+      .select("role, content, research")
+      .eq("thread_id", finalThreadId)
+      .order("created_at", { ascending: false })
+      .limit(HISTORY_ROWS)
+      .then((result) => result);
+    const conversation = (rows: HistoryRow[]) =>
+      buildHistory(
+        rows.map((row) => row.research?.groundingProvider === "google" ? { ...row, content: "[A Google-grounded answer was displayed here. Its content is excluded from automated transformations.]" } : row),
+        isNewMessage ? userContent : null
+      );
+    // The research router only reads the conversation, so without a project it
+    // starts as soon as history arrives instead of waiting for memories and
+    // context. With a project it waits, because it needs to know whether
+    // matching project material was found.
+    const earlyRoute = projectId
+      ? null
+      : historyPromise
+          .then((history) =>
+            assessResearch(
+              [
+                ...(attachments.text ? [{ role: "system" as const, content: "Files the user attached to this message." }] : []),
+                ...conversation((history.data || []) as HistoryRow[])
+              ],
+              AbortSignal.timeout(8_000)
+            )
+          )
+          .then(
+            (value) => ({ ok: true as const, value }),
+            (error: unknown) => ({ ok: false as const, error })
+          );
+
     const [historyResult, context, styleProfile, memories] = await Promise.all([
-      supabase
-        .from("chat_messages")
-        .select("role, content, research")
-        .eq("thread_id", finalThreadId)
-        .order("created_at", { ascending: false })
-        .limit(HISTORY_ROWS),
+      historyPromise,
       loadProjectContext(supabase, projectId, userContent),
       ingestUserStyle(supabase, user.id, userContent),
       retrieveMemories(supabase, user.id, userContent),
@@ -223,7 +251,7 @@ export async function POST(request: Request) {
             }
           ]
         : []),
-      ...buildHistory(((historyResult.data || []) as HistoryRow[]).map((row) => row.research?.groundingProvider === "google" ? { ...row, content: "[A Google-grounded answer was displayed here. Its content is excluded from automated transformations.]" } : row), isNewMessage ? userContent : null)
+      ...conversation((historyResult.data || []) as HistoryRow[])
     ];
 
     const webCitations: Record<string, Citation> = {};
@@ -345,7 +373,13 @@ export async function POST(request: Request) {
         const researchSignal = AbortSignal.timeout(45_000);
         let route: Awaited<ReturnType<typeof assessResearch>> | null = null;
         try {
-          route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]));
+          if (earlyRoute) {
+            const early = await earlyRoute;
+            if (!early.ok) throw early.error;
+            route = early.value;
+          } else {
+            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]));
+          }
         } catch {
           const result = researchFailure(researchSignal.aborted ? "timeout" : "routing_failed");
           research = result.research;

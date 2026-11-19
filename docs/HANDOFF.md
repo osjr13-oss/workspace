@@ -2,6 +2,15 @@
 
 Last updated: **November 19, 2026**
 
+## Faster, calmer chat (November 19)
+
+First pass on the owner's second priority, informed by the owner's screenshots of Claude and ChatGPT (centered greeting with the composer, a small moving mark with one changing word while thinking, a quiet sidebar).
+
+- **Thinking line:** `components/thinking-trace.tsx` replaces the bare spinner with three drifting dots that slowly turn, plus one word with a light passing through it. The word changes every 2.6 seconds (Thinking, Considering, Sifting, Weighing it up, Putting it together); during tool use it shows the tool status instead. Styles are `.thinking-line`, `.thinking-mark` and `.thinking-word` in `app/globals.css`. The root keeps `.thinking-orbit` (no tool) or `.tool-status` (tool) for the existing tests.
+- **Empty chat:** a time-of-day greeting with the owner's first name (from `profiles.full_name`), the composer directly under it, and the four suggestions as quiet one-line rows. The composer moves to the bottom once a conversation starts.
+- **Sidebar:** New chat is now a plain accent-colored row, not a filled navy button.
+- **Speed:** without a project, the research router (`assessResearch`) now starts as soon as the conversation history loads, in parallel with memories, style and attachments, instead of after them. With a project it still waits for project context, because it needs to know whether matching material was found.
+
 ## Memory you can trust (November 19)
 
 Owner priorities after the private switch, in order: memory, then speed and interface polish, then personal finance (statement uploads first, built so a direct bank connection can be added later). This release is memory only.

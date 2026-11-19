@@ -88,6 +88,7 @@ function ChatsContent() {
   // What Selrano is doing while it uses a tool, e.g. Searching the web.
   const [status, setStatus] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
+  const [firstName, setFirstName] = useState("");
 
   const listRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -127,6 +128,13 @@ function ChatsContent() {
       .select("*")
       .order("name")
       .then(({ data }) => setProjects((data as Project[]) || []));
+    void supabase.auth.getUser().then(async ({ data }) => {
+      const user = data.user;
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const name = String(profile?.full_name || user.user_metadata?.full_name || "").trim();
+      setFirstName(name.split(/\s+/)[0] || "");
+    });
     if (threadIdRef.current) void loadMessages(threadIdRef.current);
   }, [loadMessages]);
 
@@ -477,6 +485,25 @@ function ChatsContent() {
 
   const empty = !messages.length && !loadingThread;
 
+  const composer = (
+    <form onSubmit={send} className="mx-auto w-full max-w-[46rem]">
+      <ChatComposer
+        value={text}
+        busy={loading}
+        onChange={setText}
+        onStop={stop}
+        attachments={attachments}
+        onAttach={attach}
+        onRemoveAttachment={(key) => setAttachments((existing) => existing.filter((item) => item.key !== key))}
+        projects={projects}
+        projectId={projectId}
+        onProjectChange={setProjectId}
+        projectLocked={Boolean(threadId)}
+        maxAttachments={MAX_ATTACHMENTS}
+      />
+    </form>
+  );
+
   return (
     <section className="chat-page" aria-busy={loading} data-ai-provider={modelMetadata?.provider} data-ai-model={modelMetadata?.model} data-ai-fallback={modelMetadata?.fallbackReason}>
       <ChatHeader
@@ -488,27 +515,23 @@ function ChatsContent() {
 
       <div ref={listRef} onScroll={onListScroll} className="min-h-0 flex-1 overflow-y-auto">
         {empty ? (
-          <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 py-10 sm:px-6">
-            <h1 className="title-display text-[34px] sm:text-[42px]">What are we working on?</h1>
-            <p className="mt-2 max-w-md text-[15px] leading-6 text-[var(--muted-strong)]">
-              Ask anything. Pick a project or attach files when your own material should guide the answer.
-            </p>
-            <div className="mt-8 grid gap-2.5 sm:grid-cols-2">
+          <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 pb-16 pt-10 sm:px-6">
+            <h1 className="title-display text-center text-[34px] sm:text-[42px]">{greeting(firstName)}</h1>
+            <div className="mt-8">{composer}</div>
+            <div className="mt-4 grid gap-1.5 sm:grid-cols-2">
               {STARTERS.map((starter) => (
                 <button
                   key={starter.title}
                   type="button"
                   className="starter-card"
+                  title={starter.prompt}
                   onClick={() => {
                     setText(starter.prompt);
                     requestAnimationFrame(() => (document.querySelector('[aria-label="Chat message"]') as HTMLTextAreaElement | null)?.focus());
                   }}
                 >
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <starter.Icon size={15} className="text-[var(--accent)]" aria-hidden="true" />
-                    {starter.title}
-                  </span>
-                  <span className="mt-1 line-clamp-2 text-[13px] leading-5 text-[var(--muted)]">{starter.prompt}</span>
+                  <starter.Icon size={15} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                  {starter.title}
                 </button>
               ))}
             </div>
@@ -524,45 +547,29 @@ function ChatsContent() {
                 onRegenerate={regenerate}
               />
             ))}
-            {loading && !replyStarted ? (
-              status ? (
-                <div className="tool-status" role="status" aria-live="polite">
-                  <span className="tool-status-dot" aria-hidden="true" />
-                  {status}
-                </div>
-              ) : (
-                <ThinkingTrace />
-              )
-            ) : null}
+            {loading && !replyStarted ? <ThinkingTrace label={status} /> : null}
           </div>
         )}
       </div>
 
-      <div className="relative px-3 pb-3 sm:px-6 sm:pb-5">
-        {!atBottom && !empty ? (
-          <button type="button" onClick={jumpToLatest} className="jump-button" aria-label="Jump to latest">
-            <ArrowDown size={17} />
-          </button>
-        ) : null}
-        <form onSubmit={send} className="mx-auto w-full max-w-[46rem]">
-          <ChatComposer
-            value={text}
-            busy={loading}
-            onChange={setText}
-            onStop={stop}
-            attachments={attachments}
-            onAttach={attach}
-            onRemoveAttachment={(key) => setAttachments((existing) => existing.filter((item) => item.key !== key))}
-            projects={projects}
-            projectId={projectId}
-            onProjectChange={setProjectId}
-            projectLocked={Boolean(threadId)}
-            maxAttachments={MAX_ATTACHMENTS}
-          />
-        </form>
-      </div>
+      {empty ? null : (
+        <div className="relative px-3 pb-3 sm:px-6 sm:pb-5">
+          {!atBottom ? (
+            <button type="button" onClick={jumpToLatest} className="jump-button" aria-label="Jump to latest">
+              <ArrowDown size={17} />
+            </button>
+          ) : null}
+          {composer}
+        </div>
+      )}
     </section>
   );
+}
+
+function greeting(name: string) {
+  const hour = new Date().getHours();
+  const part = hour < 5 ? "Still up" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return name ? `${part}, ${name}.` : `${part}.`;
 }
 
 function ChatHeader({
