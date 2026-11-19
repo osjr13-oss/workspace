@@ -93,6 +93,17 @@ Lets the owner connect Google in **Settings > Connected accounts**. Selrano read
 5. Copy the client ID and secret into the Worker as secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (**Workers & Pages > selrano > Settings > Variables and Secrets**).
 6. Apply `supabase/migrations/20261120000000_google_connections.sql` in the Supabase SQL Editor.
 
+## Step 4c - Personal finance with Plaid (optional)
+
+Powers the Money page and money questions in chat. Read-only: only the Transactions product is requested. Plaid's free Trial plan allows 10 bank logins (Items) for life; removing one does not free its slot, so test in sandbox first.
+
+1. Create an account at **dashboard.plaid.com** and verify the email.
+2. Apply for the **Trial plan** (Dashboard home, or dashboard.plaid.com/trial-plan). On a Trial, OAuth banks such as Chase need no company profile or security questionnaire.
+3. **Developers > Keys**: copy the client ID and the **Sandbox** secret.
+4. Worker secrets (**Workers & Pages > selrano > Settings > Variables and Secrets**): `PLAID_CLIENT_ID`, `PLAID_SECRET`, and `PLAID_ENV` = `sandbox`. Connect Plaid's test bank on the Money page (user `user_good`, password `pass_good`) to confirm the flow.
+5. Apply `supabase/migrations/20261120120000_plaid_finance.sql` in the Supabase SQL Editor.
+6. To go live: disconnect the test bank, set `PLAID_SECRET` to the **Production** secret and `PLAID_ENV` to `production`, then connect real banks. Sandbox and production data are kept apart by `plaid_items.environment`.
+
 ## Step 5 - Optional later
 
 - **Supabase custom SMTP** - branded password-reset emails (Resend SMTP in Supabase auth settings). See `docs/OPERATIONS.md`.

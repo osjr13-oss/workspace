@@ -2,6 +2,18 @@
 
 Last updated: **November 19, 2026**
 
+## Personal finance with Plaid (November 19)
+
+Owner decision: Plaid, not statement uploads. Starting scope: where money goes (by category), subscriptions and bills, and balances; budgets later. Read-only; Selrano can never move money.
+
+- **Plaid terms checked on plaid.com (November 19):** free Trial plan with real production data, 10 Items (bank logins) for life, removing an Item does not free a slot; Transactions, Balance, Investments and Liabilities are included; on a Trial, OAuth institutions (Chase and others) need no compliance registration or security questionnaire; desktop web OAuth works in a pop-up without a redirect URI. Subscription products start billing only if the account upgrades to a paid plan.
+- **Server:** `lib/plaid.ts` creates Link tokens (Transactions only, 730 days requested, `client_name` Selrano, US), refuses a bank whose institution is already connected before exchanging (a duplicate would spend a Trial slot), exchanges the public token, stores the access token encrypted in `plaid_items` (no browser access), and syncs with `/transactions/sync` (cursor saved only after the last page) plus the accounts that come with it. No webhooks: stale banks (15 minutes) sync when the Money page loads or a chat message arrives (in the background; money tools wait up to 8 seconds for it), and `/api/cron/plaid-sync` runs daily at 12:00 UTC (new Worker cron). `ITEM_LOGIN_REQUIRED` marks the bank for re-sign-in (Link update mode). Recurring payments come from `/transactions/recurring/get` (active outflow streams).
+- **Data:** `plaid_accounts` and `plaid_transactions` are written by the server and readable by their owner (select-own policies). `lib/finance.ts` excludes transfers, income and credit card payments from spending (`isSpending`), and labels Plaid categories.
+- **Chat:** with a bank connected, four read-only tools (`money_summary`, `money_transactions`, `money_accounts`, `money_recurring`), a short system note, and the research router told that questions about the owner's own spending and balances are not web searches.
+- **Money page:** `/money` (sidebar) with spent and income this month versus last month, monthly subscription total, spending by category, accounts by bank with status, subscriptions and bills, recent transactions, connect (Plaid Link script from `cdn.plaid.com`), re-sign-in and disconnect (with a note that a Trial slot is not freed). Sandbox shows a "Test mode" line.
+- **Owner setup:** Plaid account and Trial plan, Worker secrets `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (start with `sandbox`), and the migration `supabase/migrations/20261120120000_plaid_finance.sql`. See `docs/SETUP.md` Step 4c. Privacy policy names Plaid.
+- **Tests:** `e2e/money.spec.ts` (connect, totals and exclusions, encrypted token, subscriptions, chat tools without web search, duplicate bank refused, re-sign-in state, disconnect, no tools without a bank). Fake Plaid on the fake Groq port under `/plaid`; the Plaid Link script is stubbed with `page.route`, which needs `serviceWorkers: "block"` because the app's service worker would fetch the script itself.
+
 ## Gmail and Google Calendar (November 19)
 
 Owner decision: connect Google directly (not general MCP; possible later), with "read, plus drafts and events": read and search mail, read the calendar, save drafts (never send), and add events the owner gave or confirmed. Personal finance comes next and can later use bills and receipts from Gmail.

@@ -18,6 +18,7 @@ import {
   Settings,
   SquarePen,
   Trash2,
+  Wallet,
   X
 } from "lucide-react";
 import { ChatThreadsProvider, groupThreads, useChatThreads } from "@/components/chat-threads";
@@ -29,6 +30,7 @@ const nav = [
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/files", label: "Files", icon: Files },
   { href: "/notes", label: "Notes", icon: BookOpen },
+  { href: "/money", label: "Money", icon: Wallet },
   { href: "/memory", label: "Memory", icon: Brain }
 ];
 

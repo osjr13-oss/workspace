@@ -2,7 +2,8 @@ import { assessResearch, planResearchAction, runQuickResearch, runResearch, rese
 import { EVERYDAY_ANSWER_GUIDE } from "@/lib/chat-guidance";
 import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
-import { executeTool, googleToolDefinitions, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
+import { executeTool, financeToolDefinitions, googleToolDefinitions, toolDefinitions, type ToolContext } from "@/lib/ai-tools";
+import { hasPlaidItems, syncAllIfStale } from "@/lib/plaid";
 import { getGoogleConnection } from "@/lib/google";
 import { configuredAiModel, streamAi, streamChatWithTools } from "@/lib/ai";
 import { extractMemories, maybeBootstrapMemories, retrieveMemories } from "@/lib/content-memory";
@@ -162,6 +163,13 @@ export async function POST(request: Request) {
       console.error("[chat] google connection lookup failed", serializeError(error));
       return null;
     });
+    // Banks connected through Plaid: refresh stale data in the background while the reply starts.
+    const financePromise = hasPlaidItems(user.id).catch(() => false);
+    const financeReady = financePromise.then((connected) => (connected ? syncAllIfStale(user.id) : undefined)).catch(() => undefined);
+    const accountsPromise = Promise.all([googlePromise, financePromise]).then(([connection, finance]) => [
+      ...(connection ? ["Gmail and Google Calendar"] : []),
+      ...(finance ? ["bank and card accounts"] : [])
+    ]);
     const conversation = (rows: HistoryRow[]) =>
       buildHistory(
         rows.map((row) => row.research?.groundingProvider === "google" ? { ...row, content: "[A Google-grounded answer was displayed here. Its content is excluded from automated transformations.]" } : withSourceNote(row)),
@@ -173,15 +181,15 @@ export async function POST(request: Request) {
     // matching project material was found.
     const earlyRoute = projectId
       ? null
-      : Promise.all([historyPromise, googlePromise])
-          .then(([history, google]) =>
+      : Promise.all([historyPromise, accountsPromise])
+          .then(([history, connectedAccounts]) =>
             assessResearch(
               [
                 ...(attachments.text ? [{ role: "system" as const, content: "Files the user attached to this message." }] : []),
                 ...conversation((history.data || []) as HistoryRow[])
               ],
               AbortSignal.timeout(8_000),
-              { connectedAccounts: Boolean(google) }
+              { connectedAccounts }
             )
           )
           .then(
@@ -189,7 +197,7 @@ export async function POST(request: Request) {
             (error: unknown) => ({ ok: false as const, error })
           );
 
-    const [historyResult, context, styleProfile, memories, google] = await Promise.all([
+    const [historyResult, context, styleProfile, memories, google, finance, connectedAccounts] = await Promise.all([
       historyPromise,
       loadProjectContext(supabase, projectId, userContent),
       ingestUserStyle(supabase, user.id, userContent),
@@ -206,8 +214,10 @@ export async function POST(request: Request) {
               replyBoundaryAt = data.created_at;
             })
         : Promise.resolve(),
-      googlePromise
-    ]).then(([history, ctx, style, mem, , connection]) => [history, ctx, style, mem, connection] as const);
+      googlePromise,
+      financePromise,
+      accountsPromise
+    ]).then(([history, ctx, style, mem, , connection, hasFinance, accounts]) => [history, ctx, style, mem, connection, hasFinance, accounts] as const);
 
     const messages = [
       {
@@ -242,6 +252,14 @@ export async function POST(request: Request) {
             }
           ]
         : []),
+      ...(finance
+        ? [
+            {
+              role: "system" as const,
+              content: `The user's bank and card accounts are connected read-only. Today is ${new Date().toISOString().slice(0, 10)}. Use the money tools for questions about their spending, transactions, balances, subscriptions or bills; give exact amounts and dates from the results. You cannot move money.`
+            }
+          ]
+        : []),
       ...(context.text
         ? [
             {
@@ -270,17 +288,18 @@ export async function POST(request: Request) {
     ];
 
     const webCitations: Record<string, Citation> = {};
-    const tools = google ? [...toolDefinitions, ...googleToolDefinitions] : toolDefinitions;
+    const tools = [...toolDefinitions, ...(google ? googleToolDefinitions : []), ...(finance ? financeToolDefinitions : [])];
     const toolCtx: ToolContext = {
       supabase,
       google,
+      financeReady,
       userMessage: userContent,
       userId: user.id,
       projectId,
       webCitations,
       citationOffset: Object.keys(context.citations).length
     };
-    const toolMessages: GroqChatMessage[] = [messages[0], google ? GOOGLE_ACTION_GUIDE : ACTION_GUIDE, ...messages.slice(1)];
+    const toolMessages: GroqChatMessage[] = [messages[0], ACCOUNT_ACTION_GUIDE(Boolean(google), Boolean(finance)), ...messages.slice(1)];
 
     const encoder = new TextEncoder();
     const startedAt = Date.now();
@@ -398,7 +417,7 @@ export async function POST(request: Request) {
             if (!early.ok) throw early.error;
             route = early.value;
           } else {
-            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts: Boolean(google) });
+            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts });
           }
         } catch {
           const result = researchFailure(researchSignal.aborted ? "timeout" : "routing_failed");
@@ -677,10 +696,21 @@ const ACTION_GUIDE = {
     "Tools: search the user's notes and files, create a note. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
-const GOOGLE_ACTION_GUIDE = {
-  role: "system" as const,
-  content: ACTION_GUIDE.content.replace("Tools: search the user's notes and files, create a note.", "Tools: search the user's notes and files, create a note, search and read their Gmail, save Gmail drafts, read and add Google Calendar events.").replace("Use the workspace tools only when the user asks about their own materials or asks you to create something.", "Use the tools only when the user asks about their own materials, email or calendar, or asks you to create something.")
-};
+const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean) =>
+  !google && !finance
+    ? ACTION_GUIDE
+    : {
+        role: "system" as const,
+        content: ACTION_GUIDE.content
+          .replace(
+            "Tools: search the user's notes and files, create a note.",
+            `Tools: search the user's notes and files, create a note${google ? ", search and read their Gmail, save Gmail drafts, read and add Google Calendar events" : ""}${finance ? ", read their bank and card transactions, spending, balances and recurring payments" : ""}.`
+          )
+          .replace(
+            "Use the workspace tools only when the user asks about their own materials or asks you to create something.",
+            "Use the tools only when the user asks about their own materials, email, calendar or money, or asks you to create something."
+          )
+      };
 
 // Groq limits tokens per minute, so every request is kept lean.
 const HISTORY_ROWS = 12;
@@ -811,6 +841,14 @@ function describeToolCall(name: string, args: Record<string, unknown>) {
       return "Checking your calendar";
     case "calendar_add":
       return "Adding to your calendar";
+    case "money_summary":
+      return "Adding up your spending";
+    case "money_transactions":
+      return `Looking through your transactions${quoted(args.query || args.category)}`;
+    case "money_accounts":
+      return "Checking your balances";
+    case "money_recurring":
+      return "Finding your subscriptions and bills";
     default:
       return "Working on it";
   }

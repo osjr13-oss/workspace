@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { searchMemoryText } from "@/lib/content-memory";
+import { accountsText, findTransactionsText, money, spendingSummaryText } from "@/lib/finance";
+import { recurringPayments } from "@/lib/plaid";
 import { createCalendarEvent, draftGmail, listCalendarEvents, readGmail, searchGmail, type GoogleConnection } from "@/lib/google";
 import { searchChunksFullText } from "@/lib/retrieve-context";
 import type { Citation } from "@/lib/types";
@@ -119,6 +121,55 @@ export const googleToolDefinitions = [
   }
 ];
 
+/** Offered only when the owner has a bank connected through Plaid. All read-only. */
+export const financeToolDefinitions = [
+  {
+    type: "function",
+    function: {
+      name: "money_summary",
+      description: "The user's spending by category and income between two dates.",
+      parameters: {
+        type: "object",
+        properties: { start: { type: "string", description: "YYYY-MM-DD" }, end: { type: "string", description: "YYYY-MM-DD" } },
+        required: ["start", "end"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "money_transactions",
+      description: "Find the user's bank and card transactions by merchant text, category, dates or minimum amount.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Merchant or description text" },
+          category: { type: "string", description: "e.g. food, travel, shopping" },
+          start: { type: "string", description: "YYYY-MM-DD" },
+          end: { type: "string", description: "YYYY-MM-DD" },
+          min_amount: { type: "number" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "money_accounts",
+      description: "The user's connected bank, card and savings accounts with balances.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "money_recurring",
+      description: "The user's subscriptions and recurring bills with amounts and next expected dates.",
+      parameters: { type: "object", properties: {} }
+    }
+  }
+];
+
 // Actions that change the user's accounts run only when the user's own message
 // asks for one, so instructions hidden in an email can never trigger them.
 const CONFIRMATION = /\b(?:yes|yeah|yep|sure|ok|okay|confirm(?:ed)?|go ahead|do it|sounds good|correct|that works|perfect)\b/i;
@@ -133,6 +184,8 @@ export type ToolContext = {
   google?: GoogleConnection | null;
   /** The user's current message, used to gate account-changing actions. */
   userMessage?: string;
+  /** Settles once a bank sync started for this message has finished (or given up). */
+  financeReady?: Promise<unknown>;
   userId: string;
   projectId: string | null;
   // Web search results need numbered citation markers, shared across calls so
@@ -148,6 +201,11 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
       return searchWorkspace(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
+    case "money_summary":
+    case "money_transactions":
+    case "money_accounts":
+    case "money_recurring":
+      return runFinanceTool(name, args, ctx);
     case "gmail_search":
     case "gmail_read":
     case "gmail_draft":
@@ -233,5 +291,53 @@ async function runGoogleTool(name: string, args: Record<string, unknown>, ctx: T
     const message = error instanceof Error ? error.message : String(error);
     if (/invalid_grant|401/.test(message)) return "Could not reach Google: the connection has expired. The user should reconnect Google in Settings.";
     return `Could not reach Google: ${message}`;
+  }
+}
+
+async function runFinanceTool(name: string, args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
+  const text = (value: unknown) => String(value ?? "").trim();
+  // Read after the fresh sync when one is running, but never wait more than 8 seconds for it.
+  if (ctx.financeReady) await Promise.race([ctx.financeReady.catch(() => undefined), new Promise((resolve) => setTimeout(resolve, 8_000))]);
+  try {
+    switch (name) {
+      case "money_summary":
+        return await spendingSummaryText(ctx.supabase, ctx.userId, text(args.start), text(args.end));
+      case "money_transactions":
+        return await findTransactionsText(ctx.supabase, ctx.userId, {
+          query: text(args.query),
+          category: text(args.category),
+          start: text(args.start),
+          end: text(args.end),
+          min_amount: typeof args.min_amount === "number" ? args.min_amount : undefined
+        });
+      case "money_accounts":
+        return await accountsText(ctx.supabase, ctx.userId);
+      default: {
+        const streams = await recurringPayments(ctx.userId);
+        if (!streams.length) return "No recurring payments were found yet. Plaid needs a few months of history to spot them.";
+        const monthly = streams.reduce((sum, stream) => sum + monthlyCost(stream.amount, stream.frequency), 0);
+        return [
+          `Recurring payments (about ${money(monthly)} a month in total):`,
+          ...streams.map((stream) => `- ${stream.name}: ${money(stream.amount)} ${stream.frequency}${stream.nextDate ? `, next around ${stream.nextDate}` : ""}${stream.lastDate ? `, last ${stream.lastDate}` : ""}`)
+        ].join("\n");
+      }
+    }
+  } catch (error) {
+    return `Could not read the finance data: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
+function monthlyCost(amount: number, frequency: string) {
+  switch (frequency) {
+    case "weekly":
+      return (amount * 52) / 12;
+    case "biweekly":
+      return (amount * 26) / 12;
+    case "semi_monthly":
+      return amount * 2;
+    case "annually":
+      return amount / 12;
+    default:
+      return amount;
   }
 }

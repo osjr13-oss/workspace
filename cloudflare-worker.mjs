@@ -2,7 +2,8 @@ import app from "./.open-next/worker.js";
 
 const jobs = {
   "0 13 * * *": "/api/cron/grounded-history",
-  "0 14 * * *": "/api/cron/lifecycle-emails"
+  "0 14 * * *": "/api/cron/lifecycle-emails",
+  "0 12 * * *": "/api/cron/plaid-sync"
 };
 
 export default {

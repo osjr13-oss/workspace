@@ -17,7 +17,7 @@
     "head_sampling_rate": 1
   },
   "triggers": {
-    "crons": ["0 13 * * *", "0 14 * * *"]
+    "crons": ["0 12 * * *", "0 13 * * *", "0 14 * * *"]
   },
   "routes": [
     { "pattern": "www.selrano.com/*", "zone_name": "selrano.com" },

@@ -322,6 +322,77 @@ function groqReset() {
   googleState.requests = [];
   googleState.drafts = [];
   googleState.events = [];
+  plaidState.requests = [];
+  plaidState.removed = [];
+  plaidState.loginRequired = false;
+}
+
+// ------------------------------------------------------------------ Plaid --
+
+const plaidState = { requests: [], removed: [], loginRequired: false };
+
+function plaidDay(offset) {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), Math.max(1, now.getUTCDate() - offset))).toISOString().slice(0, 10);
+}
+
+function plaidTransactions() {
+  const tx = (id, offset, name, amount, primary, detailed, merchant = name) => ({
+    transaction_id: id,
+    account_id: amount < 0 && primary === "INCOME" ? "acc_checking" : id.startsWith("c") ? "acc_card" : "acc_checking",
+    amount,
+    iso_currency_code: "USD",
+    date: plaidDay(offset),
+    name,
+    merchant_name: merchant,
+    pending: false,
+    payment_channel: "online",
+    personal_finance_category: { primary, detailed }
+  });
+  return [
+    tx("c1", 0, "Chipotle", 14.25, "FOOD_AND_DRINK", "FOOD_AND_DRINK_FAST_FOOD"),
+    tx("c2", 0, "Whole Foods", 82.4, "FOOD_AND_DRINK", "FOOD_AND_DRINK_GROCERIES"),
+    tx("c3", 0, "Netflix", 15.49, "ENTERTAINMENT", "ENTERTAINMENT_TV_AND_MOVIES"),
+    tx("k1", 0, "Rent", 1200, "RENT_AND_UTILITIES", "RENT_AND_UTILITIES_RENT", "Oak Street Apartments"),
+    tx("k2", 0, "Payroll", -2500, "INCOME", "INCOME_WAGES", "Acme Corp"),
+    tx("k3", 0, "Card payment", 300, "LOAN_PAYMENTS", "LOAN_PAYMENTS_CREDIT_CARD_PAYMENT", null)
+  ];
+}
+
+const PLAID_ACCOUNTS = [
+  { account_id: "acc_checking", name: "Everyday Checking", mask: "0000", type: "depository", subtype: "checking", balances: { current: 2310.55, available: 2250, iso_currency_code: "USD" } },
+  { account_id: "acc_card", name: "Rewards Card", mask: "3333", type: "credit", subtype: "credit card", balances: { current: 412.14, limit: 5000, iso_currency_code: "USD" } }
+];
+
+async function handlePlaid(req, res, url) {
+  const path = url.pathname.slice("/plaid".length);
+  const body = JSON.parse((await readBody(req)) || "{}");
+  plaidState.requests.push({ path, body });
+  if (body.client_id !== "test-plaid-client" || body.secret !== "test-plaid-secret") return sendJson(res, 400, { error_code: "INVALID_API_KEYS", error_message: "invalid keys" });
+  if (path === "/link/token/create") return sendJson(res, 200, { link_token: body.access_token ? "link-sandbox-update" : "link-sandbox-new" });
+  if (path === "/item/public_token/exchange") return sendJson(res, 200, { access_token: "access-sandbox-1", item_id: "item_1" });
+  if (body.access_token !== "access-sandbox-1") return sendJson(res, 400, { error_code: "INVALID_ACCESS_TOKEN", error_message: "bad token" });
+  if (plaidState.loginRequired) return sendJson(res, 400, { error_code: "ITEM_LOGIN_REQUIRED", error_message: "login required" });
+  if (path === "/transactions/sync") {
+    const all = plaidTransactions();
+    if (!body.cursor) return sendJson(res, 200, { added: all.slice(0, 3), modified: [], removed: [], accounts: PLAID_ACCOUNTS, next_cursor: "cursor-1", has_more: true });
+    if (body.cursor === "cursor-1") return sendJson(res, 200, { added: all.slice(3), modified: [], removed: [], accounts: PLAID_ACCOUNTS, next_cursor: "cursor-2", has_more: false });
+    return sendJson(res, 200, { added: [], modified: [], removed: [], accounts: PLAID_ACCOUNTS, next_cursor: "cursor-2", has_more: false });
+  }
+  if (path === "/accounts/get") return sendJson(res, 200, { accounts: PLAID_ACCOUNTS });
+  if (path === "/transactions/recurring/get") {
+    return sendJson(res, 200, {
+      outflow_streams: [
+        { description: "NETFLIX.COM", merchant_name: "Netflix", frequency: "MONTHLY", last_amount: { amount: 15.49 }, last_date: plaidDay(0), predicted_next_date: "2026-12-18", is_active: true },
+        { description: "GYM", merchant_name: "City Gym", frequency: "MONTHLY", last_amount: { amount: 40 }, last_date: plaidDay(0), is_active: false }
+      ]
+    });
+  }
+  if (path === "/item/remove") {
+    plaidState.removed.push(body.access_token);
+    return sendJson(res, 200, {});
+  }
+  return sendJson(res, 404, { error_code: "NOT_FOUND", error_message: `No fake for ${path}` });
 }
 
 // ----------------------------------------------------------------- Google --
@@ -509,6 +580,11 @@ async function handleGroq(req, res) {
   }
 
   if (url.pathname.startsWith("/google/")) return handleGoogle(req, res, url);
+  if (url.pathname.startsWith("/plaid/")) return handlePlaid(req, res, url);
+  if (url.pathname === "/__plaid") {
+    if (req.method === "POST") Object.assign(plaidState, JSON.parse((await readBody(req)) || "{}"));
+    return sendJson(res, 200, plaidState);
+  }
   if (url.pathname === "/__google") return sendJson(res, 200, googleState);
   if (url.pathname === "/gpt/v1/embeddings") {
     const body = JSON.parse(await readBody(req));
@@ -570,6 +646,10 @@ async function handleGroq(req, res) {
     max_completion_tokens: body.max_completion_tokens ?? body.max_tokens,
     lastUser: lastUserText.slice(0, 80),
     system: typeof messages[0]?.content === "string" ? messages[0].content.slice(0, 60) : "",
+    toolText: messages
+      .filter((m) => m.role === "tool" && typeof m.content === "string")
+      .map((m) => m.content)
+      .join("\n"),
     assistantText: messages
       .filter((m) => m.role === "assistant" && typeof m.content === "string")
       .map((m) => m.content)
