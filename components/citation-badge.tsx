@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Citation } from "@/lib/types";
 
 export function CitationBadge({ citation }: { citation: Citation }) {
+  if (citation.kind === "tool") return null;
   if (citation.kind === "memory") {
     return (
       <Link

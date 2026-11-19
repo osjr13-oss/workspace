@@ -2,6 +2,15 @@
 
 Last updated: **November 19, 2026**
 
+## Account questions: no clarifying, no retracting, real "remember" (November 19)
+
+From the owner's first real-bank test ("how much did I spend this month?"):
+
+- **It asked which account instead of checking.** The research router chose "clarify". Now `assessResearch` returns "ordinary" without a model call when accounts are connected and `personalAccountQuestion` matches the user's own money, email or calendar (and the user did not explicitly ask for research). Questions about money in general (tax brackets) still route normally.
+- **It retracted a correct total.** History carried the answer but not the fact that it came from bank data. The route now saves a `ToolCitation` (`kind: "tool"`, label such as "the user's connected bank data") for each kind of successful lookup (`TOOL_SOURCES`), and `withSourceNote` turns it into "(Checked at the time against: ...)". Tool citations render nothing in the UI.
+- **"Remember that" was not saved, and Selrano said "Understood".** New always-available `remember` tool (`lib/ai-tools.ts`) saves a memory at once (importance 0.85, duplicates skipped), only when the user's message asks (`REMEMBER_REQUEST`). The action guide says never to claim something was saved unless the tool confirmed it.
+- Tests in `e2e/money.spec.ts` and `e2e/memory.spec.ts`.
+
 ## Personal finance with Plaid (November 19)
 
 Owner decision: Plaid, not statement uploads. Starting scope: where money goes (by category), subscriptions and bills, and balances; budgets later. Read-only; Selrano can never move money.

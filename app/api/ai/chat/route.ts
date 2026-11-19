@@ -328,6 +328,8 @@ export async function POST(request: Request) {
       let firstVisibleAt = 0;
       let failure: unknown = null;
       let toolsUsed = 0;
+      // Which kinds of lookup the reply relied on, saved with it so later turns know it was checked.
+      const toolSources = new Set<string>();
       let research: ResearchMetadata | null = null;
 
       const send = (event: ChatStreamEvent) => {
@@ -515,6 +517,8 @@ export async function POST(request: Request) {
                   const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
                   send({ type: "status", label: describeToolCall(call.function.name, args) });
                   result = await executeTool(call.function.name, args, toolCtx);
+                  const source = TOOL_SOURCES[call.function.name];
+                  if (source && !/^(Could not|Not done|Google is not connected)/.test(result)) toolSources.add(source);
                 } catch (error) {
                   result = `Error running ${call.function.name}: ${serializeError(error)}`;
                 }
@@ -557,7 +561,7 @@ export async function POST(request: Request) {
             if (!answer.trim() || (latest && answer.length === before)) {
               // Never leave a finished action without a reply.
               push(
-                results.length && results.every((result) => /^(Created|Added|Could not|Not done)/.test(result))
+                results.length && results.every((result) => /^(Created|Added|Saved|Already|Could not|Not done)/.test(result))
                   ? results.join("\n")
                   : "I looked into that but could not put together an answer. Please try again."
               );
@@ -622,7 +626,8 @@ export async function POST(request: Request) {
             .map((n) => ({ kind: "memory" as const, marker: `M${n}`, memoryId: memories[n - 1].id, content: memories[n - 1].content }));
           const citations = [
             ...usedMarkers.map((marker) => allCitations[marker]).filter((citation): citation is Citation => Boolean(citation)),
-            ...memoryCitations
+            ...memoryCitations,
+            ...Array.from(toolSources, (label, index) => ({ kind: "tool" as const, marker: `tool-${index + 1}`, label }))
           ];
 
           const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
@@ -693,7 +698,7 @@ export async function POST(request: Request) {
 const ACTION_GUIDE = {
   role: "system" as const,
   content:
-    "Tools: search the user's notes and files, create a note. External research is handled separately before this step. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
+    "Tools: search the user's notes and files, create a note, save to memory. External research is handled separately before this step. When the user asks you to remember something, call remember; never say you saved or will remember something unless remember confirmed it. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
 const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean) =>
@@ -703,8 +708,8 @@ const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean) =>
         role: "system" as const,
         content: ACTION_GUIDE.content
           .replace(
-            "Tools: search the user's notes and files, create a note.",
-            `Tools: search the user's notes and files, create a note${google ? ", search and read their Gmail, save Gmail drafts, read and add Google Calendar events" : ""}${finance ? ", read their bank and card transactions, spending, balances and recurring payments" : ""}.`
+            "Tools: search the user's notes and files, create a note, save to memory.",
+            `Tools: search the user's notes and files, create a note, save to memory${google ? ", search and read their Gmail, save Gmail drafts, read and add Google Calendar events" : ""}${finance ? ", read their bank and card transactions, spending, balances and recurring payments" : ""}.`
           )
           .replace(
             "Use the workspace tools only when the user asks about their own materials or asks you to create something.",
@@ -715,6 +720,17 @@ const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean) =>
 // Groq limits tokens per minute, so every request is kept lean.
 const HISTORY_ROWS = 12;
 const MAX_TOOL_ROUNDS = 3;
+/** How a reply's lookups are named when that reply is sent back as history. */
+const TOOL_SOURCES: Record<string, string> = {
+  search_workspace: "the user's notes and files",
+  gmail_search: "the user's Gmail",
+  gmail_read: "the user's Gmail",
+  calendar_events: "the user's Google Calendar",
+  money_summary: "the user's connected bank data",
+  money_transactions: "the user's connected bank data",
+  money_accounts: "the user's connected bank data",
+  money_recurring: "the user's connected bank data"
+};
 const HISTORY_CHAR_BUDGET = 8000;
 const HISTORY_MESSAGE_MAX = 2000;
 const CURRENT_MESSAGE_MAX = 12000;
@@ -737,7 +753,9 @@ function withSourceNote(row: HistoryRow): HistoryRow {
         .map((citation) =>
           citation.kind === "web"
             ? [citation.title, citation.publisher].filter(Boolean).join(", ")
-            : citation.kind === "memory"
+            : citation.kind === "tool"
+              ? citation.label
+              : citation.kind === "memory"
               ? ""
               : citation.marker.startsWith("attachment-")
                 ? ""
@@ -831,6 +849,8 @@ function describeToolCall(name: string, args: Record<string, unknown>) {
       return `Searching your materials${quoted(args.query)}`;
     case "create_note":
       return "Writing a note";
+    case "remember":
+      return "Saving to memory";
     case "gmail_search":
       return `Searching your email${quoted(args.query)}`;
     case "gmail_read":

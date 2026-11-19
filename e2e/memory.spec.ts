@@ -96,6 +96,22 @@ test.describe("memory", () => {
     expect(learned?.embedding).toHaveLength(1536);
   });
 
+  test("asking Selrano to remember something saves it at once, and only when asked", async ({ page }) => {
+    await page.goto("/chats");
+    await control({ toolQueue: [{ name: "remember", args: { fact: "Check the connected bank directly for money questions." } }] });
+    await ask(page, "What is a good savings rate?");
+    expect(await tableRows("content_memories")).toHaveLength(0);
+
+    await control({ toolQueue: [{ name: "remember", args: { fact: "Check the connected bank directly for money questions." } }] });
+    await ask(page, "Remember to check my bank directly next time. I don't want to see that mistake again");
+    const [saved] = await tableRows("content_memories");
+    expect(saved.content).toBe("Check the connected bank directly for money questions.");
+    expect(saved.source).toBe("chat");
+    expect(saved.embedding).toHaveLength(1536);
+    const answers = (await groqRequests()).filter((r) => r.stream);
+    expect(String(answers[answers.length - 1].toolText)).toContain('Saved to memory: "Check the connected bank directly for money questions."');
+  });
+
   test("the Memory page adds, edits, pins and deletes", async ({ page }) => {
     await page.goto("/memory");
     await expect(page.getByRole("heading", { name: "Memory" })).toBeVisible();

@@ -70,6 +70,12 @@ function assessment(v: unknown): Assessment | null {
   return { ...(v as Assessment), query, clarification, consequential };
 }
 
+/** The user asking about their own money, email or calendar ("how much did I spend", "what's on my calendar"). */
+export function personalAccountQuestion(text: string) {
+  return /\b(?:i|my|me|mine|i['’]ve|i['’]m)\b[^.?!]*\b(?:spen[dt]|spending|budget|balances?|transactions?|charges?|charged|paid|payments?|subscriptions?|bills?|income|earn(?:ed|ings)?|paycheck|bank|cards?|accounts?|savings|checking|money|calendar|schedule|meetings?|events?|appointments?|emails?|inbox|mail)\b/i.test(text)
+    || /\b(?:spen[dt]|spending|balances?|transactions?|subscriptions?|bills?|calendar|schedule|emails?|inbox)\b[^.?!]*\b(?:i|my|me)\b/i.test(text);
+}
+
 export function researchRequired(text: string) {
   return /\b(search (?:the )?(?:web|internet)|look (?:it |this |that )?up|verify|fact.check)\b/i.test(text) ||
     /(?:^|\bplease\s+|\bcan you\s+|\bcould you\s+)research\b/i.test(text);
@@ -81,6 +87,15 @@ export async function assessResearch(history: GroqChatMessage[], signal: AbortSi
   const recent = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6).map((m) => ({ role: m.role, content: recentText(m.content, 1800) }));
   const userTurns = recent.filter((m) => m.role === "user");
   const lastUser = userTurns.at(-1)?.content.trim() || "";
+  // With accounts connected, a question about the user's own money, email or
+  // calendar is answered from those accounts: never a web search and never a
+  // clarifying question, and no routing call is spent on it.
+  if (options.connectedAccounts?.length && personalAccountQuestion(lastUser) && !researchRequired(lastUser)) {
+    return {
+      data: { decision: "ordinary", query: "", clarification: "", consequential: false, action: "none" } as Assessment,
+      model: { provider: "groq", model: "personal-account-shortcut" } as ModelInfo
+    };
+  }
   const prevAssistant = recent.slice(0, -1).findLast((m) => m.role === "assistant")?.content || "";
   const suppliedMaterials = history.some((m) => m.role === "system" && /^(Project context:|Files the user attached)/.test(m.content));
   // Ask the router for public search terms even when the shopper only answered a location or condition question.

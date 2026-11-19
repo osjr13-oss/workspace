@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { searchMemoryText } from "@/lib/content-memory";
+import { saveMemory, searchMemoryText } from "@/lib/content-memory";
 import { accountsText, findTransactionsText, money, spendingSummaryText } from "@/lib/finance";
 import { recurringPayments } from "@/lib/plaid";
 import { createCalendarEvent, draftGmail, listCalendarEvents, readGmail, searchGmail, type GoogleConnection } from "@/lib/google";
@@ -43,8 +43,23 @@ export const toolDefinitions = [
         required: ["title", "content"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "remember",
+      description: "Save a lasting fact, preference or standing instruction to the user's memory. Only when the user asks you to remember something.",
+      parameters: {
+        type: "object",
+        properties: { fact: { type: "string", description: "One short sentence, e.g. Check the connected bank directly for money questions." } },
+        required: ["fact"]
+      }
+    }
   }
 ];
+
+// Saving to memory runs only when the user's own message asks for it.
+const REMEMBER_REQUEST = /\b(?:remember|don['’]?t forget|keep in mind|note (?:that|this)|save (?:that|this)|from now on|going forward|always|never|make sure (?:to|you))\b/i;
 
 /** Offered only when the owner has connected Google (Settings). */
 export const googleToolDefinitions = [
@@ -201,6 +216,11 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
       return searchWorkspace(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
+    case "remember": {
+      if (!REMEMBER_REQUEST.test(ctx.userMessage || "")) return "Not done: the user has not asked you to remember anything.";
+      const saved = await saveMemory(ctx.supabase, ctx.userId, String(args.fact ?? ""), { source: "chat", importance: 0.85, skipDuplicates: true });
+      return saved ? `Saved to memory: "${saved.content}". It is on the Memory page.` : "Already in memory (or too short to save); nothing new was saved.";
+    }
     case "money_summary":
     case "money_transactions":
     case "money_accounts":

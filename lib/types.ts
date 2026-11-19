@@ -70,7 +70,14 @@ export type MemoryCitation = {
   content: string;
 };
 
-export type Citation = FileCitation | WebCitation | MemoryCitation;
+/** A connected account or workspace lookup a reply relied on (no visible marker). */
+export type ToolCitation = {
+  kind: "tool";
+  marker: string;
+  label: string;
+};
+
+export type Citation = FileCitation | WebCitation | MemoryCitation | ToolCitation;
 
 export type ResearchMetadata = {
   groundingProvider?: "google";

@@ -86,8 +86,9 @@ test.describe("money", () => {
     const withTools = answers.find((r) => String(r.toolText || "").includes("spent"));
     expect(withTools?.toolText).toContain("spent $1,312.14, income $2,500.00");
     expect(withTools?.toolText).toContain("- Rent and utilities: $1,200.00");
+    // A question about the owner's own money skips routing: no clarifying question, no web search.
     const routed = await (await fetch("http://localhost:54322/__research_requests")).json();
-    expect(routed.find((r: any) => r.stage === "research_assessment").input.connectedAccounts).toBe("bank and card accounts");
+    expect(routed.filter((r: any) => r.stage === "research_assessment")).toHaveLength(0);
     expect((await (await fetch("http://localhost:54322/__web_requests")).json()).length).toBe(0);
 
     await control({ toolQueue: [{ name: "money_transactions", args: { query: "chipotle" } }, { name: "money_recurring", args: {} }] });
@@ -95,6 +96,21 @@ test.describe("money", () => {
     const later = (await groqRequests()).filter((r) => r.stream).map((r) => String(r.toolText || ""));
     expect(later.some((text) => text.includes("Chipotle $14.25 out") && text.includes("(Rewards Card 3333)"))).toBe(true);
     expect(later.some((text) => text.includes("Netflix: $15.49 monthly"))).toBe(true);
+
+    // The next turn sees that earlier answers came from the bank data, so it will not "take them back".
+    await ask(page, "thanks");
+    const [last] = (await groqRequests()).filter((r) => r.stream).slice(-1);
+    expect(last.assistantText).toContain("Checked at the time against: the user's connected bank data.");
+    const saved = (await tableRows("chat_messages")).filter((m) => m.role === "assistant");
+    expect(saved[0].citations).toEqual([expect.objectContaining({ kind: "tool", label: "the user's connected bank data" })]);
+  });
+
+  test("a question about other people's money still goes through routing", async ({ page }) => {
+    await connectBank(page);
+    await page.goto("/chats");
+    await ask(page, "What are the current federal tax brackets?");
+    const routed = await (await fetch("http://localhost:54322/__research_requests")).json();
+    expect(routed.find((r: any) => r.stage === "research_assessment")?.input.connectedAccounts).toBe("bank and card accounts");
   });
 
   test("the same bank cannot be connected twice", async ({ page }) => {
