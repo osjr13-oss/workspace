@@ -2,6 +2,17 @@
 
 Last updated: **November 19, 2026**
 
+## Memory you can trust (November 19)
+
+Owner priorities after the private switch, in order: memory, then speed and interface polish, then personal finance (statement uploads first, built so a direct bank connection can be added later). This release is memory only.
+
+- **Recall by meaning:** each durable memory is stored with an embedding (`content_memories.embedding`, OpenAI `text-embedding-3-small`, 1536 dimensions). `lib/embeddings.ts` `embedForMemory` uses `EMBEDDING_API_KEY` when set and otherwise the existing `OPENAI_API_KEY` and `OPENAI_BASE_URL`, with a 1.5 second limit on the reply path. `retrieveMemories` (`lib/content-memory.ts`) embeds the message and calls the `match_memories` RPC, keeps matches at or above 0.3 similarity (or strong word overlap), and always includes up to four pinned memories. Recall questions ("what do you know about me") list the most important memories. Without embeddings or before the migration, it falls back to the old word overlap.
+- **Grounded answers:** memories reach the model labelled `[M1]`, `[M2]`. A reply that relies on one cites the label; the route saves a `MemoryCitation` (`kind: "memory"`, `memoryId`, `content`) on the assistant message, and `components/chat-message.tsx` shows it as a plain "Memory" marker linking to `/memory#<id>`, with the fact on hover. Markers without a saved citation, for example mid-stream, are hidden.
+- **Learning and corrections:** after a reply, when the message is personal or a correction ("actually", "forget", "no longer"), one background Groq call compares it with the related memories and returns additions, rewrites and removals; only ids it was shown can change. Duplicates (similarity 0.9 or more) are skipped. Older memories without embeddings are backfilled at most once an hour. The workspace search tool also searches memories.
+- **Memory page:** `/memory` (sidebar) lists memories, pinned first, with where each came from; the owner can add, edit, pin and delete. API: `app/api/memories/route.ts` (GET, POST) and `app/api/memories/[id]/route.ts` (PATCH, DELETE).
+- **Database:** `supabase/migrations/20261119180000_memory_recall.sql` adds `embedding`, `embedding_model`, `pinned`, `source` and `updated_at` to `content_memories` and the `match_memories` function. Additive and idempotent; the owner applies it in the Supabase SQL Editor.
+- **Tests:** `e2e/memory.spec.ts` covers recall by meaning, pinned memories, the Memory marker surviving reload, corrections and forgetting, and the Memory page. The fake OpenAI serves deterministic embeddings and the fake Supabase implements `match_memories`.
+
 ## Private personal AI (November 19)
 
 The owner retired the public student product. Selrano is now a private personal AI for the owner, and will grow into the consumer features the big labs are not shipping. Owner decisions: only approved emails get in; keep the landing page design but sell nothing; hide the whole site from search engines; remove flashcards and study; keep only the opt-in weekly summary email; remove billing, plan limits, referrals, the waitlist and public deck links.

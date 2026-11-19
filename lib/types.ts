@@ -62,7 +62,15 @@ export type WebCitation = {
   publisher?: string;
 };
 
-export type Citation = FileCitation | WebCitation;
+/** A durable memory an answer relied on, cited as [M1]. */
+export type MemoryCitation = {
+  kind: "memory";
+  marker: string;
+  memoryId: string;
+  content: string;
+};
+
+export type Citation = FileCitation | WebCitation | MemoryCitation;
 
 export type ResearchMetadata = {
   groundingProvider?: "google";

@@ -24,6 +24,36 @@ export const TEST_USER = {
   created_at: "2026-01-01T00:00:00.000Z"
 };
 
+// -------------------------------------------------------------- Embeddings --
+
+// Deterministic 1536-dimension stand-in for an embedding model: words in the
+// same concept group share a dimension, so "cook dinner" lands near
+// "vegetarian" the way a real model would, and unrelated text does not.
+const CONCEPTS = [
+  ["cook", "cooking", "dinner", "lunch", "breakfast", "eat", "eating", "food", "meal", "meals", "recipe", "vegetarian", "vegan", "meat"],
+  ["dog", "dogs", "cat", "cats", "pet", "pets", "puppy", "vet"],
+  ["money", "budget", "spend", "spending", "savings", "rent", "salary", "bank"]
+];
+
+export function fakeEmbedding(text) {
+  const vector = new Array(1536).fill(0);
+  for (const word of String(text).toLowerCase().match(/[a-z]+/g) || []) {
+    const concept = CONCEPTS.findIndex((group) => group.includes(word));
+    if (concept >= 0) vector[concept] += 1;
+    let hash = 0;
+    for (const ch of word) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+    vector[16 + (hash % 1500)] += 0.3;
+  }
+  const norm = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0)) || 1;
+  return vector.map((value) => value / norm);
+}
+
+function cosine(a, b) {
+  let dot = 0;
+  for (let i = 0; i < a.length; i += 1) dot += a[i] * (b[i] || 0);
+  return dot;
+}
+
 // ---------------------------------------------------------------- Supabase --
 
 const tables = new Map();
@@ -173,7 +203,15 @@ async function handleSupabase(req, res) {
 
   const rpc = path.match(/^\/rest\/v1\/rpc\/(\w+)/);
   if (rpc) {
-    await readBody(req);
+    const rpcBody = JSON.parse((await readBody(req)) || "{}");
+    if (rpc[1] === "match_memories") {
+      const matches = table("content_memories")
+        .filter((row) => row.user_id === TEST_USER.id && (row.kind ?? "durable") === "durable" && Array.isArray(row.embedding) && row.embedding_model === rpcBody.p_model)
+        .map((row) => ({ id: row.id, similarity: cosine(row.embedding, rpcBody.p_query_embedding || []) }))
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, rpcBody.p_match_count || 12);
+      return sendJson(res, 200, matches);
+    }
     if (rpc[1] === "reserve_ai_usage") { control.quotaReservations++; return sendJson(res, 200, control.quota); }
     if (rpc[1] === "check_rate_limit") return sendJson(res, 200, true);
     if (rpc[1] === "search_chunks_fts") return sendJson(res, 200, []);
@@ -267,7 +305,7 @@ async function handleSupabase(req, res) {
 const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
-  for (const key of ["assessment", "groqAssessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson", "searchQueue"]) delete groqState[key];
+  for (const key of ["assessment", "groqAssessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson", "searchQueue", "memoryChanges"]) delete groqState[key];
   groqState.requests = [];
   groqState.gptRequests = [];
   groqState.gpt = false;
@@ -382,6 +420,12 @@ async function handleGroq(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (url.pathname === "/gpt/v1/embeddings") {
+    const body = JSON.parse(await readBody(req));
+    const inputs = Array.isArray(body.input) ? body.input : [body.input];
+    groqState.embeddingRequests = (groqState.embeddingRequests || 0) + 1;
+    return sendJson(res, 200, { data: inputs.map((input, index) => ({ index, embedding: fakeEmbedding(input) })) });
+  }
   if (url.pathname === "/gpt/v1/responses") {
     const body = JSON.parse(await readBody(req));
     if (await researchReply(req, res, body, true)) return;
@@ -465,8 +509,9 @@ async function handleGroq(req, res) {
 
   // Background calls (memory extraction and similar) are non-streaming.
   if (!body.stream) {
-    const isExtraction = JSON.stringify(messages[0]?.content || "").includes("Extract lasting facts");
-    const content = isExtraction ? "[]" : "ok";
+    // The memory upkeep call returns the changes a test asked for (control { memoryChanges }), or none.
+    const isExtraction = JSON.stringify(messages[0]?.content || "").includes("lasting facts about the user");
+    const content = isExtraction ? JSON.stringify(groqState.memoryChanges ?? { add: [], update: [], remove: [] }) : "ok";
     sendJson(res, 200, {
       choices: [{ message: { role: "assistant", content } }],
       usage: { prompt_tokens: approxTokens(messages), completion_tokens: 5 }

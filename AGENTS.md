@@ -66,10 +66,10 @@ After pushing `main`, confirm the matching Cloudflare release (Workers Builds de
 - `instrumentation.ts`, `app/api/client-error/route.ts`, `app/error.tsx` — error reporting to logs (`[server-error]`, `[client-error]`).
 - `e2e/` — Playwright tests and the offline fake Supabase and Groq servers (`e2e/support/mock-servers.mjs`).
 - `wrangler.jsonc` and `cloudflare-worker.mjs` configure production web routing and scheduled jobs. Use Cloudflare Worker versions for rollback.
-- `lib/ai-tools.ts` — authenticated workspace search and note actions (model tools). Web search is never a model tool.
+- `lib/ai-tools.ts` — authenticated workspace search (notes, files, memories) and note actions (model tools). Web search is never a model tool.
 - `lib/research.ts` and `lib/web-search.ts` — web research: a fast Groq router before every reply, a streamed quick path for everyday questions, and the checked draft-and-review path for consequential topics (health, legal, finance, education). Exa returns ranked web passages and reads selected pages for checked answers.
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
-- `lib/content-memory.ts` — durable fact extraction, historical backfill (background, at most once a day), explicit recall, and relevance ranking.
+- `lib/content-memory.ts` — durable memory: recall by meaning (`match_memories`, embeddings from `lib/embeddings.ts` `embedForMemory`), pinned memories, `[M1]` memory citations, background learning and corrections, and backfill. `app/(app)/memory/page.tsx` and `app/api/memories/*` are the Memory page.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.
 - `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — the opt-in weekly summary, deduplicated per week, with failure recovery.
 - `app/(app)/files/page.tsx` and `app/api/files/*` — signed TUS upload plus server-side extraction.

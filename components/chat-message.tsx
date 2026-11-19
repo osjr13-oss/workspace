@@ -26,6 +26,11 @@ type ChatMessageProps = {
   onRegenerate: (messageId: string) => Promise<void>;
 };
 
+/** Memory markers become badges when the reply saved them, and are hidden otherwise (for example while streaming). */
+function withMemoryLinks(content: string, markers: Set<string>) {
+  return content.replace(/\s?\[M(\d+)\]/g, (match, n: string) => (markers.has(`M${n}`) ? ` [M${n}](citation:M${n})` : ""));
+}
+
 function withCitationLinks(content: string) {
   return content
     .replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_, list: string) =>
@@ -54,6 +59,7 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
   const copiedTimerRef = useRef<number | null>(null);
   const citations = message.citations || [];
   const attachments = citations.filter(isAttachment);
+  const memoryMarkers = new Set(citations.filter((item) => item.kind === "memory").map((item) => item.marker));
   const limitations = (message.research?.limitations || []).filter((text) => !content.includes(text));
 
   useEffect(() => {
@@ -221,7 +227,7 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
       ) : (
         <div className="answer-prose">
           <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={urlTransform} components={components}>
-            {citations.length ? withCitationLinks(displayed) : displayed}
+            {withMemoryLinks(citations.length ? withCitationLinks(displayed) : displayed, memoryMarkers)}
           </ReactMarkdown>
         </div>
       )}

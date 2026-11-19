@@ -4,6 +4,19 @@ import Link from "next/link";
 import type { Citation } from "@/lib/types";
 
 export function CitationBadge({ citation }: { citation: Citation }) {
+  if (citation.kind === "memory") {
+    return (
+      <Link
+        href={`/memory#${citation.memoryId}`}
+        title={`From memory: ${citation.content}`}
+        aria-label={`From memory: ${citation.content}`}
+        className="citation-badge mx-0.5 inline-flex h-[17px] -translate-y-[2px] items-center justify-center rounded-[5px] border border-[var(--border-strong)] bg-[var(--surface-sunken)] px-1.5 align-baseline text-[10.5px] font-medium leading-none text-[var(--muted-strong)] no-underline transition-colors duration-[160ms] ease-out hover:border-[var(--accent)] hover:text-[var(--accent)]"
+      >
+        Memory
+      </Link>
+    );
+  }
+
   if (citation.kind === "web") {
     return (
       <a

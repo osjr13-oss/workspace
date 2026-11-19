@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { searchMemoryText } from "@/lib/content-memory";
 import { searchChunksFullText } from "@/lib/retrieve-context";
 import type { Citation } from "@/lib/types";
 
@@ -15,7 +16,7 @@ export const toolDefinitions = [
     function: {
       name: "search_workspace",
       description:
-        "Search the user's notes and uploaded files.",
+        "Search the user's notes, uploaded files, and memories.",
       parameters: {
         type: "object",
         properties: {
@@ -69,19 +70,21 @@ async function searchWorkspace(ctx: ToolContext, query: string): Promise<string>
   if (!trimmed) return "No search query was provided.";
 
   const like = `%${trimmed.slice(0, 120)}%`;
-  const [notes, chunkExcerpts] = await Promise.all([
+  const [notes, chunkExcerpts, memories] = await Promise.all([
     ctx.supabase.from("notes").select("title, content").eq("user_id", ctx.userId).ilike("content", like).limit(4),
-    searchFileChunks(ctx, trimmed, like)
+    searchFileChunks(ctx, trimmed, like),
+    searchMemoryText(ctx.supabase, ctx.userId, trimmed).catch(() => [] as string[])
   ]);
 
   const parts = [
     ...((notes.data ?? []) as Array<{ title: string; content: string }>).map(
       (note) => `Note "${note.title}": ${note.content.slice(0, 600)}`
     ),
-    ...chunkExcerpts
+    ...chunkExcerpts,
+    ...memories
   ];
 
-  return parts.length ? parts.join("\n\n") : "No matching notes or files were found.";
+  return parts.length ? parts.join("\n\n") : "No matching notes, files, or memories were found.";
 }
 
 async function searchFileChunks(ctx: ToolContext, query: string, like: string): Promise<string[]> {

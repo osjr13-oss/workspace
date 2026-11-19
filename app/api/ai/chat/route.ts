@@ -194,8 +194,8 @@ export async function POST(request: Request) {
             {
               role: "system" as const,
               content:
-                "Durable personal context learned from earlier conversations follows. Use it only when relevant. It is not source evidence and must never be cited as project material.\n" +
-                memories.map((memory) => `- ${memory}`).join("\n")
+                "What you remember about the user, from earlier conversations and their Memory page. Use it when relevant; it is personal context, not project material. When part of your answer relies on one, put its label right after that sentence, like <claim> [M1].\n" +
+                memories.map((memory, index) => `[M${index + 1}] ${memory.content}`).join("\n")
             }
           ]
         : []),
@@ -515,9 +515,13 @@ export async function POST(request: Request) {
         if (answer.trim() && !stopped) {
           const allCitations = { ...context.citations, ...webCitations };
           const usedMarkers = Array.from(new Set(Array.from(answer.matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g), (match) => match[1].split(/\s*,\s*/)).flat()));
-          const citations = usedMarkers
-            .map((marker) => allCitations[marker])
-            .filter((citation): citation is Citation => Boolean(citation));
+          const memoryCitations: Citation[] = Array.from(new Set(Array.from(answer.matchAll(/\[M(\d+)\]/g), (match) => Number(match[1]))))
+            .filter((n) => Boolean(memories[n - 1]))
+            .map((n) => ({ kind: "memory" as const, marker: `M${n}`, memoryId: memories[n - 1].id, content: memories[n - 1].content }));
+          const citations = [
+            ...usedMarkers.map((marker) => allCitations[marker]).filter((citation): citation is Citation => Boolean(citation)),
+            ...memoryCitations
+          ];
 
           const { error: assistantMessageError } = await supabase.from("chat_messages").insert({
             user_id: user!.id,

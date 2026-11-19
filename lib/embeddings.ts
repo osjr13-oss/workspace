@@ -10,6 +10,58 @@ export function getEmbeddingModel() {
   return process.env.EMBEDDING_MODEL || "text-embedding-3-small";
 }
 
+/**
+ * Memory embeddings reuse the configured OpenAI account when no separate
+ * embedding key is set, so meaning-based memory recall works out of the box.
+ */
+function memoryEmbeddingConfig() {
+  if (process.env.EMBEDDING_API_KEY) {
+    return {
+      apiKey: process.env.EMBEDDING_API_KEY,
+      baseUrl: process.env.EMBEDDING_BASE_URL || "https://api.openai.com/v1",
+      model: getEmbeddingModel()
+    };
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      apiKey: process.env.OPENAI_API_KEY,
+      baseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+      model: "text-embedding-3-small"
+    };
+  }
+  return null;
+}
+
+export function memoryEmbeddingModel() {
+  return memoryEmbeddingConfig()?.model ?? null;
+}
+
+/** Embeds short texts (memories, chat queries). Returns null when unavailable, slow, or malformed. */
+export async function embedForMemory(texts: string[], timeoutMs = 1500): Promise<number[][] | null> {
+  const config = memoryEmbeddingConfig();
+  if (!config || !texts.length) return null;
+  try {
+    const response = await fetch(`${config.baseUrl.replace(/\/$/, "")}/embeddings`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: config.model, input: texts.map((text) => text.slice(0, 2000)) }),
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+    if (!response.ok) {
+      console.error("[embeddings] memory request failed", response.status);
+      return null;
+    }
+    const payload = (await response.json()) as { data?: Array<{ index?: number; embedding?: number[] }> };
+    const rows = [...(payload.data ?? [])].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    const vectors = rows.map((row) => row.embedding ?? []);
+    if (vectors.length !== texts.length || vectors.some((vector) => vector.length !== EMBEDDING_DIMENSION)) return null;
+    return vectors;
+  } catch (error) {
+    console.error("[embeddings] memory embedding unavailable", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
 export async function embedText(text: string): Promise<number[]> {
   const apiKey = process.env.EMBEDDING_API_KEY;
   if (!apiKey) {
