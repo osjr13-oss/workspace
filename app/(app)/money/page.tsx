@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Landmark, Plus, RefreshCw, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { useConfirm } from "@/components/dialog";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { formatRelative } from "@/lib/format";
 
@@ -73,6 +74,7 @@ export default function MoneyPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [recurring, setRecurring] = useState<Recurring[] | null>(null);
   const [message, setMessage] = useState("");
+  const confirm = useConfirm();
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -143,9 +145,12 @@ export default function MoneyPage() {
   }
 
   async function disconnect(item: Item) {
-    const confirmed = window.confirm(
-      `Disconnect ${item.institution_name || "this bank"}? Its accounts and transactions will be removed from Selrano.\n\nOn Plaid's free plan, a disconnected bank still uses one of your 10 connections.`
-    );
+    const confirmed = await confirm({
+      title: `Disconnect ${item.institution_name || "this bank"}?`,
+      description: "Its accounts and transactions will be removed from Selrano. On Plaid's free plan, a disconnected bank still uses one of your 10 connections.",
+      confirmLabel: "Disconnect",
+      destructive: true
+    });
     if (!confirmed) return;
     setBusy(item.item_id);
     setMessage("");

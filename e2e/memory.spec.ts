@@ -136,6 +136,7 @@ test.describe("memory", () => {
     await page.reload();
     await expect(page.getByRole("region", { name: "Pinned memories" })).toContainText("before noon");
     await page.getByRole("button", { name: "Delete memory" }).click();
+    await page.getByRole("dialog", { name: "Forget this memory?" }).getByRole("button", { name: "Forget" }).click();
     await expect(page.getByText("Nothing remembered yet")).toBeVisible();
     expect(await tableRows("content_memories")).toHaveLength(0);
   });

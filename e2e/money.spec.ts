@@ -133,8 +133,8 @@ test.describe("money", () => {
 
   test("disconnecting removes the bank at Plaid and deletes its data", async ({ page }) => {
     await connectBank(page);
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Disconnect First Platypus Bank" }).click();
+    await page.getByRole("dialog", { name: "Disconnect First Platypus Bank?" }).getByRole("button", { name: "Disconnect", exact: true }).click();
     await expect(page.getByText("First Platypus Bank is disconnected.")).toBeVisible();
     expect((await plaid()).removed).toEqual(["access-sandbox-1"]);
     expect(await tableRows("plaid_items")).toHaveLength(0);

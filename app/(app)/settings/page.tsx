@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
 import { GoogleConnection } from "@/components/google-connection";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
@@ -17,6 +19,8 @@ export default function SettingsPage() {
   const [lifecycleEmails, setLifecycleEmails] = useState(false);
   const [savingEmailPrefs, setSavingEmailPrefs] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -58,7 +62,7 @@ export default function SettingsPage() {
         setMessage(payload?.error || "Could not update email preferences.");
       } else {
         setLifecycleEmails(enabled);
-        setMessage(enabled ? "Weekly summary turned on." : "Weekly summary turned off.");
+        toast({ title: enabled ? "Weekly summary turned on" : "Weekly summary turned off", description: enabled ? "It arrives once a week by email." : undefined });
       }
     } catch {
       setMessage("Could not update email preferences. Please try again.");
@@ -92,7 +96,11 @@ export default function SettingsPage() {
       .update({ full_name: fullName, updated_at: new Date().toISOString() })
       .eq("id", user.id);
 
-    setMessage(profileError ? profileError.message : "Profile updated.");
+    if (profileError) setMessage(profileError.message);
+    else {
+      setMessage("");
+      toast({ title: "Profile updated" });
+    }
     setSaving(false);
   }
 
@@ -152,7 +160,13 @@ export default function SettingsPage() {
           className="btn-secondary mt-5 text-[var(--critical)]"
           disabled={deletingAccount}
           onClick={async () => {
-            if (!confirm("Are you absolutely sure? This will permanently delete your account and ALL your data. This cannot be undone.")) return;
+            const ok = await confirm({
+              title: "Delete your account?",
+              description: "Your account and all of your chats, notes, files, memories and connections will be permanently deleted. This cannot be undone.",
+              confirmLabel: "Delete everything",
+              destructive: true
+            });
+            if (!ok) return;
             setDeletingAccount(true);
             const res = await fetch("/api/account/delete", { method: "DELETE" });
             if (res.ok) {

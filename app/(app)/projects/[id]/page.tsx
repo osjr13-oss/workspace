@@ -5,6 +5,8 @@ import { use, useEffect, useState } from "react";
 import { BookOpen, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate, formatRelative } from "@/lib/format";
 import { useRouter } from "next/navigation";
@@ -22,6 +24,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -49,13 +53,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   async function deleteProject() {
-    if (!confirm("Delete this project? Notes and files linked to it will be unlinked but not deleted.")) return;
+    const ok = await confirm({
+      title: "Delete this project?",
+      description: "Its notes, files and chats are kept; they just stop belonging to the project.",
+      confirmLabel: "Delete project",
+      destructive: true
+    });
+    if (!ok) return;
     setDeleting(true);
     setError("");
     try {
       const supabase = createSupabaseBrowserClient();
       const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
       if (deleteError) throw deleteError;
+      toast({ title: "Project deleted" });
       router.push("/projects");
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Could not delete this project.");

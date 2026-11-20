@@ -15,6 +15,7 @@ Run the app against the offline fakes, as the e2e tests do: `node e2e/support/mo
 - **No pill badges.** No small rounded labels for statuses, counts, tags, or announcements. Plain text instead. Buttons, inputs, and citation markers are controls and are fine.
 - **No em dashes** in any copy: `rg -n '\x{2014}' app components lib` returns nothing.
 - **Focus.** Tab through every new control: each shows the accent focus ring.
+- **Notices and windows.** Every new action that changes something either confirms with a notice or, if destructive, asks in a window first. Open each window by keyboard: focus lands on the confirm button, Tab stays inside, Escape cancels and focus returns.
 - **Motion.** With reduced motion turned on, animations settle on their final frame. The hero demo pauses when offscreen.
 - **Claims.** Every marketing claim matches what the code does and what the Privacy, Terms, and Security pages say. No exact AI message allowances on public pages, no support email or `/support` link, no fake customer logos.
 - **Accessible names.** Buttons and links the e2e tests rely on keep their names, for example "Send message", "Stop responding", "Join the waitlist", and "Workspace navigation". Run `npm run test:e2e` to confirm.

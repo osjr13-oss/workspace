@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Brain, Check, Pencil, Pin, PinOff, Plus, Trash2, X } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { formatRelative } from "@/lib/format";
 
@@ -32,6 +34,8 @@ export default function MemoryPage() {
   const [editText, setEditText] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
   const [focusId, setFocusId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +76,7 @@ export default function MemoryPage() {
       if (!response.ok || !payload.memory) throw new Error(payload.error || "Could not save that memory.");
       setMemories((list) => [payload.memory!, ...list]);
       setDraft("");
+      toast({ title: "Saved to memory", description: "Selrano will keep this in mind in every chat." });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save that memory.");
     } finally {
@@ -91,6 +96,8 @@ export default function MemoryPage() {
       const payload = (await response.json()) as { memory?: Memory; error?: string };
       if (!response.ok || !payload.memory) throw new Error(payload.error || "Could not update that memory.");
       setMemories((list) => list.map((memory) => (memory.id === id ? payload.memory! : memory)));
+      if (body.pinned !== undefined) toast({ title: body.pinned ? "Pinned" : "Unpinned", description: body.pinned ? "It now shows on Today and is always used." : undefined });
+      else toast({ title: "Memory updated" });
       return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update that memory.");
@@ -105,12 +112,20 @@ export default function MemoryPage() {
   }
 
   async function remove(id: string) {
+    const ok = await confirm({
+      title: "Forget this memory?",
+      description: "Selrano will stop using it in chats. This cannot be undone.",
+      confirmLabel: "Forget",
+      destructive: true
+    });
+    if (!ok) return;
     setBusyId(id);
     setMessage("");
     try {
       const response = await fetch(`/api/memories/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Could not delete that memory.");
       setMemories((list) => list.filter((memory) => memory.id !== id));
+      toast({ title: "Memory forgotten" });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not delete that memory.");
     } finally {

@@ -85,7 +85,7 @@ test.describe("accounts", () => {
 
   test("the allowed account goes straight to the app", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/chats/);
+    await expect(page).toHaveURL(/\/dashboard/);
     expect((await page.request.post("/api/projects", { data: { name: "Home" } })).status()).toBe(200);
   });
 

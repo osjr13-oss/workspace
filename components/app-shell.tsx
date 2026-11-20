@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { MotionConfig, motion } from "framer-motion";
 import {
   BookOpen,
   Brain,
@@ -22,11 +23,13 @@ import {
   X
 } from "lucide-react";
 import { ChatThreadsProvider, groupThreads, useChatThreads } from "@/components/chat-threads";
+import { ConfirmProvider, useConfirm } from "@/components/dialog";
+import { ToastProvider, useToast } from "@/components/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 
 const nav = [
-  { href: "/dashboard", label: "Workspace", icon: Home },
+  { href: "/dashboard", label: "Today", icon: Home },
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/files", label: "Files", icon: Files },
   { href: "/notes", label: "Notes", icon: BookOpen },
@@ -38,9 +41,15 @@ const COLLAPSED_KEY = "selrano.sidebar.collapsed";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <ChatThreadsProvider>
-      <Shell>{children}</Shell>
-    </ChatThreadsProvider>
+    <MotionConfig reducedMotion="user">
+      <ToastProvider>
+        <ConfirmProvider>
+          <ChatThreadsProvider>
+            <Shell>{children}</Shell>
+          </ChatThreadsProvider>
+        </ConfirmProvider>
+      </ToastProvider>
+    </MotionConfig>
   );
 }
 
@@ -118,14 +127,22 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" className="icon-button" aria-label="Open menu" onClick={() => setDrawerOpen(true)}>
             <Menu size={20} />
           </button>
-          <Link href="/chats" className="text-[17px] font-semibold tracking-[-0.01em]">
+          <Link href="/dashboard" className="text-[17px] font-semibold tracking-[-0.01em]">
             Selrano
           </Link>
           <Link href="/chats" className="icon-button" aria-label="New chat" title="New chat">
             <SquarePen size={19} />
           </Link>
         </header>
-        <main className="min-w-0 flex-1">{children}</main>
+        <motion.main
+          key={pathname}
+          className="min-w-0 flex-1"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
+        >
+          {children}
+        </motion.main>
       </div>
     </div>
   );
@@ -166,7 +183,7 @@ function SidebarContent({
     <div className="flex min-h-0 w-full flex-col">
       <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} gap-2 px-3 pt-4`}>
         {collapsed ? null : (
-          <Link href="/chats" className="flex items-center gap-2.5 px-2">
+          <Link href="/dashboard" className="flex items-center gap-2.5 px-2">
             <Image src="/logo.svg" alt="" width={28} height={28} priority />
             <span className="text-lg font-semibold tracking-[-0.01em]">Selrano</span>
           </Link>
@@ -208,6 +225,9 @@ function SidebarContent({
               aria-current={active ? "page" : undefined}
               className={`side-item ${active ? "side-item-active" : ""} ${collapsed ? "justify-center px-0" : ""}`}
             >
+              {active && !collapsed ? (
+                <motion.span layoutId="side-indicator" className="side-indicator" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
+              ) : null}
               <Icon size={17} />
               {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
             </Link>
@@ -253,8 +273,8 @@ function RecentChats() {
   const router = useRouter();
   const { threads, loaded, remove } = useChatThreads();
   const [query, setQuery] = useState("");
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const confirm = useConfirm();
+  const toast = useToast();
   const activeId = pathname === "/chats" ? searchParams.get("thread") : null;
 
   const groups = useMemo(() => {
@@ -263,14 +283,20 @@ function RecentChats() {
     return groupThreads(matching);
   }, [threads, query]);
 
-  async function confirmDelete(id: string) {
-    setError("");
+  async function confirmDelete(id: string, title: string) {
+    const ok = await confirm({
+      title: "Delete this chat?",
+      description: `"${title}" and its messages will be removed. This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true
+    });
+    if (!ok) return;
     const failure = await remove(id);
-    setConfirmingId(null);
     if (failure) {
-      setError(failure);
+      toast({ title: "Could not delete the chat", description: failure, tone: "error" });
       return;
     }
+    toast({ title: "Chat deleted" });
     if (activeId === id) router.push("/chats");
   }
 
@@ -291,7 +317,6 @@ function RecentChats() {
           />
         </label>
       ) : null}
-      {error ? <p className="px-5 pt-2 text-xs font-semibold text-[var(--critical)]">{error}</p> : null}
       <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {loaded && !threads.length ? (
           <p className="px-2 py-2 text-sm text-[var(--muted)]">Your conversations will appear here.</p>
@@ -306,19 +331,6 @@ function RecentChats() {
               {group.threads.map((thread) => {
                 const title = removeEmDashes(thread.title) || "Untitled chat";
                 const active = activeId === thread.id;
-                if (confirmingId === thread.id) {
-                  return (
-                    <li key={thread.id} className="flex items-center gap-1 rounded-xl bg-[var(--surface-subtle)] py-1 pl-3 pr-1">
-                      <span className="min-w-0 flex-1 truncate text-sm font-semibold">Delete this chat?</span>
-                      <button type="button" className="chip-button text-[var(--critical)]" onClick={() => confirmDelete(thread.id)}>
-                        Delete
-                      </button>
-                      <button type="button" className="chip-button" onClick={() => setConfirmingId(null)}>
-                        Cancel
-                      </button>
-                    </li>
-                  );
-                }
                 return (
                   <li key={thread.id} className="group/thread relative">
                     <Link
@@ -332,7 +344,7 @@ function RecentChats() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setConfirmingId(thread.id)}
+                      onClick={() => void confirmDelete(thread.id, title)}
                       className="thread-action absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--critical)]"
                       aria-label={`Delete ${title}`}
                       title="Delete chat"

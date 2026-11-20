@@ -30,6 +30,8 @@ type ChatComposerProps = {
   /** An existing conversation keeps the project it started with. */
   projectLocked: boolean;
   maxAttachments: number;
+  /** Today's composer hands the message to chat and has no file picker. */
+  allowAttachments?: boolean;
 };
 
 const BOUNDARY = /[\s.,!?;:]/;
@@ -46,7 +48,8 @@ export function ChatComposer({
   projectId,
   onProjectChange,
   projectLocked,
-  maxAttachments
+  maxAttachments,
+  allowAttachments = true
 }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +177,8 @@ export function ChatComposer({
       </div>
 
       <div className="flex items-center gap-1.5 px-2 pb-2 pt-1">
+        {allowAttachments ? (
+        <>
         <input
           ref={fileInputRef}
           type="file"
@@ -198,6 +203,8 @@ export function ChatComposer({
         >
           <Paperclip size={18} />
         </button>
+        </>
+        ) : null}
 
         {projectLocked ? (
           <span className="project-chip" title="A conversation keeps the project it started with">

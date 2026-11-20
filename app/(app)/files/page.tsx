@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { FileUp, Trash2, Upload as UploadIcon } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { FileProcessingStatus } from "@/components/file-processing-status";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { fileSize, formatDate } from "@/lib/format";
@@ -31,6 +33,8 @@ function FilesContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -48,7 +52,13 @@ function FilesContent() {
   }, [projectFilter]);
 
   async function deleteFile(file: WorkspaceFile) {
-    if (!confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: "Delete this file?",
+      description: `"${file.name}" will be removed, and chats will no longer be able to cite it. This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true
+    });
+    if (!ok) return;
     setDeletingId(file.id);
     setMessage("");
     try {
@@ -58,8 +68,9 @@ function FilesContent() {
       const { error: deleteError } = await supabase.from("files").delete().eq("id", file.id);
       if (deleteError) throw deleteError;
       await load();
+      toast({ title: "File deleted", description: file.name });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not delete the file.");
+      toast({ title: "Could not delete the file", description: error instanceof Error ? error.message : undefined, tone: "error" });
     } finally {
       setDeletingId(null);
     }
@@ -72,16 +83,22 @@ function FilesContent() {
     setUploadProgress(0);
     setMessage("");
     try {
-      await uploadWorkspaceFile(file, {
+      const saved = await uploadWorkspaceFile(file, {
         projectId: projectId || null,
         onProgress: setUploadProgress,
-        onProcessing: () => setMessage("Upload complete. Extracting text…")
+        onProcessing: () => setMessage("Upload complete. Reading the text…")
       });
-      setMessage("File uploaded and processed.");
+      setMessage("");
       setFile(null);
       await load();
+      toast(
+        saved.extraction_status === "ready"
+          ? { title: "File ready", description: `${file.name} can now be searched and cited in chat.`, action: { label: "Open", href: `/files/${saved.id}` } }
+          : { title: "File uploaded", description: `Selrano could not read text from ${file.name}, so chat cannot cite it.` }
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Upload failed.");
+      setMessage("");
+      toast({ title: "Upload failed", description: error instanceof Error ? error.message : undefined, tone: "error" });
     } finally {
       setUploading(false);
       setUploadProgress(0);

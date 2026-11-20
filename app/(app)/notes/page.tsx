@@ -6,6 +6,8 @@ import { NotebookPen, Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/format";
 import type { Note, Project } from "@/lib/types";
@@ -28,7 +30,8 @@ function NotesContent() {
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
   const selected = useMemo(() => notes.find((note) => note.id === selectedId) || null, [notes, selectedId]);
 
   async function load() {
@@ -64,7 +67,7 @@ function NotesContent() {
 
   async function save() {
     setSaving(true);
-    setMessage("");
+    const isNew = !selectedId;
     try {
       const supabase = createSupabaseBrowserClient();
       const {
@@ -83,9 +86,9 @@ function NotesContent() {
         if (data) setSelectedId(data.id);
       }
       await load();
-      setMessage("Saved.");
+      toast({ title: isNew ? "Note created" : "Note saved", description: title.trim() || undefined });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not save the note.");
+      toast({ title: "Could not save the note", description: error instanceof Error ? error.message : undefined, tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -93,23 +96,27 @@ function NotesContent() {
 
   async function remove() {
     if (!selectedId) return;
-    if (!confirm("Delete this note? This cannot be undone.")) return;
-    setMessage("");
+    const ok = await confirm({
+      title: "Delete this note?",
+      description: `"${title.trim() || "Untitled note"}" will be removed. This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true
+    });
+    if (!ok) return;
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.from("notes").delete().eq("id", selectedId);
     if (error) {
-      setMessage(error.message || "Could not delete the note.");
+      toast({ title: "Could not delete the note", description: error.message, tone: "error" });
       return;
     }
     newNote();
     await load();
-    setMessage("Note deleted.");
+    toast({ title: "Note deleted" });
   }
 
   async function transform(action: string) {
     if (!content.trim()) return;
     setSaving(true);
-    setMessage("");
     try {
       const response = await fetch("/api/ai/transform", {
         method: "POST",
@@ -119,9 +126,9 @@ function NotesContent() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "AI action failed.");
       setContent(payload.result);
-      setMessage("Transformation complete. Save to keep the changes.");
+      toast({ title: `${action} ready`, description: "Save to keep the changes." });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "AI action failed.");
+      toast({ title: "That did not work", description: error instanceof Error ? error.message : "AI action failed.", tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -139,8 +146,6 @@ function NotesContent() {
           {saving ? "Saving" : "Save"}
         </button>
       </WorkspaceHeader>
-
-      {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
 
       <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
         <aside className="panel p-4">

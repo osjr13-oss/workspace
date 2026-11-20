@@ -326,11 +326,8 @@ function formatWhen(event: CalendarEvent, timeZone: string) {
   return end ? `${start} to ${end}` : start;
 }
 
-export async function listCalendarEvents(connection: GoogleConnection, start: string, end: string) {
+async function calendarItems(connection: GoogleConnection, timeMin: Date, timeMax: Date, max = 25) {
   const token = await connection.accessToken();
-  const timeMin = new Date(start);
-  const timeMax = new Date(end);
-  if (Number.isNaN(timeMin.getTime()) || Number.isNaN(timeMax.getTime())) return "Could not read the calendar: the dates were not valid.";
   const result = await api<{ items?: CalendarEvent[] }>(
     token,
     `/calendar/v3/calendars/primary/events?${new URLSearchParams({
@@ -338,10 +335,35 @@ export async function listCalendarEvents(connection: GoogleConnection, start: st
       timeMax: timeMax.toISOString(),
       singleEvents: "true",
       orderBy: "startTime",
-      maxResults: "25"
+      maxResults: String(max)
     })}`
   );
-  const items = result.items || [];
+  return result.items || [];
+}
+
+export type UpcomingEvent = { id: string; title: string; start: string; end: string | null; allDay: boolean; location: string | null; link: string | null };
+
+/** Structured events for the Today page (the model reads listCalendarEvents instead). */
+export async function upcomingCalendarEvents(connection: GoogleConnection, timeMin: Date, timeMax: Date, max = 8): Promise<UpcomingEvent[]> {
+  const items = await calendarItems(connection, timeMin, timeMax, max);
+  return items
+    .filter((event) => event.start?.dateTime || event.start?.date)
+    .map((event) => ({
+      id: event.id,
+      title: removeEmDashes(event.summary || "(no title)"),
+      start: (event.start?.dateTime || event.start?.date)!,
+      end: event.end?.dateTime || event.end?.date || null,
+      allDay: Boolean(event.start?.date),
+      location: event.location ? removeEmDashes(event.location) : null,
+      link: event.htmlLink?.startsWith("https://www.google.com/calendar/") || event.htmlLink?.startsWith("https://calendar.google.com/") ? event.htmlLink : null
+    }));
+}
+
+export async function listCalendarEvents(connection: GoogleConnection, start: string, end: string) {
+  const timeMin = new Date(start);
+  const timeMax = new Date(end);
+  if (Number.isNaN(timeMin.getTime()) || Number.isNaN(timeMax.getTime())) return "Could not read the calendar: the dates were not valid.";
+  const items = await calendarItems(connection, timeMin, timeMax);
   if (!items.length) return `No events between ${start} and ${end}.`;
   return [
     `Calendar events (times in ${connection.timeZone}):`,

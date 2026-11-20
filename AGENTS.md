@@ -54,7 +54,7 @@ After pushing `main`, confirm the matching Cloudflare release (Workers Builds de
 ## Important paths
 
 - `app/api/ai/chat/route.ts` — authentication, context retrieval, attachments, workspace tools, the JSON-lines reply stream (`lib/chat-stream.ts`), and message persistence. `app/api/ai/chat/stop/route.ts` saves a stopped reply.
-- `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Chat is the signed-in home.
+- `app/(app)/chats/page.tsx`, `components/chat-composer.tsx`, `components/chat-threads.tsx`, `components/app-shell.tsx` — the chat page, composer, shared conversation list, and the sidebar that shows it. Today (`/dashboard`) is the signed-in home.
 - `app/page.tsx` and `components/marketing/*` — the landing page, shared public header, hero demo, and illustrations. `DESIGN_SYSTEM.md` describes the tokens and primitives.
 - `lib/access.ts` and `middleware.ts` — the private allowlist and the list of open pages.
 - `app/(legal)` — the open legal pages (reading layout).
@@ -72,6 +72,8 @@ After pushing `main`, confirm the matching Cloudflare release (Workers Builds de
 - `lib/research.ts` and `lib/web-search.ts` — web research: a fast Groq router before every reply, a streamed quick path for everyday questions, and the checked draft-and-review path for consequential topics (health, legal, finance, education). Exa returns ranked web passages and reads selected pages for checked answers.
 - `lib/style-profile.ts` — learned writing preferences and adaptive response directives.
 - `lib/content-memory.ts` — durable memory: recall by meaning (`match_memories`, embeddings from `lib/embeddings.ts` `embedForMemory`), pinned memories, `[M1]` memory citations, background learning and corrections, and backfill. `app/(app)/memory/page.tsx` and `app/api/memories/*` are the Memory page.
+- `app/(app)/dashboard/page.tsx` and `app/api/today/route.ts` — the Today page (the signed-in landing page) and its calendar, money and pinned-memory data. `lib/chat-handoff.ts` passes a message from Today to chat.
+- `components/toast.tsx` and `components/dialog.tsx` — notices after actions and confirmation windows, provided by `AppShell`.
 - `components/chat-message.tsx` and `components/thinking-trace.tsx` — premium chat presentation, response actions, and waiting state.
 - `lib/lifecycle-emails.ts` and `lib/email/lifecycle-templates.ts` — the opt-in weekly summary, deduplicated per week, with failure recovery.
 - `app/(app)/files/page.tsx` and `app/api/files/*` — signed TUS upload plus server-side extraction.

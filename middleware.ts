@@ -101,7 +101,7 @@ export async function middleware(request: NextRequest) {
       dest.search = target.search;
       return NextResponse.redirect(dest);
     }
-    return redirectTo("/chats");
+    return redirectTo("/dashboard");
   }
 
   return withCsp(response);

@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { isAllowedEmail } from "@/lib/access";
 
 function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/chats";
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
 export async function GET(request: NextRequest) {

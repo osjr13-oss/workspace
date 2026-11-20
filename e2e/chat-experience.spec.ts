@@ -143,7 +143,10 @@ test.describe("chat experience", () => {
     await expect(page.locator(bubbles)).toHaveCount(1);
 
     await sidebar.getByRole("button", { name: "Delete Weekly plan" }).click();
-    await sidebar.getByRole("button", { name: "Delete", exact: true }).click();
+    const confirmDelete = page.getByRole("dialog", { name: "Delete this chat?" });
+    await expect(confirmDelete).toBeVisible();
+    await confirmDelete.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Chat deleted" })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "Weekly plan" })).toHaveCount(0);
     await expect(page).toHaveURL(/\/chats$/);
     expect(await tableRows("chat_threads")).toHaveLength(0);

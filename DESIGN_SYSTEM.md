@@ -1,6 +1,6 @@
 # Selrano Design System
 
-Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Shipped November 4, 2026; updated November 5, 2026. Check changes with `design-qa.md`.
+Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Shipped November 4, 2026; updated November 20, 2026. Check changes with `design-qa.md`.
 
 ## Principles
 
@@ -65,6 +65,10 @@ Status colors (`--critical`, `--high`, `--medium`, `--low`, `--info`) are for st
 | `.input-premium` | 12px radius field; ink border and soft ring on focus |
 | `.composer`, `.send-button`, `.user-bubble`, `.starter-card` | Chat parts, reused by the landing illustrations |
 | `.focus-ring` | Adds the standard focus ring to any element |
+| `.btn-danger` | Red button, only for the confirm step of a destructive window |
+| `.home-card`, `.home-row` | Today page card and its clickable row |
+| `.skeleton` | Shimmering placeholder shaped like the content it stands in for |
+| `.toast`, `.dialog-panel` | Notice and window surfaces (use the components below, not the classes) |
 
 Focus is always visible: a 3px paper gap plus a 2px accent ring (`--accent-ring`).
 
@@ -79,6 +83,8 @@ Focus is always visible: a 3px paper gap plus a 2px accent ring (`--accent-ring`
 - `components/auth-frame.tsx`: shared layout and field for sign in, sign up, and password pages.
 - `components/workspace-header.tsx` and `components/empty-state.tsx`: app page title and empty states (optional icon).
 - `components/citation-badge.tsx`: numbered ink marker that opens the cited passage.
+- `components/toast.tsx`: `useToast()` for short notices after an action ("Note saved"). Sentence-case title of a few words, optional one-line description and one action link. Use it for success and for failures of background actions; keep form validation inline.
+- `components/dialog.tsx`: `Dialog` for a centred window and `useConfirm()` for confirming. Every destructive action confirms in a window that names the item and says whether it can be undone; the confirm button carries the verb ("Delete", "Forget", "Disconnect"). Never use the browser's `confirm()`.
 
 ## Layout
 
@@ -90,6 +96,10 @@ Focus is always visible: a 3px paper gap plus a 2px accent ring (`--accent-ring`
 ## Motion
 
 - Transitions are 140 to 200ms on color, border, and shadow. Buttons do not jump on hover.
+- framer-motion is the motion library. The app is wrapped in `MotionConfig reducedMotion="user"`.
+- Pages fade and rise 6px on navigation. Cards and list items enter with a short stagger (40 to 50ms apart, under 0.5s total). Interactive cards lift their shadow on hover; nothing changes size.
+- Notices slide up from the bottom; windows scale in from 97% over a soft scrim. Both leave faster than they arrive.
+- Loading uses `.skeleton` shapes, not spinners, wherever the layout is known.
 - `components/reveal.tsx` fades sections in on scroll (once). Keep offsets small.
 - Respect `prefers-reduced-motion`; the global rule in `globals.css` shortens animations, and the hero demo stops on its final frame.
 

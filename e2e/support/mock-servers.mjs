@@ -473,8 +473,18 @@ async function handleGoogle(req, res, url) {
       googleState.events.push(event);
       return sendJson(res, 200, { id: "e9", ...event });
     }
+    // Two hours after the window opens, so it always lands in "Coming up" on Today.
+    const from = new Date(url.searchParams.get("timeMin") || Date.now()).getTime();
     return sendJson(res, 200, {
-      items: [{ id: "e1", summary: "Dentist", location: "Main St", start: { dateTime: "2026-11-20T15:00:00-05:00" }, end: { dateTime: "2026-11-20T16:00:00-05:00" } }]
+      items: [
+        {
+          id: "e1",
+          summary: "Dentist",
+          location: "Main St",
+          start: { dateTime: new Date(from + 2 * 3_600_000).toISOString() },
+          end: { dateTime: new Date(from + 3 * 3_600_000).toISOString() }
+        }
+      ]
     });
   }
   return sendJson(res, 404, { error: { message: `No fake for ${path}` } });

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { FolderOpen, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EmptyState } from "@/components/empty-state";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDate } from "@/lib/format";
 import type { Project } from "@/lib/types";
@@ -16,6 +18,8 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const toast = useToast();
+  const confirm = useConfirm();
 
   async function load() {
     const supabase = createSupabaseBrowserClient();
@@ -37,6 +41,8 @@ export default function ProjectsPage() {
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Could not create project.");
+      const created = payload.project as Project | undefined;
+      toast({ title: "Project created", description: name.trim(), action: created?.id ? { label: "Open", href: `/projects/${created.id}` } : undefined });
       setName("");
       setDescription("");
       await load();
@@ -49,7 +55,13 @@ export default function ProjectsPage() {
 
   async function deleteProject(event: React.MouseEvent, id: string) {
     event.preventDefault();
-    if (!confirm("Delete this project? Notes and files linked to it will be unlinked but not deleted.")) return;
+    const ok = await confirm({
+      title: "Delete this project?",
+      description: "Its notes, files and chats are kept; they just stop belonging to the project.",
+      confirmLabel: "Delete project",
+      destructive: true
+    });
+    if (!ok) return;
     setDeletingId(id);
     setError("");
     try {
@@ -57,6 +69,7 @@ export default function ProjectsPage() {
       const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
       if (deleteError) throw deleteError;
       await load();
+      toast({ title: "Project deleted" });
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Could not delete project.");
     } finally {

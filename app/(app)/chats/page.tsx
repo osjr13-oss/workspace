@@ -4,11 +4,15 @@ import type { ResearchMetadata } from "@/lib/types";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { ArrowDown, Check, Globe2, ListChecks, Mail, MoreHorizontal, NotebookPen, Pencil, Trash2, X } from "lucide-react";
 import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
 import { ChatMessageBubble } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
 import { ThinkingTrace } from "@/components/thinking-trace";
+import { useConfirm } from "@/components/dialog";
+import { useToast } from "@/components/toast";
+import { takePendingMessage, STARTERS } from "@/lib/chat-handoff";
 import { readChatStream } from "@/lib/chat-stream";
 import { createStreamPacer, type StreamPacer } from "@/lib/stream-pacer";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -23,12 +27,12 @@ type Handoff = { userKey?: string | null; assistantKey?: string | null };
 
 const MAX_ATTACHMENTS = 4;
 
-const STARTERS = [
-  { title: "Summarize my notes", prompt: "Summarize what is in my notes and point out anything I should follow up on.", Icon: NotebookPen },
-  { title: "Plan my week", prompt: "Help me plan my week. Ask me what I have coming up first.", Icon: ListChecks },
-  { title: "Draft a reply", prompt: "Help me draft a reply to a message. I will paste it next.", Icon: Mail },
-  { title: "What changed today", prompt: "What are the most important news stories today?", Icon: Globe2 }
-];
+const STARTER_ICONS = { notes: NotebookPen, week: ListChecks, reply: Mail, news: Globe2 } as const;
+
+const ACTION_LINKS: Partial<Record<string, { label: string; href: string }>> = {
+  note: { label: "View", href: "/notes" },
+  memory: { label: "View", href: "/memory" }
+};
 
 function withHandoffKeys(rows: ChatMessage[], handoff?: Handoff): DisplayMessage[] {
   const out: DisplayMessage[] = rows.map((row) => ({ ...row }));
@@ -66,6 +70,7 @@ function ChatsContent() {
   const urlThread = searchParams.get("thread");
   const urlProject = searchParams.get("project");
   const { threads, refresh: refreshThreads, rename, remove } = useChatThreads();
+  const toast = useToast();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -79,6 +84,9 @@ function ChatsContent() {
     setThreadIdState(id);
   }
   const [projectId, setProjectId] = useState(urlProject || "");
+  // Read by the reply request, so a message handed over from Today uses its project at once.
+  const projectIdRef = useRef(projectId);
+  projectIdRef.current = projectId;
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -294,7 +302,7 @@ function ChatsContent() {
         body: JSON.stringify({
           ...options,
           threadId: threadIdRef.current,
-          projectId: projectId || null
+          projectId: projectIdRef.current || null
         })
       });
 
@@ -331,6 +339,8 @@ function ChatsContent() {
           pacer.push(event.text);
         } else if (event.type === "model") {
           setModelMetadata(event);
+        } else if (event.type === "action") {
+          toast({ title: event.label, action: ACTION_LINKS[event.kind] });
         } else if (event.type === "error") {
           fail(event.error, event.restore);
         }
@@ -418,10 +428,13 @@ function ChatsContent() {
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
-    const prompt = removeEmDashes(text).trim();
-    if (!prompt || busyRef.current) return;
     if (attachments.some((item) => item.status === "uploading" || item.status === "processing")) return;
-    const ready = attachments.filter((item) => item.status === "ready" && item.fileId);
+    await sendPrompt(text, attachments.filter((item) => item.status === "ready" && item.fileId));
+  }
+
+  async function sendPrompt(raw: string, ready: ComposerAttachment[] = []) {
+    const prompt = removeEmDashes(raw).trim();
+    if (!prompt || busyRef.current) return;
     setText("");
     setAttachments([]);
     const userKey = `pending-user-${turnRef.current + 1}`;
@@ -488,10 +501,35 @@ function ChatsContent() {
     }
   }
 
+  // A message started on Today (or a starter there) is sent once, as a new conversation.
+  useEffect(() => {
+    if (threadIdRef.current) return;
+    const pending = takePendingMessage();
+    if (!pending) return;
+    if (pending.projectId) {
+      projectIdRef.current = pending.projectId;
+      setProjectId(pending.projectId);
+    }
+    void sendPrompt(pending.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function deleteCurrent() {
     if (!threadId) return;
     const failure = await remove(threadId);
-    if (!failure) router.push("/chats");
+    if (failure) {
+      toast({ title: "Could not delete the chat", description: failure, tone: "error" });
+    } else {
+      toast({ title: "Chat deleted" });
+      router.push("/chats");
+    }
+    return failure;
+  }
+
+  async function renameCurrent(title: string) {
+    if (!threadId) return null;
+    const failure = await rename(threadId, title);
+    if (!failure) toast({ title: "Chat renamed" });
     return failure;
   }
 
@@ -523,7 +561,7 @@ function ChatsContent() {
         <ChatHeader
           title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
           canManage={Boolean(threadId && activeThread)}
-          onRename={(title) => (threadId ? rename(threadId, title) : Promise.resolve(null))}
+          onRename={renameCurrent}
           onDelete={deleteCurrent}
         />
       </div>
@@ -531,36 +569,49 @@ function ChatsContent() {
       <div ref={listRef} onScroll={onListScroll} className="chat-scroll min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <div className="mx-auto flex h-full w-full max-w-[46rem] flex-col justify-center px-4 pb-16 pt-10 sm:px-6">
-            <h1 className="title-display text-center text-[34px] sm:text-[42px]">{greeting(firstName)}</h1>
-            <div className="mt-8">{composer}</div>
+            <motion.h1
+              className="title-display text-center text-[34px] sm:text-[42px]"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
+            >
+              {greeting(firstName)}
+            </motion.h1>
+            <motion.div className="mt-8" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.06, ease: [0.2, 0.7, 0.2, 1] }}>
+              {composer}
+            </motion.div>
             <div className="mt-4 grid gap-1.5 sm:grid-cols-2">
-              {STARTERS.map((starter) => (
-                <button
-                  key={starter.title}
-                  type="button"
-                  className="starter-card"
-                  title={starter.prompt}
-                  onClick={() => {
-                    setText(starter.prompt);
-                    requestAnimationFrame(() => (document.querySelector('[aria-label="Chat message"]') as HTMLTextAreaElement | null)?.focus());
-                  }}
-                >
-                  <starter.Icon size={15} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
-                  {starter.title}
-                </button>
-              ))}
+              {STARTERS.map((starter, index) => {
+                const Icon = STARTER_ICONS[starter.id];
+                return (
+                  <motion.button
+                    key={starter.title}
+                    type="button"
+                    className="starter-card"
+                    title={starter.prompt}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.12 + index * 0.04 }}
+                    onClick={() => void sendPrompt(starter.prompt)}
+                  >
+                    <Icon size={15} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                    {starter.title}
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
         ) : (
           <div ref={contentRef} className="mx-auto w-full max-w-[46rem] space-y-6 px-4 pt-16 sm:px-6" style={{ paddingBottom: composerHeight + 32 }}>
             {messages.map((message) => (
-              <ChatMessageBubble
+              <motion.div
                 key={message.clientKey ?? message.id}
-                message={message}
-                busy={loading}
-                onEdit={editAndResend}
-                onRegenerate={regenerate}
-              />
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.24, ease: [0.2, 0.7, 0.2, 1] }}
+              >
+                <ChatMessageBubble message={message} busy={loading} onEdit={editAndResend} onRegenerate={regenerate} />
+              </motion.div>
             ))}
             {loading && !replyStarted ? <ThinkingTrace label={status} /> : null}
           </div>
@@ -599,8 +650,8 @@ function ChatHeader({
   onDelete: () => Promise<string | null | undefined>;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const confirm = useConfirm();
   const [draft, setDraft] = useState(title);
   const [error, setError] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -608,16 +659,10 @@ function ChatHeader({
   useEffect(() => {
     if (!menuOpen) return;
     const close = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false);
-        setConfirmingDelete(false);
-      }
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-        setConfirmingDelete(false);
-      }
+      if (event.key === "Escape") setMenuOpen(false);
     };
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", onKey);
@@ -675,10 +720,7 @@ function ChatHeader({
             className="icon-button"
             aria-label="Conversation options"
             aria-expanded={menuOpen}
-            onClick={() => {
-              setMenuOpen((open) => !open);
-              setConfirmingDelete(false);
-            }}
+            onClick={() => setMenuOpen((open) => !open)}
           >
             <MoreHorizontal size={18} />
           </button>
@@ -697,27 +739,24 @@ function ChatHeader({
                 <Pencil size={15} />
                 Rename
               </button>
-              {confirmingDelete ? (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="menu-item text-[var(--critical)]"
-                  onClick={async () => {
-                    const failure = await onDelete();
-                    if (failure) setError(failure);
-                    setMenuOpen(false);
-                    setConfirmingDelete(false);
-                  }}
-                >
-                  <Trash2 size={15} />
-                  Confirm delete
-                </button>
-              ) : (
-                <button type="button" role="menuitem" className="menu-item text-[var(--critical)]" onClick={() => setConfirmingDelete(true)}>
-                  <Trash2 size={15} />
-                  Delete
-                </button>
-              )}
+              <button
+                type="button"
+                role="menuitem"
+                className="menu-item text-[var(--critical)]"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  const ok = await confirm({
+                    title: "Delete this chat?",
+                    description: `"${title}" and its messages will be removed. This cannot be undone.`,
+                    confirmLabel: "Delete",
+                    destructive: true
+                  });
+                  if (ok) await onDelete();
+                }}
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
             </div>
           ) : null}
         </div>

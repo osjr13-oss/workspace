@@ -14,7 +14,7 @@ import { serializeError } from "@/lib/serialize-error";
 import { ingestUserStyle } from "@/lib/style-profile";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { removeEmDashes } from "@/lib/text";
-import type { ChatStreamEvent } from "@/lib/chat-stream";
+import { toolActionEvent, type ChatStreamEvent } from "@/lib/chat-stream";
 import type { Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -519,6 +519,8 @@ export async function POST(request: Request) {
                   const args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
                   send({ type: "status", label: describeToolCall(call.function.name, args) });
                   result = await executeTool(call.function.name, args, toolCtx);
+                  const action = toolActionEvent(call.function.name, result);
+                  if (action) send(action);
                   const source = TOOL_SOURCES[call.function.name];
                   if (source && !/^(Could not|Not done|Google is not connected)/.test(result)) toolSources.add(source);
                 } catch (error) {
