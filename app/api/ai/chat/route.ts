@@ -295,6 +295,7 @@ export async function POST(request: Request) {
       google,
       financeReady,
       userMessage: userContent,
+      lastAssistantMessage: ((historyResult.data || []) as HistoryRow[]).find((row) => row.role === "assistant")?.content || "",
       userId: user.id,
       projectId,
       webCitations,

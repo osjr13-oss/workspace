@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp } from "@/lib/audit";
 import { allowRequest } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -6,7 +7,7 @@ export const runtime = "nodejs";
 /** Receives browser-side crashes so they show up in server logs as `[client-error]`. */
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = clientIp(request) || "unknown";
     if (!(await allowRequest("client.error", ip, 20, 600))) {
       return NextResponse.json({ ok: false }, { status: 429 });
     }

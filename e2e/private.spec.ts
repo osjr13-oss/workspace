@@ -30,6 +30,18 @@ test("search engines are asked to skip every page", async ({ page, request }) =>
   await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
 });
 
+test("pages cannot be shown inside another site and browsers keep to HTTPS", async ({ request }) => {
+  for (const path of ["/", "/signin", "/api/client-error"]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    const headers = response.headers();
+    expect(headers["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(headers["x-frame-options"], path).toBe("DENY");
+    expect(headers["x-content-type-options"], path).toBe("nosniff");
+    expect(headers["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
+    expect(headers["strict-transport-security"], path).toContain("max-age=");
+  }
+});
+
 test("retired public pages are gone or send visitors to sign in", async ({ page }) => {
   for (const path of ["/pricing", "/guides", "/changelog", "/d/some-deck", "/flashcards", "/study", "/support"]) {
     const response = await page.goto(path);

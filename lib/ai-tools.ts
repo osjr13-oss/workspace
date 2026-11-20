@@ -188,6 +188,25 @@ export const financeToolDefinitions = [
 // Actions that change the user's accounts run only when the user's own message
 // asks for one, so instructions hidden in an email can never trigger them.
 const CONFIRMATION = /\b(?:yes|yeah|yep|sure|ok|okay|confirm(?:ed)?|go ahead|do it|sounds good|correct|that works|perfect)\b/i;
+// What Selrano's previous reply must have been offering for a bare "yes" to count.
+const PROPOSAL: Record<string, RegExp> = {
+  gmail_draft: /\b(?:draft|reply|respond|email|message)\b/i,
+  calendar_add: /\b(?:event|calendar|schedule|meeting|appointment|reminder|add)\b/i
+};
+const MAX_CONFIRMATION_WORDS = 8;
+
+/**
+ * A short "yes" approves a draft or event only when the previous Selrano reply
+ * asked about exactly that. A "yes" tucked into a longer message, or one that
+ * follows an unrelated reply, never counts, so text planted in an email cannot
+ * ride along on an unrelated "ok".
+ */
+export function confirmsProposal(tool: string, userMessage: string, lastAssistantMessage: string) {
+  const words = userMessage.trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > MAX_CONFIRMATION_WORDS || !CONFIRMATION.test(userMessage)) return false;
+  const proposal = PROPOSAL[tool];
+  return Boolean(proposal && lastAssistantMessage.includes("?") && proposal.test(lastAssistantMessage));
+}
 const ACTION_REQUEST: Record<string, RegExp> = {
   gmail_draft: /\b(?:draft|write|compose|respond to|reply to|answer)\b|\breply\s+(?:to|back|saying|that|thanking|with)\b/i,
   calendar_add: /\b(?:add|schedule|put|book|block|create|set up|make)\b[^.?!]*\b(?:calendar|event|meeting|appointment|reminder|call|lunch|dinner|at \d|on \w+day|tomorrow|today)\b/i
@@ -199,6 +218,8 @@ export type ToolContext = {
   google?: GoogleConnection | null;
   /** The user's current message, used to gate account-changing actions. */
   userMessage?: string;
+  /** Selrano's previous reply, so a short "yes" can be matched to what it proposed. */
+  lastAssistantMessage?: string;
   /** Settles once a bank sync started for this message has finished (or given up). */
   financeReady?: Promise<unknown>;
   userId: string;
@@ -284,7 +305,7 @@ async function runGoogleTool(name: string, args: Record<string, unknown>, ctx: T
   const google = ctx.google;
   if (!google) return "Google is not connected. The user can connect it in Settings.";
   const text = (value: unknown) => String(value ?? "").trim();
-  if ((name === "gmail_draft" || name === "calendar_add") && !ACTION_REQUEST[name].test(ctx.userMessage || "") && !CONFIRMATION.test(ctx.userMessage || "")) {
+  if ((name === "gmail_draft" || name === "calendar_add") && !ACTION_REQUEST[name].test(ctx.userMessage || "") && !confirmsProposal(name, ctx.userMessage || "", ctx.lastAssistantMessage || "")) {
     return "Not done: the user has not asked for this in their message. Ask them first.";
   }
   try {

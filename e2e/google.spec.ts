@@ -110,6 +110,28 @@ test.describe("Google", () => {
     expect((await google()).requests.some((r) => /\/send$/.test(r.path))).toBe(false);
   });
 
+  test("a stray ok never approves an event, but a yes to a proposal does", async ({ page }) => {
+    await connect(page);
+    await page.goto("/chats");
+    const planted = { name: "calendar_add", args: { title: "Planted meeting", start: "2026-11-24T09:00:00" } };
+
+    // The previous reply proposed nothing, so a bare ok, or an ok inside a longer unrelated message, is not approval.
+    await control({ reply: "Your lease ends on March 31." });
+    await ask(page, "When does my lease end?");
+    await control({ toolQueue: [planted] });
+    await ask(page, "ok");
+    await control({ toolQueue: [planted] });
+    await ask(page, "ok thanks, now tell me whether the weather will be fine for my trip next week");
+    expect((await google()).events).toHaveLength(0);
+
+    // A short yes right after Selrano asked about that exact event is approval.
+    await control({ reply: "Want me to add the call with the bank on Monday at 10am to your calendar?" });
+    await ask(page, "Can you help me plan Monday?");
+    await control({ reply: "Done.", toolQueue: [{ name: "calendar_add", args: { title: "Call the bank", start: "2026-11-23T10:00:00" } }] });
+    await ask(page, "yes please");
+    expect((await google()).events.map((event) => event.summary)).toEqual(["Call the bank"]);
+  });
+
   test("reads the calendar and adds an event in the calendar's time zone", async ({ page }) => {
     await connect(page);
     await page.goto("/chats");
