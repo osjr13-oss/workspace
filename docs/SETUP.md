@@ -104,6 +104,15 @@ Powers the Money page and money questions in chat. Read-only: only the Transacti
 5. Apply `supabase/migrations/20261120120000_plaid_finance.sql` in the Supabase SQL Editor.
 6. To go live: disconnect the test bank, set `PLAID_SECRET` to the **Production** secret and `PLAID_ENV` to `production`, then connect real banks. Sandbox and production data are kept apart by `plaid_items.environment`.
 
+## Step 4d - Dedicated lock for connected-account logins (recommended)
+
+Your Google and bank logins are encrypted before they are stored. By default the lock is made from `SUPABASE_SERVICE_ROLE_KEY`, so replacing that Supabase key would make them unreadable (and a bank reconnect spends one of the 10 lifetime Plaid Trial slots). This step gives the lock its own key so replacing the Supabase key is safe.
+
+1. In your password manager (Apple Passwords, 1Password and similar), create a new entry named "Selrano token key" with a generated random password of **at least 48 characters**. Keep that entry forever: if this key is lost, the stored logins cannot be opened and you would reconnect Google and your banks.
+2. Cloudflare: **Workers & Pages > selrano > Settings > Variables and Secrets > Add**. Type **Secret**, name `TOKEN_ENCRYPTION_KEY`, value is the password from step 1. Save and deploy.
+3. Nothing else to do. New logins use it at once. Old ones are re-locked automatically by the daily 12:00 UTC bank job (`/api/cron/plaid-sync`), which checks each re-locked value before saving it. In Worker logs, look for `[cron/plaid-sync] stored logins` with `upgraded` above 0 after the first run.
+4. Only after that log line appears is it safe to ever replace the Supabase service key.
+
 ## Step 5 - Optional later
 
 - **Supabase custom SMTP** - branded password-reset emails (Resend SMTP in Supabase auth settings). See `docs/OPERATIONS.md`.
