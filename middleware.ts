@@ -1,13 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAllowedEmail, isOpenPath } from "@/lib/access";
+import { contentSecurityPolicy, newNonce } from "@/lib/csp";
 
 // Selrano is private (lib/access.ts): every page except the open ones needs an
 // allowed account. Pages that redirect a signed-in visitor to the workspace.
 const authOnlyPaths = ["/signin"];
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Pages get a one-time script pass (lib/csp.ts). Next reads it from the request
+  // headers to stamp its own scripts, and the browser enforces it from the response.
+  const nonce = newNonce();
+  const csp = contentSecurityPolicy(nonce);
+  const passOn = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce);
+    headers.set("content-security-policy", csp);
+    return NextResponse.next({ request: { headers } });
+  };
+  const withCsp = (result: NextResponse) => {
+    result.headers.set("Content-Security-Policy", csp);
+    return result;
+  };
+  let response = passOn();
   const pathname = request.nextUrl.pathname;
   const hasSupabaseConfig = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -21,7 +36,8 @@ export async function middleware(request: NextRequest) {
 
   if (!hasSupabaseConfig) {
     // Fail closed: without auth configured, only the open pages load.
-    if (pathname.startsWith("/api/") || isOpenPath(pathname)) return response;
+    if (pathname.startsWith("/api/")) return NextResponse.next({ request });
+    if (isOpenPath(pathname)) return withCsp(response);
     const url = request.nextUrl.clone();
     url.pathname = "/signin";
     url.search = "";
@@ -31,7 +47,7 @@ export async function middleware(request: NextRequest) {
   // API routes check the session themselves. Skipping it here saves a full
   // round trip to Supabase on every request, including each chat message.
   if (pathname.startsWith("/api/")) {
-    return response;
+    return NextResponse.next({ request });
   }
 
   const supabase = createServerClient(
@@ -44,7 +60,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = passOn();
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         }
       }
@@ -88,7 +104,7 @@ export async function middleware(request: NextRequest) {
     return redirectTo("/chats");
   }
 
-  return response;
+  return withCsp(response);
 }
 
 export const config = {

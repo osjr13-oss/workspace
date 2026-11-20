@@ -15,6 +15,9 @@ const display = Newsreader({
   axes: ["opsz"]
 });
 
+// Every page is built per request so each one carries its own script pass (lib/csp.ts).
+export const dynamic = "force-dynamic";
+
 export const viewport: Viewport = {
   themeColor: brand.colors.background,
   width: "device-width",
