@@ -76,6 +76,17 @@ function directiveFromDimensions(dimensions: StyleDimensions) {
   return `${length} ${structure} ${energy} ${casing} Never use an em dash.`;
 }
 
+/** The saved profile, unchanged. Used for turns that are not new messages (edit, regenerate). */
+export async function loadStyleProfile(supabase: SupabaseClient, userId: string): Promise<StyleProfile | null> {
+  try {
+    const { data } = await supabase.from("style_profiles").select("style_directive, confidence, message_count").eq("user_id", userId).maybeSingle();
+    if (!data?.style_directive) return null;
+    return { styleDirective: String(data.style_directive), confidence: Number(data.confidence || 0), messageCount: Number(data.message_count || 0) };
+  } catch {
+    return null;
+  }
+}
+
 export async function ingestUserStyle(
   supabase: SupabaseClient,
   userId: string,

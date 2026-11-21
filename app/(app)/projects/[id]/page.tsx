@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { BookOpen, Files, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { FileProcessingStatus } from "@/components/file-processing-status";
+import { ProjectInstructions } from "@/components/project-instructions";
 import { useConfirm } from "@/components/dialog";
 import { useToast } from "@/components/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -35,7 +36,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         supabase.from("projects").select("*").eq("id", id).single(),
         supabase.from("notes").select("*").eq("project_id", id).order("updated_at", { ascending: false }),
         supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-        supabase.from("chat_threads").select("*").eq("project_id", id).order("updated_at", { ascending: false })
+        supabase.from("chat_threads").select("*").eq("project_id", id).neq("temporary", true).order("updated_at", { ascending: false })
       ]);
       const firstError = projectResult.error || notesResult.error || filesResult.error || threadsResult.error;
       if (firstError) {
@@ -107,6 +108,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {project.description && (
         <p className="max-w-2xl text-sm leading-6 text-[var(--muted-strong)]">{project.description}</p>
       )}
+
+      <ProjectInstructions projectId={project.id} initial={String((project as Project & { instructions?: string | null }).instructions || "")} />
 
       <div className="flex gap-1 overflow-x-auto border-b border-[var(--border)]">
         {tabs.map((t) => (

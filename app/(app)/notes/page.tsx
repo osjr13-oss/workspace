@@ -42,7 +42,10 @@ function NotesContent() {
     const loadedNotes = (notesResult.data as Note[]) || [];
     setNotes(loadedNotes);
     setProjects((projectsResult.data as Project[]) || []);
-    if (!selectedId && loadedNotes[0]) selectNote(loadedNotes[0]);
+    // A link from search opens that note; otherwise the newest one.
+    const linked = loadedNotes.find((note) => note.id === searchParams.get("note"));
+    if (linked) selectNote(linked);
+    else if (!selectedId && loadedNotes[0]) selectNote(loadedNotes[0]);
     if (projectFilter) setProjectId(projectFilter);
   }
 

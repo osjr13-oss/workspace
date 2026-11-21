@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, FileText, FolderOpen, Loader2, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, FileText, FolderOpen, Loader2, Mic, MicOff, Paperclip, SlidersHorizontal, Square, X } from "lucide-react";
+import { RESPONSE_STYLES, type ResponseStyleId } from "@/lib/response-styles";
 import { autocorrectOnBoundary } from "@/lib/autocorrect";
 import { removeEmDashes } from "@/lib/text";
 import { ACCEPTED_FILE_TYPES } from "@/lib/upload-file";
@@ -32,7 +33,35 @@ type ChatComposerProps = {
   maxAttachments: number;
   /** Today's composer hands the message to chat and has no file picker. */
   allowAttachments?: boolean;
+  /** How Selrano should answer in this chat; hidden when not given. */
+  responseStyle?: ResponseStyleId;
+  onResponseStyleChange?: (style: ResponseStyleId) => void;
 };
+
+/** Pasted text longer than this becomes an attachment, so the box stays usable and nothing is cut. */
+export const LONG_PASTE_CHARS = 4_000;
+
+type Recognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+};
+
+function speechRecognition(): (new () => Recognition) | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
+function pastedTextFile(text: string) {
+  const stamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).replace(/[/:,]/g, " ").replace(/\s+/g, " ").trim();
+  return new File([text], `Pasted text ${stamp}.txt`, { type: "text/plain" });
+}
 
 const BOUNDARY = /[\s.,!?;:]/;
 
@@ -49,7 +78,9 @@ export function ChatComposer({
   onProjectChange,
   projectLocked,
   maxAttachments,
-  allowAttachments = true
+  allowAttachments = true,
+  responseStyle,
+  onResponseStyleChange
 }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +89,49 @@ export function ChatComposer({
   const uploading = attachments.some((item) => item.status === "uploading" || item.status === "processing");
   const canSend = Boolean(value.trim()) && !uploading;
   const projectName = projects.find((project) => project.id === projectId)?.name;
+  const [dragging, setDragging] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [canDictate, setCanDictate] = useState(false);
+  const recognitionRef = useRef<Recognition | null>(null);
+  // Dictation adds to what was typed before it started.
+  const dictationBaseRef = useRef("");
+  const room = allowAttachments ? Math.max(0, maxAttachments - attachments.length) : 0;
+
+  useEffect(() => setCanDictate(Boolean(speechRecognition())), []);
+  useEffect(() => () => recognitionRef.current?.stop(), []);
+
+  function toggleDictation() {
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const Speech = speechRecognition();
+    if (!Speech) return;
+    const recognition = new Speech();
+    recognition.lang = navigator.language || "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    dictationBaseRef.current = value ? `${value.replace(/\s+$/, "")} ` : "";
+    recognition.onresult = (event) => {
+      let heard = "";
+      for (let index = 0; index < event.results.length; index += 1) heard += event.results[index][0].transcript;
+      onChange(removeEmDashes(dictationBaseRef.current + heard.trimStart()));
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  }
+
+  function takeFiles(files: File[]) {
+    if (!files.length || !room) return;
+    onAttach(files.slice(0, room));
+  }
 
   useEffect(() => {
     return () => {
@@ -109,7 +183,24 @@ export function ChatComposer({
   }
 
   return (
-    <div className="composer">
+    <div
+      className={`composer ${dragging ? "composer-dragging" : ""}`}
+      onDragOver={(event) => {
+        if (!allowAttachments || !Array.from(event.dataTransfer.types).includes("Files")) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(event) => {
+        if (!allowAttachments) return;
+        event.preventDefault();
+        setDragging(false);
+        takeFiles(Array.from(event.dataTransfer.files || []));
+      }}
+    >
+      {dragging ? <div className="composer-drop-hint" aria-hidden="true">Drop files to attach</div> : null}
       {attachments.length ? (
         <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Attached files">
           {attachments.map((item) => (
@@ -153,6 +244,21 @@ export function ChatComposer({
           className="block max-h-60 min-h-7 w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-[var(--muted)]"
           value={value}
           onChange={(event) => update(event.target.value)}
+          onPaste={(event) => {
+            if (!allowAttachments) return;
+            // Pasted pictures and files are attached; very long text becomes a text attachment.
+            const files = Array.from(event.clipboardData.files || []);
+            if (files.length) {
+              event.preventDefault();
+              takeFiles(files);
+              return;
+            }
+            const text = event.clipboardData.getData("text/plain");
+            if (text.length > LONG_PASTE_CHARS && room) {
+              event.preventDefault();
+              takeFiles([pastedTextFile(removeEmDashes(text))]);
+            }
+          }}
           onKeyDown={(event) => {
             // IME confirmation/cancellation belongs to the input method. Safari
             // can clear isComposing before the confirming Enter (keyCode 229).
@@ -206,6 +312,24 @@ export function ChatComposer({
         </>
         ) : null}
 
+        {onResponseStyleChange ? (
+          <label className="project-chip project-chip-select" title="How Selrano answers in this chat">
+            <SlidersHorizontal size={14} />
+            <select
+              aria-label="Response style"
+              value={responseStyle || "normal"}
+              onChange={(event) => onResponseStyleChange(event.target.value as ResponseStyleId)}
+              className="max-w-[9rem] appearance-none truncate bg-transparent pr-1 outline-none"
+            >
+              {RESPONSE_STYLES.map((style) => (
+                <option key={style.id} value={style.id}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
         {projectLocked ? (
           <span className="project-chip" title="A conversation keeps the project it started with">
             <FolderOpen size={14} />
@@ -231,6 +355,18 @@ export function ChatComposer({
         )}
 
         <div className="flex-1" />
+        {canDictate && !busy ? (
+          <button
+            type="button"
+            className={`icon-button ${listening ? "text-[var(--accent)]" : ""}`}
+            onClick={toggleDictation}
+            aria-pressed={listening}
+            aria-label={listening ? "Stop dictation" : "Dictate"}
+            title={listening ? "Stop dictation" : "Dictate"}
+          >
+            {listening ? <MicOff size={18} /> : <Mic size={18} />}
+          </button>
+        ) : null}
         {busy ? (
           <button type="button" onClick={onStop} className="send-button" aria-label="Stop responding" title="Stop (Esc)">
             <Square size={13} fill="currentColor" />

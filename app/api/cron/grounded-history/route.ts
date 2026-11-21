@@ -7,7 +7,15 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   if (!isCronAuthorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    await expireGroundedHistory(createSupabaseAdminClient());
+    const admin = createSupabaseAdminClient();
+    await expireGroundedHistory(admin);
+    // Temporary chats are removed a day after they were last used.
+    const { error } = await admin
+      .from("chat_threads")
+      .delete()
+      .eq("temporary", true)
+      .lt("updated_at", new Date(Date.now() - 86_400_000).toISOString());
+    if (error) console.error("[grounded-history] temporary chat cleanup failed", error.message);
     return NextResponse.json({ success: true });
   } catch {
     console.error("[grounded-history] cleanup failed");

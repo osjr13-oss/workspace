@@ -5,26 +5,61 @@ import { isValidElement, useEffect, useRef, useState } from "react";
 import {
   Check,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   FileText,
   Pencil,
   RefreshCw,
+  ThumbsDown,
+  ThumbsUp,
   Volume2,
   VolumeX
 } from "lucide-react";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { CitationBadge } from "@/components/citation-badge";
+import { ActivityTrail } from "@/components/activity-trail";
+import { Dialog } from "@/components/dialog";
+import { SourcesPanel, usableSources } from "@/components/sources-panel";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { healStreamingMarkdown } from "@/lib/stream-markdown";
 import { removeEmDashes } from "@/lib/text";
 import type { ChatMessage, FileCitation } from "@/lib/types";
+
+export type MessageVersions = { position: number; total: number; onShow: (position: number) => void };
 
 type ChatMessageProps = {
   message: ChatMessage;
   busy: boolean;
   onEdit: (messageId: string, content: string) => Promise<void>;
   onRegenerate: (messageId: string) => Promise<void>;
+  /** Other versions of this message (an edited question or a retried answer). */
+  versions?: MessageVersions | null;
+  /** Follow-up questions are shown under the latest answer only; picking one sends it. */
+  onSuggestion?: (text: string) => void;
 };
+
+/** < 2 / 3 > under a message that has more than one version. */
+function VersionSwitch({ versions, busy, noun }: { versions: MessageVersions; busy: boolean; noun: string }) {
+  const { position, total, onShow } = versions;
+  return (
+    <div className="version-switch" role="group" aria-label={`${noun} versions`}>
+      <button type="button" aria-label={`Previous ${noun.toLowerCase()} version`} disabled={busy || position === 0} onClick={() => onShow(position - 1)}>
+        <ChevronLeft size={15} />
+      </button>
+      <span aria-live="polite">
+        {position + 1} / {total}
+      </span>
+      <button type="button" aria-label={`Next ${noun.toLowerCase()} version`} disabled={busy || position >= total - 1} onClick={() => onShow(position + 1)}>
+        <ChevronRight size={15} />
+      </button>
+    </div>
+  );
+}
 
 /** Memory markers become badges when the reply saved them, and are hidden otherwise (for example while streaming). */
 function withMemoryLinks(content: string, markers: Set<string>) {
@@ -39,6 +74,20 @@ function withCitationLinks(content: string) {
     .replace(/\[(\d+)\]/g, (marker, id) => `[${marker}](citation:${id})`);
 }
 
+/**
+ * Math: $$...$$, \(...\) and \[...\] become formulas. A single $ is left alone,
+ * so prices like $5 and $10 are never read as math.
+ */
+function withMath(content: string) {
+  if (!/\\[([]|\$\$/.test(content)) return content;
+  return content
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, body: string) => `\n$$\n${body.trim()}\n$$\n`)
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, body: string) => `$$${body.trim()}$$`);
+}
+
+const REMARK_PLUGINS: Parameters<typeof ReactMarkdown>[0]["remarkPlugins"] = [remarkGfm, [remarkMath, { singleDollarTextMath: false }]];
+const REHYPE_PLUGINS: Parameters<typeof ReactMarkdown>[0]["rehypePlugins"] = [[rehypeKatex, { throwOnError: false, strict: false }]];
+
 function urlTransform(url: string) {
   return url.startsWith("citation:") ? url : defaultUrlTransform(url);
 }
@@ -47,7 +96,7 @@ function isAttachment(citation: { marker: string }): citation is FileCitation {
   return citation.marker.startsWith("attachment-");
 }
 
-export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatMessageProps) {
+export function ChatMessageBubble({ message, busy, onEdit, onRegenerate, versions, onSuggestion }: ChatMessageProps) {
   const content = removeEmDashes(message.content);
   // Unfinished formatting at the tail of a reply that is still arriving is tidied so it never flashes as raw symbols.
   const streaming = message.id.startsWith("streaming");
@@ -56,6 +105,10 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
   const [draft, setDraft] = useState(content);
   const [copied, setCopied] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [feedback, setFeedback] = useState<number | null>(message.feedback ?? null);
+  const [reasonOpen, setReasonOpen] = useState(false);
+  const [reason, setReason] = useState("");
   const copiedTimerRef = useRef<number | null>(null);
   const citations = message.citations || [];
   const attachments = citations.filter(isAttachment);
@@ -89,6 +142,17 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
     } catch {
       setCopied(false);
     }
+  }
+
+  /** Thumbs up or down, saved with the answer; a thumbs down can say what went wrong. */
+  async function rate(value: 1 | -1, why?: string) {
+    const next = feedback === value && why === undefined ? null : value;
+    setFeedback(next);
+    const supabase = createSupabaseBrowserClient();
+    await supabase
+      .from("chat_messages")
+      .update({ feedback: next, feedback_reason: next === -1 ? removeEmDashes(why || "").slice(0, 1000) || null : null })
+      .eq("id", message.id);
   }
 
   function toggleSpeech() {
@@ -164,23 +228,26 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
           </div>
         )}
         {saved && !editing ? (
-          <div className="message-actions mt-1 flex items-center gap-0.5">
-            <button type="button" onClick={copyText} className="icon-button h-8 w-8" aria-label={copied ? "Message copied" : "Copy message"} title="Copy">
-              {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(content);
-                setEditing(true);
-              }}
-              disabled={busy}
-              className="icon-button h-8 w-8"
-              aria-label="Edit and resend message"
-              title="Edit and resend"
-            >
-              <Pencil size={15} />
-            </button>
+          <div className="mt-1 flex items-center gap-1">
+            {versions && versions.total > 1 ? <VersionSwitch versions={versions} busy={busy} noun="Message" /> : null}
+            <div className="message-actions flex items-center gap-0.5">
+              <button type="button" onClick={copyText} className="icon-button h-8 w-8" aria-label={copied ? "Message copied" : "Copy message"} title="Copy">
+                {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft(content);
+                  setEditing(true);
+                }}
+                disabled={busy}
+                className="icon-button h-8 w-8"
+                aria-label="Edit and resend message"
+                title="Edit and resend"
+              >
+                <Pencil size={15} />
+              </button>
+            </div>
           </div>
         ) : null}
       </article>
@@ -216,8 +283,15 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
     }
   };
 
+  const steps = message.tool_trace?.steps || [];
+  const sources = usableSources(citations);
+  const sourceCount = citations.filter((item) => item.kind === "web").length;
+
   return (
     <article className="group w-full" aria-label="Selrano response">
+      {steps.length && !isError ? (
+        <ActivityTrail steps={steps} durationMs={streaming ? undefined : message.tool_trace?.durationMs} sourceCount={streaming ? 0 : sourceCount} live={streaming} />
+      ) : null}
       {isError ? (
         <div className="rounded-2xl border border-[rgba(194,65,61,0.22)] bg-[rgba(194,65,61,0.05)] px-4 py-3 text-[15px] leading-7 text-[var(--text)]">
           {content}
@@ -226,8 +300,8 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
         <p className="text-sm italic text-[var(--muted)]">Stopped before replying.</p>
       ) : (
         <div className="answer-prose">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={urlTransform} components={components}>
-            {withMemoryLinks(citations.length ? withCitationLinks(displayed) : displayed, memoryMarkers)}
+          <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS} urlTransform={urlTransform} components={components}>
+            {withMath(withMemoryLinks(citations.length ? withCitationLinks(displayed) : displayed, memoryMarkers))}
           </ReactMarkdown>
         </div>
       )}
@@ -249,11 +323,36 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
       ) : null}
 
       {!streaming && !isError ? (
-        <div className="message-actions mt-2 flex items-center gap-0.5 text-[var(--muted)]">
+        <div className="message-actions mt-2 flex flex-wrap items-center gap-0.5 text-[var(--muted)]">
+          {versions && versions.total > 1 ? <VersionSwitch versions={versions} busy={busy} noun="Response" /> : null}
           {!stoppedEmpty ? (
             <>
               <button type="button" onClick={copyText} className="icon-button h-8 w-8" aria-label={copied ? "Response copied" : "Copy response"} title={copied ? "Copied" : "Copy"}>
                 {copied ? <CheckCheck size={15} /> : <Copy size={15} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => void rate(1)}
+                className={`icon-button h-8 w-8 ${feedback === 1 ? "text-[var(--accent)]" : ""}`}
+                aria-label="Good response"
+                aria-pressed={feedback === 1}
+                title="Good response"
+              >
+                <ThumbsUp size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (feedback === -1) return void rate(-1);
+                  setReason("");
+                  setReasonOpen(true);
+                }}
+                className={`icon-button h-8 w-8 ${feedback === -1 ? "text-[var(--accent)]" : ""}`}
+                aria-label="Bad response"
+                aria-pressed={feedback === -1}
+                title="Bad response"
+              >
+                <ThumbsDown size={15} />
               </button>
               <button
                 type="button"
@@ -276,8 +375,49 @@ export function ChatMessageBubble({ message, busy, onEdit, onRegenerate }: ChatM
           >
             <RefreshCw size={15} />
           </button>
+          {sources.length ? (
+            <button type="button" onClick={() => setSourcesOpen(true)} className="chip-button ml-1 whitespace-nowrap text-[13px] text-[var(--muted-strong)]" aria-haspopup="dialog">
+              View sources
+            </button>
+          ) : null}
         </div>
       ) : null}
+      {onSuggestion && !busy && !streaming && message.suggestions?.length ? (
+        <div className="follow-ups" aria-label="Suggested follow-up questions">
+          {message.suggestions.map((suggestion) => (
+            <button key={suggestion} type="button" className="follow-up" onClick={() => onSuggestion(suggestion)}>
+              {removeEmDashes(suggestion)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {sources.length ? <SourcesPanel open={sourcesOpen} onClose={() => setSourcesOpen(false)} citations={sources} /> : null}
+      <Dialog open={reasonOpen} onClose={() => setReasonOpen(false)} title="What went wrong?" description="Optional. It helps Selrano answer better next time.">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setReasonOpen(false);
+            void rate(-1, reason);
+          }}
+        >
+          <textarea
+            aria-label="What went wrong"
+            className="input-premium min-h-24 w-full resize-y"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Wrong facts, too long, missed the point..."
+            data-autofocus
+          />
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" className="btn-secondary btn-sm" onClick={() => setReasonOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary btn-sm">
+              Send feedback
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </article>
   );
 }

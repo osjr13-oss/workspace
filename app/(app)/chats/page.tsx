@@ -7,25 +7,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowDown, Check, Globe2, ListChecks, Mail, MoreHorizontal, NotebookPen, Pencil, Trash2, X } from "lucide-react";
 import { ChatComposer, type ComposerAttachment } from "@/components/chat-composer";
-import { ChatMessageBubble } from "@/components/chat-message";
+import { ChatMessageBubble, type MessageVersions } from "@/components/chat-message";
 import { useChatThreads } from "@/components/chat-threads";
 import { ThinkingTrace } from "@/components/thinking-trace";
 import { useConfirm } from "@/components/dialog";
 import { useToast } from "@/components/toast";
 import { takePendingMessage, STARTERS } from "@/lib/chat-handoff";
 import { readChatStream } from "@/lib/chat-stream";
+import { activePath, childrenIndex, deepestLeaf, effectiveParents, versionsOf } from "@/lib/chat-tree";
 import { createStreamPacer, type StreamPacer } from "@/lib/stream-pacer";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 import { uploadWorkspaceFile } from "@/lib/upload-file";
-import type { ChatMessage, Project } from "@/lib/types";
+import type { ChatMessage, Project, ToolStep } from "@/lib/types";
+import { isResponseStyle, type ResponseStyleId } from "@/lib/response-styles";
 
 /** A message plus a React key that survives the swap from streamed text to the saved row. */
 type DisplayMessage = ChatMessage & { clientKey?: string };
 
 type Handoff = { userKey?: string | null; assistantKey?: string | null };
 
-const MAX_ATTACHMENTS = 4;
+const MAX_ATTACHMENTS = 8;
 
 const STARTER_ICONS = { notes: NotebookPen, week: ListChecks, reply: Mail, news: Globe2 } as const;
 
@@ -74,6 +76,8 @@ function ChatsContent() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  // Every saved message of the conversation, including other versions; `messages` is the branch on screen.
+  const [tree, setTree] = useState<ChatMessage[]>([]);
   const [modelMetadata, setModelMetadata] = useState<{ provider: string; model: string; fallbackReason?: string } | null>(null);
   const [threadId, setThreadIdState] = useState<string | null>(urlThread);
   // The conversation id is also kept in a ref that is updated the instant it is known, so the next
@@ -88,6 +92,14 @@ function ChatsContent() {
   const projectIdRef = useRef(projectId);
   projectIdRef.current = projectId;
   const [text, setText] = useState("");
+  // How Selrano answers; starts from the default in Settings and can change per chat.
+  const [responseStyle, setResponseStyle] = useState<ResponseStyleId>("normal");
+  // A temporary chat is not kept in the list, is never learned from, and is removed after a day.
+  const [temporary, setTemporary] = useState(false);
+  const temporaryRef = useRef(false);
+  temporaryRef.current = temporary;
+  const responseStyleRef = useRef<ResponseStyleId>("normal");
+  responseStyleRef.current = responseStyle;
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingThread, setLoadingThread] = useState(Boolean(urlThread));
@@ -114,23 +126,58 @@ function ChatsContent() {
   const pacerRef = useRef<StreamPacer | null>(null);
   const turnKeysRef = useRef<Handoff>({});
   const stopRef = useRef<Promise<void> | null>(null);
+  // The saved question this reply answers and when the turn began, for Stop.
+  const answerTurnRef = useRef<{ questionId?: string; startedAt?: string } | null>(null);
+  // Stop pressed before a new conversation had an id: it runs as soon as the id arrives.
+  const pendingStopRef = useRef(false);
 
   const activeThread = threads.find((thread) => thread.id === threadId) || null;
+  const lastSavedId = useRef<string | null>(null);
+  lastSavedId.current = [...messages].reverse().find((item) => !["pending-user", "streaming", "error"].includes(item.id))?.id || null;
   const hasMessages = messages.length > 0;
 
   const loadMessages = useCallback(async (id: string | null, handoff?: Handoff) => {
     const view = viewRef.current;
     if (!id) {
       setMessages([]);
+      setTree([]);
       setLoadingThread(false);
       return;
     }
     const supabase = createSupabaseBrowserClient();
-    const { data } = await supabase.from("chat_messages").select("*").eq("thread_id", id).order("created_at", { ascending: true });
+    const [{ data }, { data: thread }] = await Promise.all([
+      supabase.from("chat_messages").select("*").eq("thread_id", id).order("created_at", { ascending: true }),
+      supabase.from("chat_threads").select("active_leaf_id").eq("id", id).maybeSingle()
+    ]);
     if (viewRef.current !== view) return;
-    setMessages(withHandoffKeys((data as ChatMessage[]) || [], handoff));
+    const rows = (data as ChatMessage[]) || [];
+    setTree(rows);
+    setMessages(withHandoffKeys(activePath(rows, (thread as { active_leaf_id?: string | null } | null)?.active_leaf_id), handoff));
     setLoadingThread(false);
   }, []);
+
+  // Version arrows for each message on screen that has siblings.
+  const versionInfo = (() => {
+    const parents = effectiveParents(tree);
+    const index = childrenIndex(tree, parents);
+    const byId = new Map(tree.map((row) => [row.id, row]));
+    return (message: DisplayMessage): MessageVersions | null => {
+      const saved = byId.get(message.id);
+      if (!saved) return null;
+      const { ids, position } = versionsOf(tree, saved, parents, index);
+      if (ids.length < 2) return null;
+      return { position, total: ids.length, onShow: (next) => void showVersion(ids[next], index) };
+    };
+  })();
+
+  /** Shows another version of a message, and the newest conversation that follows it. */
+  async function showVersion(id: string, index: ReturnType<typeof childrenIndex<ChatMessage>>) {
+    if (busyRef.current || !threadIdRef.current) return;
+    const leaf = deepestLeaf(tree, id, index);
+    setMessages(activePath(tree, leaf));
+    const supabase = createSupabaseBrowserClient();
+    await supabase.from("chat_threads").update({ active_leaf_id: leaf }).eq("id", threadIdRef.current);
+  }
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -142,8 +189,9 @@ function ChatsContent() {
     void supabase.auth.getUser().then(async ({ data }) => {
       const user = data.user;
       if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       const name = String(profile?.full_name || user.user_metadata?.full_name || "").trim();
+      if (isResponseStyle(profile?.response_style)) setResponseStyle(profile.response_style);
       setFirstName(name.split(/\s+/)[0] || "");
     });
     if (threadIdRef.current) void loadMessages(threadIdRef.current);
@@ -165,6 +213,7 @@ function ChatsContent() {
     setStatus(null);
     setThreadId(urlThread);
     setMessages([]);
+    setTree([]);
     stickRef.current = true;
     setAtBottom(true);
     if (urlThread) {
@@ -173,6 +222,7 @@ function ChatsContent() {
     } else {
       setLoadingThread(false);
       setProjectId(urlProject || "");
+      setTemporary(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlThread]);
@@ -250,6 +300,9 @@ function ChatsContent() {
     sentAttachments: ComposerAttachment[]
   ) {
     setLoading(true);
+    pendingStopRef.current = false;
+    answerTurnRef.current = null;
+    const liveSteps: ToolStep[] = [];
     setModelMetadata(null);
     setReplyStarted(false);
     setStatus(null);
@@ -302,7 +355,11 @@ function ChatsContent() {
         body: JSON.stringify({
           ...options,
           threadId: threadIdRef.current,
-          projectId: projectIdRef.current || null
+          projectId: projectIdRef.current || null,
+          // The new message follows the last saved message on screen (the version showing).
+          parentId: lastSavedId.current,
+          style: responseStyleRef.current,
+          temporary: !threadIdRef.current && temporaryRef.current
         })
       });
 
@@ -321,8 +378,18 @@ function ChatsContent() {
             showThread(event.threadId);
             void refreshThreads();
           }
+          answerTurnRef.current = { questionId: event.questionId, startedAt: event.startedAt };
+          if (pendingStopRef.current) {
+            pendingStopRef.current = false;
+            stop();
+          }
         } else if (event.type === "status") {
           setStatus(event.label);
+          if (event.label && liveSteps[liveSteps.length - 1]?.label !== event.label) {
+            liveSteps.push({ label: event.label });
+            const trail = { steps: [...liveSteps] };
+            setMessages((existing) => existing.map((item) => (item.id === "streaming" ? { ...item, tool_trace: trail } : item)));
+          }
         } else if (event.type === "research") {
           researchMetadata = event.research;
           setMessages((existing) => existing.map((item) => item.id === "streaming" ? { ...item, research: researchMetadata, citations: researchMetadata?.sources } : item));
@@ -333,10 +400,12 @@ function ChatsContent() {
             // Reply fills into an assistant bubble as words arrive.
             setMessages((existing) => [
               ...existing,
-              { id: "streaming", research: researchMetadata, citations: researchMetadata?.sources, clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
+              { id: "streaming", research: researchMetadata, citations: researchMetadata?.sources, tool_trace: liveSteps.length ? { steps: [...liveSteps] } : null, clientKey: assistantKey, thread_id: streamThreadId || "pending", user_id: "", role: "assistant", content: "", created_at: new Date().toISOString() }
             ]);
           }
           pacer.push(event.text);
+        } else if (event.type === "suggestions") {
+          setMessages((existing) => existing.map((item) => (item.id === "streaming" ? { ...item, suggestions: event.suggestions } : item)));
         } else if (event.type === "model") {
           setModelMetadata(event);
         } else if (event.type === "action") {
@@ -396,6 +465,12 @@ function ChatsContent() {
   function stop() {
     const controller = abortRef.current;
     if (!controller || stopRef.current) return;
+    if (!answerTurnRef.current?.questionId) {
+      // The question is not saved yet; keep listening until it is, then stop.
+      pendingStopRef.current = true;
+      return;
+    }
+    const turn = answerTurnRef.current;
     // Exactly the words the reader has seen, not what had arrived but was not shown yet.
     const partial = pacerRef.current?.shown() ?? "";
     pacerRef.current?.cancel();
@@ -412,7 +487,7 @@ function ChatsContent() {
         await fetch("/api/ai/chat/stop", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ threadId: id, content: partial })
+          body: JSON.stringify({ threadId: id, content: partial, questionId: turn.questionId, startedAt: turn.startedAt })
         }).catch(() => undefined);
         await loadMessages(id, keys);
         void refreshThreads();
@@ -550,6 +625,8 @@ function ChatsContent() {
         onProjectChange={setProjectId}
         projectLocked={Boolean(threadId)}
         maxAttachments={MAX_ATTACHMENTS}
+        responseStyle={responseStyle}
+        onResponseStyleChange={setResponseStyle}
       />
     </form>
   );
@@ -561,6 +638,8 @@ function ChatsContent() {
         <ChatHeader
           title={threadId ? removeEmDashes(activeThread?.title || "") || "Conversation" : "New chat"}
           canManage={Boolean(threadId && activeThread)}
+          temporary={threadId ? Boolean(activeThread?.temporary) || temporary : temporary}
+          onTemporaryChange={threadId ? undefined : setTemporary}
           onRename={renameCurrent}
           onDelete={deleteCurrent}
         />
@@ -603,14 +682,14 @@ function ChatsContent() {
           </div>
         ) : (
           <div ref={contentRef} className="mx-auto w-full max-w-[46rem] space-y-6 px-4 pt-16 sm:px-6" style={{ paddingBottom: composerHeight + 32 }}>
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <motion.div
                 key={message.clientKey ?? message.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.24, ease: [0.2, 0.7, 0.2, 1] }}
               >
-                <ChatMessageBubble message={message} busy={loading} onEdit={editAndResend} onRegenerate={regenerate} />
+                <ChatMessageBubble message={message} busy={loading} onEdit={editAndResend} onRegenerate={regenerate} versions={versionInfo(message)} onSuggestion={index === messages.length - 1 ? (suggestion) => void sendPrompt(suggestion) : undefined} />
               </motion.div>
             ))}
             {loading && !replyStarted ? <ThinkingTrace label={status} /> : null}
@@ -642,10 +721,15 @@ function ChatHeader({
   title,
   canManage,
   onRename,
-  onDelete
+  onDelete,
+  temporary,
+  onTemporaryChange
 }: {
   title: string;
   canManage: boolean;
+  temporary: boolean;
+  /** Only a new chat can be made temporary. */
+  onTemporaryChange?: (temporary: boolean) => void;
   onRename: (title: string) => Promise<string | null>;
   onDelete: () => Promise<string | null | undefined>;
 }) {
@@ -710,8 +794,22 @@ function ChatHeader({
           </button>
         </form>
       ) : (
-        <h2 className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+          {title}
+          {temporary ? <span className="ml-2 text-[13px] font-normal text-[var(--muted)]">Temporary, not saved to your chats</span> : null}
+        </h2>
       )}
+      {onTemporaryChange ? (
+        <button
+          type="button"
+          className={`chip-button text-[13px] ${temporary ? "text-[var(--accent)]" : "text-[var(--muted-strong)]"}`}
+          aria-pressed={temporary}
+          onClick={() => onTemporaryChange(!temporary)}
+          title="A temporary chat is not kept in your list, is never used to learn about you, and is removed after a day"
+        >
+          Temporary chat
+        </button>
+      ) : null}
       {error ? <p className="text-xs font-semibold text-[var(--critical)]">{error}</p> : null}
       {canManage && !renaming ? (
         <div className="relative" ref={menuRef}>

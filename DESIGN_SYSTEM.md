@@ -1,6 +1,6 @@
 # Selrano Design System
 
-Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Shipped November 4, 2026; updated November 20, 2026. Check changes with `design-qa.md`.
+Editorial calm: warm paper, ink, and a highlighter. Selrano should feel like a well-made notebook that happens to be very smart. Shipped November 4, 2026; updated November 21, 2026. Check changes with `design-qa.md`.
 
 ## Principles
 
@@ -69,6 +69,12 @@ Status colors (`--critical`, `--high`, `--medium`, `--low`, `--info`) are for st
 | `.home-card`, `.home-row` | Today page card and its clickable row |
 | `.skeleton` | Shimmering placeholder shaped like the content it stands in for |
 | `.toast`, `.dialog-panel` | Notice and window surfaces (use the components below, not the classes) |
+| `.activity-trail` | The folded line above an answer naming what it looked at; opens into the steps |
+| `.version-switch` | "< 2 / 3 >" under an edited question or a retried answer |
+| `.sources-row` | One source in the Sources side panel (`Dialog side`) |
+| `.follow-up` | A suggested next question under the latest answer: accent text, no capsule |
+| `.search-box`, `.search-result` | The Cmd+K search window |
+| `.composer-dragging` | The message box while files are dragged over it |
 
 Focus is always visible: a 3px paper gap plus a 2px accent ring (`--accent-ring`).
 

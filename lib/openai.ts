@@ -45,7 +45,8 @@ function reasoning() {
   return { reasoning: { effort: process.env.OPENAI_REASONING_EFFORT?.trim() || "low" } };
 }
 
-function convertMessages(messages: GroqChatMessage[], assistantItems?: OpenAIItem[]) {
+function convertMessages(messages: GroqChatMessage[], assistantItems?: OpenAIItem[], images: string[] = []) {
+  const lastUser = images.length ? messages.findLastIndex((message) => message.role === "user") : -1;
   const instructions: string[] = [];
   const input: OpenAIItem[] = [];
   const lastToolAssistant = messages.findLastIndex((message) => message.role === "assistant" && message.tool_calls?.length);
@@ -62,6 +63,10 @@ function convertMessages(messages: GroqChatMessage[], assistantItems?: OpenAIIte
       for (const call of message.tool_calls || []) {
         input.push({ type: "function_call", call_id: call.id, name: call.function.name, arguments: call.function.arguments || "{}" });
       }
+    } else if (index === lastUser) {
+      // Pictures attached to this message go with it.
+      const content: OpenAIContentPart[] = [{ type: "input_text", text: message.content || "" }, ...images.map((url) => ({ type: "input_image" as const, image_url: url, detail: "auto" as const }))];
+      input.push({ type: "message", role: "user", content });
     } else if (message.content) {
       input.push({ type: "message", role: "user", content: message.content });
     }
@@ -118,7 +123,7 @@ async function readEvents(body: ReadableStream<Uint8Array>, handle: (event: Reco
 export async function streamOpenAI(
   messages: GroqChatMessage[],
   tools: Tool[],
-  options: { signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: OpenAIItem[]; allowTools?: boolean }
+  options: { signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: OpenAIItem[]; allowTools?: boolean; cacheKey?: string; images?: string[] }
 ): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: OpenAIItem[]; model: string }> {
   const controller = new AbortController();
   const firstOutputTimeout = setTimeout(() => controller.abort(), 25_000);
@@ -130,10 +135,12 @@ export async function streamOpenAI(
       signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal,
       body: JSON.stringify({
         model: openaiModel(),
-        ...convertMessages(messages, options.assistantContent),
+        ...convertMessages(messages, options.assistantContent, options.images),
         max_output_tokens: options.maxTokens ?? 4096,
         stream: true,
         store: false,
+        // Groups requests that share a prompt start, so OpenAI can reuse it.
+        ...(options.cacheKey ? { prompt_cache_key: options.cacheKey } : {}),
         include: ["reasoning.encrypted_content"],
         ...reasoning(),
         ...(tools.length ? {

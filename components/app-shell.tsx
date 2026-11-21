@@ -25,6 +25,7 @@ import {
 import { ChatThreadsProvider, groupThreads, useChatThreads } from "@/components/chat-threads";
 import { ConfirmProvider, useConfirm } from "@/components/dialog";
 import { ToastProvider, useToast } from "@/components/toast";
+import { SearchDialog } from "@/components/search-dialog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 
@@ -55,8 +56,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Cmd+K (Ctrl+K) searches everything; Cmd+Shift+O starts a new chat.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "k" && !event.shiftKey) {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      } else if (key === "o" && event.shiftKey) {
+        event.preventDefault();
+        router.push("/chats");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router]);
 
   useEffect(() => {
     try {
@@ -94,11 +114,12 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-frame">
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
       <aside
         className={`sidebar hidden lg:flex ${collapsed ? "sidebar-collapsed" : ""}`}
         aria-label="Workspace navigation"
       >
-        <SidebarContent collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+        <SidebarContent collapsed={collapsed} onToggleCollapsed={toggleCollapsed} onSearch={() => setSearchOpen(true)} />
       </aside>
 
       {drawerOpen ? (
@@ -117,7 +138,14 @@ function Shell({ children }: { children: React.ReactNode }) {
               if ((event.target as HTMLElement).closest("a")) setDrawerOpen(false);
             }}
           >
-            <SidebarContent collapsed={false} onClose={() => setDrawerOpen(false)} />
+            <SidebarContent
+              collapsed={false}
+              onClose={() => setDrawerOpen(false)}
+              onSearch={() => {
+                setDrawerOpen(false);
+                setSearchOpen(true);
+              }}
+            />
           </aside>
         </div>
       ) : null}
@@ -151,11 +179,13 @@ function Shell({ children }: { children: React.ReactNode }) {
 function SidebarContent({
   collapsed,
   onToggleCollapsed,
-  onClose
+  onClose,
+  onSearch
 }: {
   collapsed: boolean;
   onToggleCollapsed?: () => void;
   onClose?: () => void;
+  onSearch: () => void;
 }) {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
@@ -211,6 +241,11 @@ function SidebarContent({
           <SquarePen size={17} />
           {collapsed ? <span className="sr-only">New chat</span> : "New chat"}
         </Link>
+        <button type="button" onClick={onSearch} className={`side-item mt-0.5 w-full ${collapsed ? "mx-auto w-10 justify-center px-0" : ""}`} title="Search (Cmd K)">
+          <Search size={17} />
+          {collapsed ? <span className="sr-only">Search</span> : <span className="flex-1 text-left">Search</span>}
+          {collapsed ? null : <span className="text-[12px] text-[var(--muted)]">Cmd K</span>}
+        </button>
       </div>
 
       <nav className="space-y-0.5 px-3 pt-3" aria-label="Sections">

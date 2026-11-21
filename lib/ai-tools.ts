@@ -4,6 +4,7 @@ import { accountsText, findTransactionsText, money, spendingSummaryText } from "
 import { recurringPayments } from "@/lib/plaid";
 import { createCalendarEvent, draftGmail, listCalendarEvents, readGmail, searchGmail, type GoogleConnection } from "@/lib/google";
 import { searchChunksFullText } from "@/lib/retrieve-context";
+import { removeEmDashes } from "@/lib/text";
 import type { Citation } from "@/lib/types";
 
 /**
@@ -25,6 +26,18 @@ export const toolDefinitions = [
         properties: {
           query: { type: "string", description: "What to look for." }
         },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_past_chats",
+      description: "Search the user's earlier conversations with you. Use when they refer to something discussed before that is not in this chat.",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string", description: "Words likely used in that conversation." } },
         required: ["query"]
       }
     }
@@ -224,6 +237,8 @@ export type ToolContext = {
   financeReady?: Promise<unknown>;
   userId: string;
   projectId: string | null;
+  /** The conversation this reply belongs to; past-chat search leaves it out. */
+  threadId?: string;
   // Web search results need numbered citation markers, shared across calls so
   // markers stay unique alongside any project-context citations already assigned.
   webCitations: Record<string, Citation>;
@@ -235,6 +250,8 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
   switch (name) {
     case "search_workspace":
       return searchWorkspace(ctx, String(args.query ?? ""));
+    case "search_past_chats":
+      return searchPastChats(ctx, String(args.query ?? ""));
     case "create_note":
       return createNote(ctx, String(args.title ?? "Untitled note"), String(args.content ?? ""));
     case "remember": {
@@ -256,6 +273,34 @@ export async function executeTool(name: string, args: Record<string, unknown>, c
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+/** Earlier conversations that mention the query, newest first, as short excerpts with their titles and dates. */
+async function searchPastChats(ctx: ToolContext, query: string): Promise<string> {
+  const trimmed = removeEmDashes(query).trim().slice(0, 200);
+  if (!trimmed) return "No search query was provided.";
+  let request = ctx.supabase
+    .from("chat_messages")
+    .select("thread_id, role, content, created_at, chat_threads!inner(title, temporary)")
+    .textSearch("content_tsv", trimmed, { type: "websearch", config: "english" })
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (ctx.threadId) request = request.neq("thread_id", ctx.threadId);
+  const { data, error } = await request;
+  if (error) return "Could not search earlier conversations right now.";
+  type Row = { thread_id: string; role: string; content: string; created_at: string; chat_threads: { title: string; temporary?: boolean | null } | null };
+  const seen = new Map<string, number>();
+  const lines: string[] = [];
+  for (const row of (data || []) as unknown as Row[]) {
+    if (row.chat_threads?.temporary) continue;
+    const count = seen.get(row.thread_id) || 0;
+    if (count >= 2 || (seen.size >= 5 && !count)) continue;
+    seen.set(row.thread_id, count + 1);
+    const date = new Date(row.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+    const who = row.role === "user" ? "The user said" : "You said";
+    lines.push(`From "${removeEmDashes(row.chat_threads?.title || "a conversation")}" (${date}). ${who}: ${removeEmDashes(row.content).replace(/\s+/g, " ").slice(0, 600)}`);
+  }
+  return lines.length ? `Earlier conversations that mention "${trimmed}":\n${lines.join("\n")}` : `No earlier conversation mentions "${trimmed}".`;
 }
 
 async function searchWorkspace(ctx: ToolContext, query: string): Promise<string> {

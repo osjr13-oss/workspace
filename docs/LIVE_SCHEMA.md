@@ -29,6 +29,10 @@ functions and `supabase_migrations.schema_migrations` for tracked history.
 Linking the project (`supabase link`) would make `supabase db dump` the better
 mechanism. That is worth doing.
 
+## Pending: chat harness (November 21, 2026)
+
+`supabase/migrations/20261121120000_chat_harness.sql` adds message versions (`chat_messages.parent_id`, `chat_threads.active_leaf_id`), `tool_trace`, `suggestions`, `feedback`, `feedback_reason`, a generated `content_tsv` (GIN index), thread `summary`, `summary_through`, `title_locked`, `temporary`, profile `about_you`, `response_instructions`, `response_style`, project `instructions`, the `scheduled_prompts` table, and two same-conversation triggers. Regenerate this file after the owner applies it.
+
 ## Tracked migration history (production)
 
 Only these four migrations are recorded in `supabase_migrations.schema_migrations`:

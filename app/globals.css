@@ -680,6 +680,100 @@ article[aria-label="Your message"] .message-actions:focus-within {
   }
 }
 
+/* Version switcher under an edited question or a retried answer: < 2 / 3 > */
+.version-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.version-switch button {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.version-switch button:hover:not(:disabled) {
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+
+.version-switch button:disabled {
+  opacity: 0.35;
+}
+
+.version-switch button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--accent-ring);
+}
+
+/* What a reply did before answering: one quiet line that opens into the steps. */
+.activity-trail {
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.activity-trail-toggle {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 4px 8px 4px 2px;
+  text-align: left;
+  color: var(--muted-strong);
+}
+
+.activity-trail-toggle:hover {
+  color: var(--text);
+}
+
+.activity-trail-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--accent-ring);
+}
+
+.activity-trail-chevron {
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+
+.activity-trail-toggle[aria-expanded="true"] .activity-trail-chevron {
+  transform: rotate(90deg);
+}
+
+.activity-trail-meta {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-trail-steps {
+  margin: 4px 0 2px 9px;
+  padding: 2px 0 2px 14px;
+  border-left: 1px solid var(--border-strong);
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  color: var(--muted-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-trail-chevron {
+    transition: none;
+  }
+}
+
 .answer-prose {
   font-size: 16px;
   line-height: 1.75;
@@ -961,6 +1055,30 @@ article[aria-label="Your message"] .message-actions:focus-within {
 .composer:focus-within {
   border-color: rgba(27, 45, 80, 0.42);
   box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-soft);
+}
+
+/* Files dragged over the message box. */
+.composer {
+  position: relative;
+}
+
+.composer-dragging {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft-strong), var(--shadow-soft);
+}
+
+.composer-drop-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(253, 251, 247, 0.92);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 .attachment-chip {
@@ -1306,6 +1424,127 @@ article[aria-label="Your message"] .message-actions:focus-within {
   padding: 22px;
   box-shadow: var(--shadow-lift);
   outline: none;
+}
+
+/* A panel along the right edge: sources, a draft. Scrolls inside itself. */
+.dialog-side {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .dialog-side {
+    height: calc(100dvh - 24px);
+  }
+}
+
+/* Suggested follow-up questions under the latest answer: plain text links, no capsules. */
+.follow-ups {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  margin-top: 10px;
+}
+
+.follow-up {
+  border-radius: 8px;
+  padding: 3px 6px;
+  margin-left: -6px;
+  text-align: left;
+  font-size: 14.5px;
+  color: var(--accent);
+}
+
+.follow-up:hover {
+  background: var(--accent-soft);
+}
+
+.follow-up:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--accent-ring);
+}
+
+/* Search window (Cmd+K). */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--background-elevated);
+}
+
+.search-box:focus-within {
+  border-color: rgba(27, 45, 80, 0.42);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.search-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+}
+
+.search-result-active {
+  background: var(--accent-soft);
+}
+
+/* Sources panel rows. */
+.sources-row + .sources-row {
+  border-top: 1px solid var(--border);
+}
+
+.sources-link {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  color: var(--text);
+}
+
+a.sources-link:hover {
+  background: var(--surface-subtle);
+}
+
+a.sources-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--surface-strong), 0 0 0 5px var(--accent-ring);
+}
+
+.sources-number {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.sources-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sources-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sources-snippet {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted-strong);
 }
 
 /* Loading placeholders shaped like the content they stand in for. */

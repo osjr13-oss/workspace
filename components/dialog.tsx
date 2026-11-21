@@ -17,7 +17,8 @@ export function Dialog({
   title,
   description,
   children,
-  size = "sm"
+  size = "sm",
+  side = false
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +26,8 @@ export function Dialog({
   description?: string;
   children: React.ReactNode;
   size?: "sm" | "md";
+  /** Opens as a panel along the right edge (on phones, from the bottom) instead of a centred window. */
+  side?: boolean;
 }) {
   const titleId = useId();
   const descriptionId = useId();
@@ -78,7 +81,7 @@ export function Dialog({
   return createPortal(
     <AnimatePresence>
       {open ? (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-center sm:p-6">
+        <div className={side ? "fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-stretch sm:justify-end sm:p-3" : "fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-center sm:p-6"}>
           <motion.div
             className="dialog-scrim absolute inset-0"
             initial={{ opacity: 0 }}
@@ -95,10 +98,10 @@ export function Dialog({
             aria-labelledby={titleId}
             aria-describedby={description ? descriptionId : undefined}
             tabIndex={-1}
-            className={`dialog-panel relative w-full ${size === "md" ? "max-w-lg" : "max-w-md"}`}
-            initial={{ opacity: 0, y: 14, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.14 } }}
+            className={`dialog-panel relative w-full ${side ? "dialog-side max-w-md" : size === "md" ? "max-w-lg" : "max-w-md"}`}
+            initial={side ? { opacity: 0, x: 24 } : { opacity: 0, y: 14, scale: 0.97 }}
+            animate={side ? { opacity: 1, x: 0 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={side ? { opacity: 0, x: 16, transition: { duration: 0.14 } } : { opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.14 } }}
             transition={{ type: "spring", stiffness: 460, damping: 36 }}
           >
             <div className="flex items-start justify-between gap-4">

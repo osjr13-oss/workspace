@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
 import { GoogleConnection } from "@/components/google-connection";
+import { PersonalizationSettings } from "@/components/personalization-settings";
 import { useConfirm } from "@/components/dialog";
 import { useToast } from "@/components/toast";
 import { WorkspaceHeader } from "@/components/workspace-header";
@@ -122,6 +123,8 @@ export default function SettingsPage() {
         </button>
         {message ? <p className="text-sm font-semibold text-[var(--muted-strong)]">{message}</p> : null}
       </form>
+
+      <PersonalizationSettings />
 
       <GoogleConnection />
 

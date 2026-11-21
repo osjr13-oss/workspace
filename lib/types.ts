@@ -35,6 +35,9 @@ export type ChatThread = {
   user_id: string;
   project_id: string | null;
   title: string;
+  active_leaf_id?: string | null;
+  title_locked?: boolean;
+  temporary?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -89,6 +92,17 @@ export type ResearchMetadata = {
   extractedPages: number;
 };
 
+/** One thing a reply did: a search, a lookup in the user's accounts, a note it wrote. */
+export type ToolStep = {
+  label: string;
+  /** The tool's name, for lookups the model made. */
+  tool?: string;
+  /** A short copy of what the lookup found, replayed to later turns. Never shown raw. */
+  digest?: string;
+};
+
+export type ToolTrace = { steps: ToolStep[]; durationMs?: number };
+
 export type ChatMessage = {
   id: string;
   thread_id: string;
@@ -97,6 +111,10 @@ export type ChatMessage = {
   content: string;
   citations?: Citation[];
   research?: ResearchMetadata | null;
+  parent_id?: string | null;
+  tool_trace?: ToolTrace | null;
+  suggestions?: string[] | null;
+  feedback?: number | null;
   created_at: string;
 };
 

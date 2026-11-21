@@ -109,7 +109,16 @@ function matches(row, key, expr) {
       return operand.replace(/^\(|\)$/g, "").split(",").includes(String(value));
     case "is":
       return operand === "null" ? value === null || value === undefined : String(value) === operand;
+    case "ilike": {
+      const pattern = operand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".");
+      return new RegExp(`^${pattern}$`, "is").test(String(value ?? ""));
+    }
     default:
+      // Full-text search (fts, plfts, wfts): every word must appear in the text column.
+      if (/^(wfts|plfts|phfts|fts)/.test(op)) {
+        const text = String(row[key.replace(/_tsv$/, "")] ?? "").toLowerCase();
+        return operand.toLowerCase().split(/\s+/).filter(Boolean).every((word) => text.includes(word.replace(/[^a-z0-9]/g, "")));
+      }
       return true;
   }
 }

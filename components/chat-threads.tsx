@@ -22,7 +22,8 @@ export function ChatThreadsProvider({ children }: { children: React.ReactNode })
 
   const refresh = useCallback(async () => {
     const supabase = createSupabaseBrowserClient();
-    const { data } = await supabase.from("chat_threads").select("*").order("updated_at", { ascending: false });
+    // Temporary chats stay out of the list.
+    const { data } = await supabase.from("chat_threads").select("*").neq("temporary", true).order("updated_at", { ascending: false });
     setThreads((data as ChatThread[]) || []);
     setLoaded(true);
   }, []);
@@ -31,7 +32,8 @@ export function ChatThreadsProvider({ children }: { children: React.ReactNode })
     const next = removeEmDashes(title).trim().slice(0, 120);
     if (!next) return "A title is required.";
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.from("chat_threads").update({ title: next }).eq("id", id);
+    // A title set by hand is never replaced by a generated one.
+    const { error } = await supabase.from("chat_threads").update({ title: next, title_locked: true }).eq("id", id);
     if (error) return error.message || "Could not rename the conversation.";
     setThreads((current) => current.map((thread) => (thread.id === id ? { ...thread, title: next } : thread)));
     return null;

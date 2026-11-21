@@ -3,20 +3,23 @@ import type { ResearchMetadata } from "@/lib/types";
 /**
  * The chat reply protocol: /api/ai/chat answers with one JSON object per line.
  *
- *   start   the conversation id (new conversations get one here)
+ *   start   the conversation id (new conversations get one here), the saved
+ *           question this reply answers, and when the turn began (for Stop)
  *   status  what Selrano is doing while a tool runs; null clears it
  *   text    the next words of the answer
  *   model   provider metadata for diagnostics; never contains prompts or keys
  *   action  something a tool did for the user (a note, a memory, a draft, an event), for a notice
+ *   suggestions  up to three follow-up questions, after the answer
  *   error   nothing could be produced; restore puts the user's text back
  */
 export type ChatStreamEvent =
-  | { type: "start"; threadId: string }
+  | { type: "start"; threadId: string; questionId?: string; startedAt?: string }
   | { type: "status"; label: string | null }
   | { type: "text"; text: string }
   | { type: "research"; research: ResearchMetadata }
   | { type: "model"; provider: "openai" | "groq"; model: string; fallbackReason?: string }
   | { type: "action"; kind: ChatActionKind; label: string }
+  | { type: "suggestions"; suggestions: string[] }
   | { type: "error"; error: string; restore: boolean };
 
 export type ChatActionKind = "note" | "memory" | "draft" | "event";

@@ -148,6 +148,8 @@ test.describe("money", () => {
     const [answer] = (await groqRequests()).filter((r) => r.stream);
     expect(answer.systemText).not.toContain("bank and card accounts are connected");
     // The model works on the owner's clock, never UTC.
-    expect(answer.systemText).toMatch(/It is now \w+day, \w+ \d{1,2}, \d{4},? (?:at )?\d{1,2}:\d{2}\s[AP]M Eastern Time\. Use Eastern Time for every date and time, never UTC\./);
+    expect(answer.systemText).toContain("Use Eastern Time for every date and time, never UTC");
+    // The time comes last in the instructions, so the rest can be reused between turns.
+    expect(answer.systemText).toMatch(/Current date and time: \w+day, \w+ \d{1,2}, \d{4},? (?:at )?\d{1,2}:\d{2}\s[AP]M Eastern Time\./);
   });
 });

@@ -68,6 +68,9 @@ type StreamOptions = {
   assistantContent?: OpenAIItem[];
   tools?: Parameters<typeof streamOpenAI>[1];
   allowTools?: boolean;
+  cacheKey?: string;
+  /** Private links to pictures attached to the newest message (OpenAI only; Groq gets their text). */
+  images?: string[];
 };
 
 /** Fall back only before text starts, so two providers never splice answers together. */
@@ -94,10 +97,46 @@ export async function streamChatWithTools(
   }
   options.signal?.throwIfAborted();
   if (!groqReady()) throw new Error("No available AI provider is configured.");
+  const lean = leanForGroq(messages);
   const result = tools.length && options.allowTools !== false
-    ? await streamGroqWithTools(messages, tools, options)
-    : { text: await streamGroq(messages, options), toolCalls: [] };
+    ? await streamGroqWithTools(lean, tools, options)
+    : { text: await streamGroq(lean, options), toolCalls: [] };
   return { ...result, provider: "groq" as const, assistantContent: undefined, model: groqModel(), fallbackReason };
+}
+
+const GROQ_HISTORY_BUDGET = 7_000;
+const GROQ_MESSAGE_MAX = 2_000;
+const GROQ_SYSTEM_MAX = 9_000;
+
+/**
+ * Groq limits tokens per minute, so a fallback call keeps only the most recent
+ * conversation (about 7,000 characters, each earlier message clipped to 2,000).
+ * Instructions, the newest user message and this turn's tool calls stay whole.
+ */
+export function leanForGroq(messages: GroqChatMessage[]): GroqChatMessage[] {
+  const lastUser = messages.findLastIndex((message) => message.role === "user");
+  if (lastUser <= 0) return messages;
+  const keep = new Set<number>();
+  let used = 0;
+  for (let index = lastUser - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === "system") continue;
+    if (message.role === "tool" || (message.role === "assistant" && message.tool_calls?.length)) continue;
+    const length = Math.min(message.content?.length || 0, GROQ_MESSAGE_MAX);
+    if (used + length > GROQ_HISTORY_BUDGET && keep.size) break;
+    used += length;
+    keep.add(index);
+  }
+  return messages.flatMap((message, index) => {
+    // Long attachments and project material are cut to what Groq can take.
+    if (message.role === "system" && message.content.length > GROQ_SYSTEM_MAX && /^(Files the user attached|Project context:)/.test(message.content)) {
+      return [{ ...message, content: `${message.content.slice(0, GROQ_SYSTEM_MAX)}...` }];
+    }
+    if (index >= lastUser || message.role === "system") return [message];
+    if (!keep.has(index)) return [];
+    const content = message.content || "";
+    return [{ ...message, content: content.length > GROQ_MESSAGE_MAX ? `${content.slice(0, GROQ_MESSAGE_MAX)}...` : content } as GroqChatMessage];
+  });
 }
 
 /**
