@@ -48,13 +48,15 @@ function uploadFileResumable(file: File, storagePath: string, token: string, onP
   const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
 
   return new Promise<void>((resolve, reject) => {
+    // Each /api/files/upload-url call returns a fresh storage path and one-time
+    // signed token, so never resume a stale URL saved in browser storage.
     const upload = new TusUpload(file, {
       endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable/sign`,
       headers: { "x-signature": token },
       chunkSize: 6 * 1024 * 1024,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
+      retryDelays: [0, 2000, 5000],
       uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
+      storeFingerprintForResuming: false,
       metadata: {
         bucketName: "workspace-files",
         objectName: storagePath,
@@ -71,9 +73,6 @@ function uploadFileResumable(file: File, storagePath: string, token: string, onP
       }
     });
 
-    upload.findPreviousUploads().then((previousUploads) => {
-      if (previousUploads.length) upload.resumeFromPreviousUpload(previousUploads[0]);
-      upload.start();
-    }).catch(reject);
+    upload.start();
   });
 }

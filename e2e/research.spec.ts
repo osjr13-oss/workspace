@@ -200,6 +200,18 @@ test.describe("research evidence contract", () => {
     expect(await requests()).toHaveLength(0);
   });
 
+  test("attached files and pictures skip the research router instead of asking to clarify", async () => {
+    await control({ assessment: { decision: "clarify", query: "", clarification: "Could you specify what you are referring to?", consequential: false } });
+    const result = await assessResearch(
+      [{ role: "user", content: "What is this?" }],
+      AbortSignal.timeout(5000),
+      { hasAttachments: true }
+    );
+    expect(result.data.decision).toBe("ordinary");
+    expect(result.model.model).toBe("attachment-shortcut");
+    expect(await requests("research")).toHaveLength(0);
+  });
+
   const quick = (onToken: (token: string) => void = () => {}, onSources: () => void = () => {}) =>
     runQuickResearch({ assessment: { ...assessment, consequential: false }, history, signal: AbortSignal.timeout(5000), offset: 0, progress: () => {}, onSources, onToken });
 

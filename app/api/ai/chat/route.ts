@@ -201,17 +201,18 @@ export async function POST(request: Request) {
     // starts at once instead of waiting for memories and context. With a
     // project it waits, because it needs to know whether matching project
     // material was found.
+    const hasAttachments = Boolean(attachments.text || attachments.images.length);
     const earlyRoute = projectId
       ? null
       : accountsPromise
           .then((connectedAccounts) =>
             assessResearch(
               [
-                ...(attachments.text ? [{ role: "system" as const, content: "Files the user attached to this message." }] : []),
+                ...(hasAttachments ? [{ role: "system" as const, content: "Files the user attached to this message." }] : []),
                 ...conversation()
               ],
               AbortSignal.timeout(8_000),
-              { connectedAccounts }
+              { connectedAccounts, hasAttachments }
             )
           )
           .then(
@@ -454,7 +455,7 @@ export async function POST(request: Request) {
             if (!early.ok) throw early.error;
             route = early.value;
           } else {
-            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts });
+            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts, hasAttachments });
           }
         } catch (error) {
           // Deciding whether to search failed. Answer anyway, like an ordinary

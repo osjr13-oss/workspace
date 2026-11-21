@@ -84,10 +84,20 @@ export function researchRequired(text: string) {
 
 const BROAD_NEWS_QUERY = /^(?:what(?:'s| is| are)|tell me|give me|show me|\s)*(?:the\s+)?(?:(?:top|biggest|latest|breaking|major|today'?s|world|daily|current|main|important|us|global)\s+)*(?:(?:news|stories|headlines|events|briefing|updates|developments)(?:\s+|$))+(?:(?:today|now|this week|right now|in the world|in the us|worldwide|globally)(?:\s+|$))*[?.!]*$/i;
 
-export async function assessResearch(history: GroqChatMessage[], signal: AbortSignal, options: { connectedAccounts?: string[] } = {}) {
+export async function assessResearch(history: GroqChatMessage[], signal: AbortSignal, options: { connectedAccounts?: string[]; hasAttachments?: boolean } = {}) {
   const recent = history.filter((m) => m.role === "user" || m.role === "assistant").slice(-6).map((m) => ({ role: m.role, content: recentText(m.content, 1800) }));
   const userTurns = recent.filter((m) => m.role === "user");
   const lastUser = userTurns.at(-1)?.content.trim() || "";
+  // When the user attaches a file or picture to this turn, answer straight from
+  // the main model (which can see the picture and file) instead of letting the
+  // text-only research router ask "what are you referring to?".
+  const hasAttachments = Boolean(options.hasAttachments) || history.some((m) => m.role === "system" && /^Files the user attached/.test(m.content));
+  if (hasAttachments && !researchRequired(lastUser)) {
+    return {
+      data: { decision: "ordinary", query: "", clarification: "", consequential: false, action: "none" } as Assessment,
+      model: { provider: "groq", model: "attachment-shortcut" } as ModelInfo
+    };
+  }
   // With accounts connected, a question about the user's own money, email or
   // calendar is answered from those accounts: never a web search and never a
   // clarifying question, and no routing call is spent on it.

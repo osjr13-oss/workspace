@@ -51,16 +51,27 @@ const PLACEHOLDER_SIGNATURE = "skip_thought_signature_validator";
 
 async function inlineImage(url: string): Promise<GeminiPart | null> {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(8_000) });
-    if (!response.ok) return null;
-    const mimeType = (response.headers.get("content-type") || "").split(";")[0].trim();
-    if (!/^image\/(png|jpeg|webp|heic|heif)$/.test(mimeType)) return null;
+    const response = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    if (!response.ok) {
+      console.warn("[gemini] skipped attached image: fetch status", response.status);
+      return null;
+    }
+    const rawMime = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    const mimeType = rawMime === "image/jpg" ? "image/jpeg" : rawMime;
+    if (!/^image\/(png|jpeg|webp|heic|heif)$/.test(mimeType)) {
+      console.warn("[gemini] skipped attached image: unsupported content-type", mimeType || "none");
+      return null;
+    }
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > 7_000_000) return null;
+    if (bytes.byteLength > 7_000_000) {
+      console.warn("[gemini] skipped attached image: too large", bytes.byteLength);
+      return null;
+    }
     let binary = "";
     for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
     return { inlineData: { mimeType, data: btoa(binary) } };
-  } catch {
+  } catch (error) {
+    console.warn("[gemini] skipped attached image: fetch failed", error instanceof Error ? error.message : String(error));
     return null;
   }
 }
