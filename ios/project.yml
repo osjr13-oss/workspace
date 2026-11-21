@@ -1,0 +1,64 @@
+name: Selrano
+options:
+  bundleIdPrefix: com.selrano
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Signing.xcconfig
+  Release: Config/Signing.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # The Selrano server the app talks to. Signing.local.xcconfig can point a
+    # Debug build at a local server; SELRANO_BASE_URL in the launch environment wins.
+    SELRANO_BASE_URL: https://www.selrano.com
+targets:
+  Selrano:
+    type: application
+    platform: iOS
+    sources:
+      - path: Selrano
+    info:
+      path: Selrano/Info.plist
+      properties:
+        CFBundleDisplayName: Selrano
+        SelranoBaseURL: $(SELRANO_BASE_URL)
+        UILaunchScreen:
+          UIColorName: Paper
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        NSFaceIDUsageDescription: Selrano uses Face ID to keep your chats, notes and money private when you open the app.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selrano.app
+        TARGETED_DEVICE_FAMILY: "1"
+        ENABLE_PREVIEWS: true
+        GENERATE_INFOPLIST_FILE: false
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  SelranoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SelranoTests
+    dependencies:
+      - target: Selrano
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.selrano.app.tests
+        GENERATE_INFOPLIST_FILE: true
+schemes:
+  Selrano:
+    build:
+      targets:
+        Selrano: all
+        SelranoTests: [test]
+    test:
+      targets:
+        - SelranoTests

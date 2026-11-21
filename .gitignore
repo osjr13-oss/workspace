@@ -16,3 +16,10 @@ playwright-report
 .open-next/
 .wrangler/
 .dev.vars*
+
+# iPhone app (ios/): the Xcode project is generated from project.yml.
+ios/*.xcodeproj
+ios/Config/Signing.local.xcconfig
+ios/**/xcuserdata
+ios/**/DerivedData
+ios/build

@@ -203,6 +203,16 @@ async function handleSupabase(req, res) {
   }
 
   if (path === "/auth/v1/user") return sendJson(res, 200, { ...TEST_USER, email: control.userEmail });
+  // Password sign-in and refresh for the iPhone app (ios/). The test password is "test-password".
+  if (path === "/auth/v1/token" && req.method === "POST") {
+    const body = JSON.parse((await readBody(req)) || "{}");
+    const grant = url.searchParams.get("grant_type");
+    const ok = grant === "refresh_token" ? body.refresh_token === "test-refresh" : body.password === "test-password";
+    if (!ok) return sendJson(res, 400, { error: "invalid_grant", error_description: "Invalid login credentials" });
+    const part = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const access = `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub: TEST_USER.id, role: "authenticated", exp: 4_102_444_800 })}.sig`;
+    return sendJson(res, 200, { access_token: access, token_type: "bearer", expires_in: 3600, refresh_token: "test-refresh", user: { ...TEST_USER, email: control.userEmail } });
+  }
   if (path === "/auth/v1/logout") {
     res.writeHead(204);
     res.end();
