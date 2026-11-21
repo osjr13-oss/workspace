@@ -1,6 +1,28 @@
 # Selrano production handoff
 
-Last updated: **November 21, 2026**
+Last updated: **November 21, 2026 (end of session; read the next section first)**
+
+## Open problems and state at the end of the November 21 session (read first)
+
+The owner ended the session frustrated with bugs after a large day of changes. Be plain with them, do not overclaim, and verify in production before saying anything works. Three large commits shipped the same day: `c17a823` (chat harness), `67e9968` (Gemini), `7c77125` (picture upload). Offline tests passed (126 for the first two, 16 for the last), and GitHub Actions passed for all three. **Nothing signed-in was verified on https://www.selrano.com by an agent**: there was no way to log in, and wrangler was not logged in on the owner's Mac, so Cloudflare logs were never read.
+
+**Problems the owner reported on the live site (unresolved, causes unknown):**
+1. **Picture upload.** Attaching `IMG_0644.png` in chat showed a red "Failed" chip after about a minute. The chip's hover text (`title`) holds the exact error; it was never read. After `7c77125` the owner still reported "close to a minute" to load a photo.
+2. **Gemini does not see the picture.** The reply asks what the owner is talking about. Likely explanation: the upload failed, so no `fileIds` reached `/api/ai/chat` and the model got no attachment. Not proven. If an upload does succeed, check the chain `loadAttachments` (`app/api/ai/chat/route.ts`, signed 10-minute link per image, `mime_type` must match `image/(png|jpeg|webp|gif)`) then `inlineImage` and `toGeminiContents` in `lib/gemini.ts` (fetches the signed link and sends base64 `inlineData`; skips pictures over about 7 MB or a failed fetch, silently).
+3. **Unverified from the owner's side:** whether `GEMINI_API_KEY` on the Worker works (the owner said they added it and prepaid $5; the first test was the picture). Check the log line `[chat] reply` (it prints `provider` and `model`) and `[ai] Gemini unavailable before output; trying Groq { reason }`. A `reason` of `401:authentication` or `*:quota` means the key or credit.
+4. **Groq key.** The owner said "my groq api key expired yesterday". An agent earlier claimed web search was therefore broken; the owner said web search was working. It is unknown which key expired (the one in `.env.local` on the Mac is expired and unrelated to the Worker). Groq runs the research router (`assessResearch`), titles, suggestions, memory learning, summaries and picture text reading. Confirm the Worker's `GROQ_API_KEY` before relying on any of them. The owner said they would make a new key and replace the Worker secret.
+
+**Where to look first for the upload problem:** the failing step is one of (a) `/api/files/upload-url` (fast, shows an error quickly), (b) the resumable upload to `https://<project>.storage.supabase.co/storage/v1/upload/resumable/sign` in `lib/upload-file.ts` (retries 0, 3, 5, 10 and 20 seconds before failing, about 38 seconds in total, which matches "close to a minute"), or (c) `/api/files/upload` (download, then optional text reading; now capped at 25 seconds). The hover text on the chip or `wrangler tail` for `[upload]` lines separates these. A tus error means (b). Also check the Supabase storage bucket `workspace-files` and that the signed upload still works from the Worker origin.
+
+**Rollback:** the Worker can be rolled back to a version before `c17a823` in Cloudflare (Workers & Pages, selrano, Deployments; see `docs/CLOUDFLARE.md`). The database migration `20261121120000_chat_harness.sql` is additive and applied; old code runs against it, so no database rollback is needed.
+
+**Shelved by the owner (do not start unless asked):** the side panel for long drafts, scheduled asks (the `scheduled_prompts` table exists, unused), deep research mode (dropped), Mermaid diagrams, and the iPhone app. The iPhone code and its server pieces (`ios/`, `app/api/me`, `app/api/app`, `e2e/app-api.spec.ts`, bearer-token changes in `lib/supabase/server.ts`, `tsconfig.json`, `.eslintrc.json`, `.gitignore`, `.claude/launch.json`) are uncommitted in the working tree on the owner's Mac. Do not commit or delete them without being asked. `e2e/support/mock-servers.mjs` also has one uncommitted fake-login hunk for the app.
+
+**Other facts:**
+- `.env.local` on the Mac holds old real keys (`GEMINI_API_KEY`, `EMBEDDING_API_KEY`, an expired `GROQ_API_KEY`). `playwright.config.ts` blanks the first two for tests. Never print these.
+- Memories are re-embedded with Google in the background, 50 per hourly pass; until then recall falls back to word overlap.
+- `docs/LIVE_SCHEMA.md` should be regenerated now that the chat migration is applied.
+- Owner preferences: plain language and exact click-by-click steps (they are not technical); neutral, current-data comparisons when choosing providers (an earlier answer that led with Claude options upset them); push finished work without asking; show a visible before/after before UI work. The model is Gemini 4 Hydrogen via the `GEMINI_MODEL` Worker setting; the owner wants to compare `gemini-3.8-flash` but has called it unreliable.
 
 ## Gemini replaces OpenAI as the main model (November 21)
 
