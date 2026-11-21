@@ -415,7 +415,7 @@ export async function POST(request: Request) {
       let first: Awaited<ReturnType<typeof streamChatWithTools>> | null = null;
       // The newest tool round, which the answer after tools continues from.
       let latest: Awaited<ReturnType<typeof streamChatWithTools>> | null = null;
-      let answerProvider: "openai" | "groq" | undefined;
+      let answerProvider: "gemini" | "openai" | "groq" | undefined;
       let answerModel: string | undefined;
       let fallbackReason: string | undefined;
       const streamPlain = async (msgs: GroqChatMessage[]) => {

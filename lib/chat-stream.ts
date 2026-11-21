@@ -17,7 +17,7 @@ export type ChatStreamEvent =
   | { type: "status"; label: string | null }
   | { type: "text"; text: string }
   | { type: "research"; research: ResearchMetadata }
-  | { type: "model"; provider: "openai" | "groq"; model: string; fallbackReason?: string }
+  | { type: "model"; provider: "gemini" | "openai" | "groq"; model: string; fallbackReason?: string }
   | { type: "action"; kind: ChatActionKind; label: string }
   | { type: "suggestions"; suggestions: string[] }
   | { type: "error"; error: string; restore: boolean };

@@ -326,7 +326,7 @@ async function bootstrapMemoriesFromHistory(supabase: SupabaseClient, userId: st
   return applyMemoryChanges(supabase, userId, { add: changes.add, update: [], remove: [] }, "history", 0.7);
 }
 
-/** Give older memories an embedding so they can be recalled by meaning. */
+/** Give older memories an embedding (or a new one after the embedding model changed) so they can be recalled by meaning. */
 async function backfillEmbeddings(supabase: SupabaseClient, userId: string) {
   const model = memoryEmbeddingModel();
   if (!model) return 0;
@@ -334,7 +334,8 @@ async function backfillEmbeddings(supabase: SupabaseClient, userId: string) {
     .from("content_memories")
     .select("id, content")
     .eq("user_id", userId)
-    .is("embedding", null)
+    // Missing, or made by a different embedding model (vectors from two models cannot be compared).
+    .or(`embedding.is.null,embedding_model.is.null,embedding_model.neq.${model}`)
     .limit(50);
   if (error || !data?.length) return 0;
 

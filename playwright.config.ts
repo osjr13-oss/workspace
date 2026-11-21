@@ -55,6 +55,10 @@ export default defineConfig({
             GROQ_API_KEY: "test-groq-key",
             // Never let offline tests send customer context to a real OpenAI endpoint.
             OPENAI_API_KEY: "test-openai-key",
+            // Empty values beat any real keys in .env.local, so tests never call Google or a real
+            // embedding service. e2e/gemini.spec.ts tests the Gemini client against the fake server.
+            GEMINI_API_KEY: "",
+            EMBEDDING_API_KEY: "",
             OPENAI_BASE_URL: "http://localhost:54322/gpt/v1",
             GROQ_BASE_URL: "http://localhost:54322/openai/v1"
           }

@@ -309,11 +309,54 @@ async function handleSupabase(req, res) {
   return sendJson(res, 405, { message: "method not allowed" });
 }
 
+// ------------------------------------------------------------------ Gemini --
+// A stand-in for Google's generateContent API. It enforces the thought
+// signature rule: a functionCall replayed in history must carry its signature.
+
+const geminiState = { requests: [], toolNext: null, reply: "Gemini says hello. This answer came from the fake Gemini server." };
+
+async function handleGemini(req, res, url) {
+  if (url.pathname === "/__gemini") {
+    if (req.method === "POST") Object.assign(geminiState, JSON.parse((await readBody(req)) || "{}"));
+    return sendJson(res, 200, geminiState);
+  }
+  if (req.headers["x-goog-api-key"] !== "test-gemini-key") return sendJson(res, 401, { error: { status: "UNAUTHENTICATED", message: "API key not valid" } });
+  const body = JSON.parse((await readBody(req)) || "{}");
+  geminiState.requests.push({ path: url.pathname, body });
+  if (url.pathname.endsWith(":batchEmbedContents")) {
+    if (body.requests?.some((r) => r.embedContentConfig)) return sendJson(res, 400, { error: { message: "Unknown name embedContentConfig" } });
+    return sendJson(res, 200, { embeddings: body.requests.map((r) => ({ values: fakeEmbedding(r.content.parts[0].text).map((v) => v * 3) })) });
+  }
+  if (!url.pathname.endsWith(":streamGenerateContent")) return sendJson(res, 404, {});
+  for (const content of body.contents || []) {
+    const first = content.parts?.find((part) => part.functionCall);
+    if (content.role === "model" && first && !first.thoughtSignature) {
+      return sendJson(res, 400, { error: { status: "INVALID_ARGUMENT", message: "Function call is missing a thought_signature" } });
+    }
+  }
+  const last = body.contents?.[body.contents.length - 1];
+  const answeringTool = last?.parts?.some((part) => part.functionResponse);
+  const chunks = [];
+  if (!answeringTool && geminiState.toolNext && body.tools && body.toolConfig?.functionCallingConfig?.mode !== "NONE") {
+    chunks.push({ candidates: [{ content: { role: "model", parts: [{ functionCall: { name: geminiState.toolNext.name, args: geminiState.toolNext.args, id: "fc-1" }, thoughtSignature: "sig-from-gemini" }] }, finishReason: "STOP" }], modelVersion: "gemini-4-hydrogen" });
+    geminiState.toolNext = null;
+  } else {
+    const text = answeringTool ? "I used the tool and here is what I found." : geminiState.reply;
+    const words = text.split(/(?<= )/);
+    words.forEach((word, index) => chunks.push({ candidates: [{ content: { role: "model", parts: [{ text: word }] }, ...(index === words.length - 1 ? { finishReason: "STOP" } : {}) }], modelVersion: "gemini-4-hydrogen" }));
+  }
+  res.writeHead(200, { "Content-Type": "text/event-stream" });
+  for (const chunk of chunks) res.write(`data: ${JSON.stringify(chunk)}\r\n\r\n`);
+  res.end();
+}
+
 // -------------------------------------------------------------------- Groq --
 
 const groqState = { requests: [], gptRequests: [], gpt: false, gptTool: false, gptPartial: false, failNext: [], toolNext: false, toolPreface: "", reply: null, emptyNext: false, tokenDelayMs: 2, firstTokenDelayMs: 0, chunkChars: 0 };
 
 function groqReset() {
+  geminiState.requests = [];
+  geminiState.toolNext = null;
   for (const key of ["assessment", "groqAssessment", "selection", "review", "gapQuery", "searchResults", "sourcePassage", "webFailure", "extractFailure", "extractResults", "webDelayMs", "reviewDelayMs", "researchUnavailable", "gptResearchUnavailable", "groqResearchUnavailable", "gptReviewInvalidJson", "searchQueue", "memoryChanges", "toolQueue"]) delete groqState[key];
   groqState.requests = [];
   groqState.gptRequests = [];
@@ -598,6 +641,7 @@ async function handleGroq(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (url.pathname.startsWith("/gemini/") || url.pathname === "/__gemini") return handleGemini(req, res, url);
   if (url.pathname.startsWith("/google/")) return handleGoogle(req, res, url);
   if (url.pathname.startsWith("/plaid/")) return handlePlaid(req, res, url);
   if (url.pathname === "/__plaid") {

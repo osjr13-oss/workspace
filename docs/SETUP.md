@@ -44,16 +44,19 @@ Open **Workers & Pages > selrano > Settings > Variables and Secrets**. Store pri
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same (secret) |
 | `GROQ_API_KEY` | console.groq.com (secret; fallback and non-chat work) |
-| `OPENAI_API_KEY` | https://platform.openai.com/api-keys (server-only Secret; primary chat) |
+| `GEMINI_API_KEY` | https://aistudio.google.com, Get API key (server-only Secret; primary chat and memory search). Turn on billing in AI Studio so Google does not use the data to improve its products |
+| `OPENAI_API_KEY` | Optional and unused while `GEMINI_API_KEY` is set (the owner closed the OpenAI account on 2026-11-21) |
 | `NEXT_PUBLIC_APP_URL` | `https://selrano.com` |
 
 ### AI models (all optional)
 
-OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if OpenAI is unavailable before output. Without that key, chat continues on Groq. Background work (memory extraction) remains on Groq. Requests use `store: false`, so OpenAI does not keep conversation state. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
+Gemini is primary for chat when `GEMINI_API_KEY` is set (otherwise OpenAI when `OPENAI_API_KEY` is set); Groq takes over if the main model is unavailable before output. Without that key, chat continues on Groq. Background work (memory extraction) remains on Groq. Requests use `store: false`, so OpenAI does not keep conversation state. The defaults below work; set a variable only to change the model. Groq retires models from time to time, so check https://console.groq.com/docs/deprecations before choosing one. A value that points at a model Groq has already shut down is ignored and the default is used instead.
 
 | Name | Default | Used for |
 |------|---------|----------|
-| `OPENAI_MODEL` | `gpt-6.1-sol` | Primary chat model. `gpt-6-luna` is far cheaper; `gpt-6-astra` is the flagship |
+| `GEMINI_MODEL` | `gemini-4-hydrogen` | Primary chat model. `gemini-3.8-flash` is about half the price; `gemini-4-neon` and `gemini-4-carbon` are stronger and dearer |
+| `GEMINI_THINKING_LEVEL` | `low` | How long Gemini thinks before answering: `low`, `medium` or `high` |
+| `OPENAI_MODEL` | `gpt-6.1-sol` | Only used without `GEMINI_API_KEY` |
 | `OPENAI_REASONING_EFFORT` | model default | Optional reasoning effort, for example `low` for faster first words |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Fallback chat answers |
 | `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Takes over at once when the main model is rate limited. Groq limits are per model, so keep it different from `GROQ_MODEL` |
@@ -64,7 +67,7 @@ OpenAI GPT is primary for chat when `OPENAI_API_KEY` is set; Groq takes over if 
 
 `SUPPORT_INBOX` and `NEXT_PUBLIC_SUPPORT_EMAIL` are no longer used either.
 
-`OPENAI_BASE_URL` and `EXA_BASE_URL` are for offline tests. Leave both unset on the production Worker. Save the settings and deploy.
+`GEMINI_BASE_URL`, `OPENAI_BASE_URL` and `EXA_BASE_URL` are for offline tests. Leave both unset on the production Worker. Save the settings and deploy.
 
 ---
 

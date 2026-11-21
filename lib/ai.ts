@@ -10,13 +10,14 @@ import {
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
 import { openaiModel, openaiReady, OpenAIRequestError, streamOpenAI, type OpenAIItem } from "@/lib/openai";
+import { geminiModel, geminiReady, GeminiRequestError, streamGemini, type GeminiPart } from "@/lib/gemini";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
-export type AiProvider = "groq" | "openai";
+export type AiProvider = "groq" | "openai" | "gemini";
 
 /** Tokens billed for one model call. Zero means the provider did not return usage. */
 export type TokenUsage = {
@@ -55,7 +56,7 @@ function groqReady() {
 }
 
 export function configuredAiModel(chat = false) {
-  return chat && openaiReady() ? openaiModel() : groqModel();
+  return chat && geminiReady() ? geminiModel() : chat && openaiReady() ? openaiModel() : groqModel();
 }
 
 type StreamOptions = {
@@ -65,29 +66,51 @@ type StreamOptions = {
   onToken: (token: string) => void;
   onToolCallStart?: () => void;
   provider?: AiProvider;
-  assistantContent?: OpenAIItem[];
+  /** The previous tool round's raw output (OpenAI items or Gemini parts), replayed to the same provider. */
+  assistantContent?: Array<Record<string, unknown>>;
   tools?: Parameters<typeof streamOpenAI>[1];
   allowTools?: boolean;
   cacheKey?: string;
-  /** Private links to pictures attached to the newest message (OpenAI only; Groq gets their text). */
+  /** Private links to pictures attached to the newest message (Gemini and OpenAI; Groq gets their text). */
   images?: string[];
 };
 
-/** Fall back only before text starts, so two providers never splice answers together. */
+/**
+ * The main model is Gemini when GEMINI_API_KEY is set, otherwise OpenAI when
+ * OPENAI_API_KEY is set; Groq is the fallback. Fall back only before text
+ * starts, so two providers never splice answers together. A tool round that
+ * began on one provider continues on it (options.provider).
+ */
 export async function streamChatWithTools(
   messages: GroqChatMessage[],
   tools: Parameters<typeof streamOpenAI>[1],
   options: StreamOptions
 ) {
   let fallbackReason: string | undefined;
-  if (openaiReady() && options.provider !== "groq") {
+  if (geminiReady() && (options.provider === undefined || options.provider === "gemini")) {
+    let started = false;
+    try {
+      const result = await streamGemini(messages, tools, {
+        ...options,
+        assistantContent: options.provider === "gemini" ? (options.assistantContent as GeminiPart[] | undefined) : undefined,
+        onToken: (token) => { if (token) started = true; options.onToken(token); }
+      });
+      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "gemini" as const, fallbackReason: undefined };
+      fallbackReason = "empty";
+    } catch (error) {
+      if (started || options.signal?.aborted) throw error;
+      fallbackReason = error instanceof GeminiRequestError ? `${error.status}:${error.reason}` : "stream_or_network";
+      console.warn("[ai] Gemini unavailable before output; trying Groq", { reason: fallbackReason });
+    }
+  } else if (openaiReady() && options.provider !== "groq") {
     let started = false;
     try {
       const result = await streamOpenAI(messages, tools, {
         ...options,
+        assistantContent: options.assistantContent as OpenAIItem[] | undefined,
         onToken: (token) => { if (token) started = true; options.onToken(token); }
       });
-      if (result.text.trim() || result.toolCalls.length) return { ...result, provider: "openai" as const, fallbackReason: undefined };
+      if (result.text.trim() || result.toolCalls.length) return { ...result, assistantContent: result.assistantContent as Array<Record<string, unknown>>, provider: "openai" as const, fallbackReason: undefined };
       fallbackReason = "empty";
     } catch (error) {
       if (started || options.signal?.aborted) throw error;
