@@ -12,7 +12,8 @@ const IMAGE_MEDIA_TYPES: Record<string, string> = {
 };
 
 // Groq limits base64 image requests to 4MB, and base64 adds roughly a third.
-const MAX_IMAGE_BYTES = 2.8 * 1024 * 1024;
+export const MAX_OCR_IMAGE_BYTES = 2.8 * 1024 * 1024;
+const OCR_TIMEOUT_MS = 25_000;
 
 export const DEFAULT_GROQ_VISION_MODEL = "qwen/qwen3.8-27b";
 
@@ -27,7 +28,7 @@ export function imageMediaType(extension: string) {
 
 /** Reads the text in a photo or screenshot with a Groq vision model (qwen/qwen3.8-27b by default). Returns "" when nothing is readable. */
 export async function transcribeImage(bytes: Buffer, mediaType: string): Promise<string> {
-  if (bytes.length > MAX_IMAGE_BYTES) {
+  if (bytes.length > MAX_OCR_IMAGE_BYTES) {
     throw new Error("This image is too large to read. Try a smaller photo or a cropped screenshot (under 2.5MB).");
   }
 
@@ -50,7 +51,9 @@ export async function transcribeImage(bytes: Buffer, mediaType: string): Promise
           ]
         }
       ]
-    })
+    }),
+    // A stuck request must not hold the upload open.
+    signal: AbortSignal.timeout(OCR_TIMEOUT_MS)
   });
 
   if (!response.ok) {

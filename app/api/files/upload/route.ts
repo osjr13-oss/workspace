@@ -1,4 +1,4 @@
-import { imageMediaType, transcribeImage } from "@/lib/ocr";
+import { imageMediaType, MAX_OCR_IMAGE_BYTES, transcribeImage } from "@/lib/ocr";
 import { NextResponse } from "next/server";
 import { embedChunksForFile } from "@/lib/embeddings";
 import { chunkTextWithLocations } from "@/lib/chunk";
@@ -59,6 +59,9 @@ export async function POST(request: Request) {
       const bytes = Buffer.from(await storedFile.arrayBuffer());
       const extraction = await extractText(name, mimeType, bytes);
       if (!extraction.supported) throw new Error("Unsupported file type. Upload a PDF, DOCX, TXT, Markdown, or image file.");
+      // A picture is kept even when no text can be read from it: the chat model looks at the picture itself.
+      const pictureOnly = extraction.picture === true && !extraction.text.trim();
+      if (pictureOnly) extraction.text = `Picture: ${name}. No text could be read from it; open the picture to see it.`;
       if (!extraction.text.trim()) throw new Error("No readable text was found. Scanned PDFs are not supported yet. Upload a text-based PDF, or a clear photo of the page as an image.");
 
       const { data: fileRecord, error: insertError } = await supabase
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
       if (insertError) throw insertError;
       fileRecordId = fileRecord.id;
 
-      const located = chunkTextWithLocations(extraction.text, extraction.pages);
+      const located = pictureOnly ? [] : chunkTextWithLocations(extraction.text, extraction.pages);
       let embedded = 0;
       if (located.length) {
         const { data: insertedChunks, error: chunkError } = await supabase
@@ -120,7 +123,7 @@ export async function POST(request: Request) {
 }
 
 type ExtractedPage = { pageNumber: number; text: string; start: number; end: number };
-type ExtractionResult = { supported: boolean; text: string; pages: ExtractedPage[] };
+type ExtractionResult = { supported: boolean; text: string; pages: ExtractedPage[]; picture?: boolean };
 
 async function extractText(name: string, mimeType: string, bytes: Buffer): Promise<ExtractionResult> {
   const extension = name.toLowerCase().split(".").pop() || "";
@@ -188,8 +191,17 @@ async function extractText(name: string, mimeType: string, bytes: Buffer): Promi
 
   const imageType = imageMediaType(extension);
   if (imageType) {
-    const ocrText = await transcribeImage(bytes, imageType);
-    return { supported: true, text: ocrText, pages: [] };
+    // Reading the text in a picture is a bonus (it makes the words searchable). A failure,
+    // a slow answer or a large picture must never reject the upload itself.
+    let ocrText = "";
+    if (bytes.length <= MAX_OCR_IMAGE_BYTES) {
+      try {
+        ocrText = await transcribeImage(bytes, imageType);
+      } catch (error) {
+        console.warn("[upload] picture text could not be read; keeping the picture", serializeError(error).slice(0, 160));
+      }
+    }
+    return { supported: true, text: ocrText, pages: [], picture: true };
   }
 
   return { supported: false, text: "", pages: [] };
