@@ -9,7 +9,6 @@ import {
   BookOpen,
   Brain,
   CalendarDays,
-  Files,
   Globe2,
   ListChecks,
   Mail,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import { ChatComposer } from "@/components/chat-composer";
 import { useChatThreads } from "@/components/chat-threads";
-import { FileProcessingStatus } from "@/components/file-processing-status";
 import { QuickActions } from "@/components/quick-actions";
 import { STARTERS, setPendingMessage } from "@/lib/chat-handoff";
 import { money } from "@/lib/finance";
@@ -27,7 +25,7 @@ import { formatRelative } from "@/lib/format";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { removeEmDashes } from "@/lib/text";
 import { OWNER_TIME_ZONE, ownerToday } from "@/lib/time";
-import type { Note, Project, WorkspaceFile } from "@/lib/types";
+import type { Note, Project } from "@/lib/types";
 
 type Section<T> = { status: "ready"; data: T } | { status: "not_connected" } | { status: "unavailable" } | { status: "error" };
 type CalendarEvent = { id: string; title: string; start: string; end: string | null; allDay: boolean; location: string | null; link: string | null };
@@ -47,7 +45,6 @@ export default function TodayPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [text, setText] = useState("");
-  const [files, setFiles] = useState<WorkspaceFile[] | null>(null);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [today, setToday] = useState<TodayData | null>(null);
 
@@ -62,11 +59,9 @@ export default function TodayPage() {
     });
     void Promise.all([
       supabase.from("projects").select("*").order("name"),
-      supabase.from("files").select("*").order("created_at", { ascending: false }).limit(4),
       supabase.from("notes").select("*").order("updated_at", { ascending: false }).limit(3)
-    ]).then(([projectRows, fileRows, noteRows]) => {
+    ]).then(([projectRows, noteRows]) => {
       setProjects((projectRows.data as Project[]) || []);
-      setFiles((fileRows.data as WorkspaceFile[]) || []);
       setNotes((noteRows.data as Note[]) || []);
     });
     void fetch("/api/today")
@@ -74,22 +69,6 @@ export default function TodayPage() {
       .then((payload: TodayData) => setToday(payload))
       .catch(() => setToday({ calendar: { status: "error" }, money: { status: "error" }, memories: { status: "error" } }));
   }, []);
-
-  // Files still being read are checked again every few seconds, so their status turns over on its own.
-  const processing = files?.some((file) => file.extraction_status === "pending") ?? false;
-  useEffect(() => {
-    if (!processing) return;
-    const supabase = createSupabaseBrowserClient();
-    const timer = window.setInterval(() => {
-      void supabase
-        .from("files")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(4)
-        .then(({ data }) => setFiles((data as WorkspaceFile[]) || []));
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [processing]);
 
   function startChat(message: string) {
     const prompt = removeEmDashes(message).trim();
@@ -182,24 +161,6 @@ export default function TodayPage() {
               </div>
             ) : (
               <EmptyLine text="Your conversations will show up here. Ask anything above to start one." />
-            )}
-          </HomeCard>
-
-          <HomeCard index={2} title="Recent files" icon={<Files size={16} />} link={{ label: "All files", href: "/files" }}>
-            {files === null ? (
-              <SkeletonRows rows={3} />
-            ) : files.length ? (
-              <div className="-mx-1 space-y-0.5">
-                {files.map((file) => (
-                  <Link key={file.id} href={`/files/${file.id}`} className="home-row">
-                    <Files size={15} className="shrink-0 text-[var(--muted)]" />
-                    <span className="min-w-0 flex-1 truncate text-[14px] font-medium">{file.name}</span>
-                    <FileProcessingStatus status={file.extraction_status} />
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <EmptyLine text="Upload a PDF, document, or photo and ask about it in any chat." action={{ label: "Upload a file", href: "/files" }} />
             )}
           </HomeCard>
         </div>

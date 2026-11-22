@@ -8,7 +8,6 @@ import { MotionConfig, motion } from "framer-motion";
 import {
   BookOpen,
   Brain,
-  Files,
   FolderOpen,
   Home,
   LogOut,
@@ -32,7 +31,6 @@ import { removeEmDashes } from "@/lib/text";
 const nav = [
   { href: "/dashboard", label: "Today", icon: Home },
   { href: "/projects", label: "Projects", icon: FolderOpen },
-  { href: "/files", label: "Files", icon: Files },
   { href: "/notes", label: "Notes", icon: BookOpen },
   { href: "/money", label: "Money", icon: Wallet },
   { href: "/memory", label: "Memory", icon: Brain }
