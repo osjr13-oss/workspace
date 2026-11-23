@@ -7,6 +7,7 @@ import { hasPlaidItems, syncAllIfStale } from "@/lib/plaid";
 import { getGoogleConnection } from "@/lib/google";
 import { ownerNow } from "@/lib/time";
 import { configuredAiModel, streamAi, streamChatWithTools } from "@/lib/ai";
+import { geminiReady, type GeminiGrounding } from "@/lib/gemini";
 import { extractMemories, maybeBootstrapMemories, retrieveMemories } from "@/lib/content-memory";
 import { GroqHttpError, type GroqChatMessage } from "@/lib/groq";
 import { searchChunksFullText, searchProjectChunks, type RetrievedChunk } from "@/lib/retrieve-context";
@@ -202,7 +203,10 @@ export async function POST(request: Request) {
     // project it waits, because it needs to know whether matching project
     // material was found.
     const hasAttachments = Boolean(attachments.text || attachments.images.length);
-    const earlyRoute = projectId
+    // When Gemini is active, it handles Google Search and live webpage reading
+    // natively in one step, so skip the separate Groq pre-router completely.
+    const nativeWebSearch = geminiReady();
+    const earlyRoute = nativeWebSearch || projectId
       ? null
       : accountsPromise
           .then((connectedAccounts) =>
@@ -315,7 +319,7 @@ export async function POST(request: Request) {
       webCitations,
       citationOffset: Object.keys(context.citations).length
     };
-    const toolMessages: GroqChatMessage[] = [messages[0], ACCOUNT_ACTION_GUIDE(Boolean(google), Boolean(finance)), ...messages.slice(1)];
+    const toolMessages: GroqChatMessage[] = [messages[0], ACCOUNT_ACTION_GUIDE(Boolean(google), Boolean(finance), nativeWebSearch), ...messages.slice(1)];
 
     const encoder = new TextEncoder();
     const startedAt = Date.now();
@@ -419,12 +423,58 @@ export async function POST(request: Request) {
       let answerProvider: "gemini" | "openai" | "groq" | undefined;
       let answerModel: string | undefined;
       let fallbackReason: string | undefined;
+      const groundedSources: Citation[] = [];
+      const groundedUrls = new Set<string>();
+      const recordGrounding = (grounding?: GeminiGrounding) => {
+        if (!grounding) return;
+        const base = Object.keys(context.citations).length + Object.keys(webCitations).length;
+        let offset = 0;
+        for (const source of grounding.sources) {
+          if (groundedUrls.has(source.url)) continue;
+          groundedUrls.add(source.url);
+          offset += 1;
+          const marker = String(base + offset);
+          let publisher = "";
+          try { publisher = new URL(source.url).hostname; } catch { publisher = ""; }
+          const citation: Citation = {
+            kind: "web",
+            marker,
+            title: source.title,
+            url: source.url,
+            snippet: "",
+            evidenceKind: grounding.readUrls.includes(source.url) ? "page" : "search_excerpt",
+            publisher,
+            retrievedAt: new Date().toISOString()
+          };
+          webCitations[marker] = citation;
+          groundedSources.push(citation);
+        }
+        if (groundedSources.length || grounding.queries.length || grounding.readUrls.length) {
+          research = {
+            status: "complete",
+            sources: groundedSources.filter((c): c is Extract<Citation, { kind: "web" }> => c.kind === "web"),
+            limitations: [],
+            searches: Math.max(research?.searches ?? 0, grounding.queries.length || (groundedSources.length ? 1 : 0)),
+            extractedPages: Math.max(research?.extractedPages ?? 0, grounding.readUrls.length)
+          };
+          send({ type: "research", research });
+        }
+      };
+      const onSearchQuery = (queries: string[]) => {
+        step("Searched Google", { digest: queries.join("; ") });
+      };
+      const onUrlRead = (urls: string[]) => {
+        step("Read webpage", { digest: urls.join(", ") });
+      };
       const streamPlain = async (msgs: GroqChatMessage[]) => {
         const result = await streamAi(msgs, {
           signal: stopSignal,
           temperature: 0.6,
           cacheKey: user!.id,
           images: attachments.images,
+          webSearch: nativeWebSearch,
+          onSearchQuery,
+          onUrlRead,
           provider: latest?.provider ?? first?.provider,
           assistantContent: latest?.assistantContent ?? first?.assistantContent,
           tools: latest?.toolCalls.length || first?.toolCalls.length ? tools : undefined,
@@ -433,6 +483,7 @@ export async function POST(request: Request) {
         answerProvider = result.provider;
         answerModel = result.model;
         fallbackReason = result.fallbackReason || fallbackReason;
+        recordGrounding(result.grounding);
         return result;
       };
 
@@ -449,20 +500,22 @@ export async function POST(request: Request) {
         const researchSignal = AbortSignal.any([AbortSignal.timeout(45_000), stopSignal]);
         let route: Awaited<ReturnType<typeof assessResearch>> | null = null;
         let routeFailed = false;
-        try {
-          if (earlyRoute) {
-            const early = await earlyRoute;
-            if (!early.ok) throw early.error;
-            route = early.value;
-          } else {
-            route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts, hasAttachments });
+        if (!nativeWebSearch) {
+          try {
+            if (earlyRoute) {
+              const early = await earlyRoute;
+              if (!early.ok) throw early.error;
+              route = early.value;
+            } else {
+              route = await assessResearch(messages, AbortSignal.any([researchSignal, AbortSignal.timeout(8_000)]), { connectedAccounts, hasAttachments });
+            }
+          } catch (error) {
+            // Deciding whether to search failed. Answer anyway, like an ordinary
+            // turn, but tell the model it could not check the web this time.
+            routeFailed = true;
+            toolMessages.splice(toolMessages.length - 1, 0, UNCHECKED_NOTE);
+            console.info("[research]", JSON.stringify({ outcome: "routing_failed", reason: serializeError(error), durationMs: Date.now() - startedAt, fallbackCategory: "assessment" }));
           }
-        } catch (error) {
-          // Deciding whether to search failed. Answer anyway, like an ordinary
-          // turn, but tell the model it could not check the web this time.
-          routeFailed = true;
-          toolMessages.splice(toolMessages.length - 1, 0, UNCHECKED_NOTE);
-          console.info("[research]", JSON.stringify({ outcome: "routing_failed", reason: serializeError(error), durationMs: Date.now() - startedAt, fallbackCategory: "assessment" }));
         }
         if (route?.data.decision === "clarify") {
           research = { status: "clarification", sources: [], limitations: [], searches: 0, extractedPages: 0 };
@@ -516,19 +569,23 @@ export async function POST(request: Request) {
           // Reveal only the exact reviewed answer, in small chunks through the existing stream.
           for (const chunk of result.text.match(/[\s\S]{1,96}/g) || []) push(chunk);
           if (result.action && !researchSignal.aborted) await runResearchAction(result.action);
-        } else if (route || routeFailed) {
+        } else if (nativeWebSearch || route || routeFailed) {
           try {
             first = await streamChatWithTools(toolMessages, tools, {
               signal: stopSignal,
               temperature: 0.6,
               cacheKey: user!.id,
               images: attachments.images,
+              webSearch: nativeWebSearch,
+              onSearchQuery,
+              onUrlRead,
               onToken,
               onToolCallStart
             });
             answerProvider = first.provider;
             answerModel = first.model;
             fallbackReason = first.fallbackReason;
+            recordGrounding(first.grounding);
           } catch (error) {
             // A malformed tool request should never prevent a normal answer, as
             // long as nothing has been shown yet. Capacity problems are different:
@@ -581,6 +638,9 @@ export async function POST(request: Request) {
                   temperature: 0.6,
                   cacheKey: user!.id,
                   images: attachments.images,
+                  webSearch: nativeWebSearch,
+                  onSearchQuery,
+                  onUrlRead,
                   provider: round.provider,
                   assistantContent: round.assistantContent,
                   onToken: (token) => onToken(removeEmDashes(token)),
@@ -589,6 +649,7 @@ export async function POST(request: Request) {
                 answerProvider = round.provider;
                 answerModel = round.model;
                 fallbackReason = round.fallbackReason || fallbackReason;
+                recordGrounding(round.grounding);
               } catch (error) {
                 console.error("[chat] tool follow-up failed", serializeError(error));
                 round = { ...round, text: "", toolCalls: [] };
@@ -627,15 +688,19 @@ export async function POST(request: Request) {
 
       if (answerProvider && answerModel) send({ type: "model", provider: answerProvider, model: answerModel, fallbackReason });
 
-      // The sources an answer actually cites, plus the accounts it looked at.
+      // The sources an answer actually cites, plus any web pages Gemini grounded on and accounts it looked at.
       const replyCitations = (text: string): Citation[] => {
         const allCitations = { ...context.citations, ...webCitations };
         const usedMarkers = Array.from(new Set(Array.from(text.matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g), (match) => match[1].split(/\s*,\s*/)).flat()));
+        const inlineCitations = usedMarkers.map((marker) => allCitations[marker]).filter((citation): citation is Citation => Boolean(citation));
+        const seenMarkers = new Set(inlineCitations.map((citation) => citation.marker));
+        const extraGrounded = groundedSources.filter((citation) => !seenMarkers.has(citation.marker));
         const memoryCitations: Citation[] = Array.from(new Set(Array.from(text.matchAll(/\[M(\d+)\]/g), (match) => Number(match[1]))))
           .filter((n) => Boolean(memories[n - 1]))
           .map((n) => ({ kind: "memory" as const, marker: `M${n}`, memoryId: memories[n - 1].id, content: memories[n - 1].content }));
         return [
-          ...usedMarkers.map((marker) => allCitations[marker]).filter((citation): citation is Citation => Boolean(citation)),
+          ...inlineCitations,
+          ...extraGrounded,
           ...memoryCitations,
           ...Array.from(toolSources, (label, index) => ({ kind: "tool" as const, marker: `tool-${index + 1}`, label }))
         ];
@@ -762,7 +827,7 @@ export async function POST(request: Request) {
         ]).catch((error: unknown) => console.warn("[chat] summary failed", serializeError(error)));
         if (stopped || !isNewMessage || temporary) return;
         await extractMemories(supabase, user!.id, userContent, finalAnswer);
-        await maybeBootstrapMemories(supabase, user!.id);
+        if (!memories.length) await maybeBootstrapMemories(supabase, user!.id);
       });
     }
 
@@ -792,21 +857,28 @@ const ACTION_GUIDE = {
     "Tools: search the user's notes and files, search earlier conversations, create a note, save to memory. External research is handled separately before this step. When the user asks you to remember something, call remember; never say you saved or will remember something unless remember confirmed it. Use the workspace tools only when the user asks about their own materials or asks you to create something. Do not write any text before calling a tool. After tools, answer in plain prose and cite web results with their bracketed id, like <claim> [1]. Cite only ids you were given."
 };
 
-const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean) =>
-  !google && !finance
-    ? ACTION_GUIDE
-    : {
-        role: "system" as const,
-        content: ACTION_GUIDE.content
-          .replace(
-            "Tools: search the user's notes and files, search earlier conversations, create a note, save to memory.",
-            `Tools: search the user's notes and files, search earlier conversations, create a note, save to memory${google ? ", search and read their Gmail, save Gmail drafts, read and add Google Calendar events" : ""}${finance ? ", read their bank and card transactions, spending, balances and recurring payments" : ""}.`
-          )
-          .replace(
-            "Use the workspace tools only when the user asks about their own materials or asks you to create something.",
-            "Use the tools only when the user asks about their own materials, email, calendar or money, or asks you to create something."
-          )
-      };
+const ACCOUNT_ACTION_GUIDE = (google: boolean, finance: boolean, nativeWebSearch = false) => {
+  let content = ACTION_GUIDE.content;
+  if (nativeWebSearch) {
+    content = content.replace(
+      "External research is handled separately before this step.",
+      "You have built-in Google Search and live webpage reading (URL context). Use Google Search whenever a question depends on current events, news, live facts, shopping, product availability, or current prices. When the user pastes a link or asks about specific products or pricing, read the pages directly and give exact prices, specs, and store names. Default to the United States and the current date instead of asking unnecessary clarifying questions."
+    );
+  }
+  if (!google && !finance) return { role: "system" as const, content };
+  return {
+    role: "system" as const,
+    content: content
+      .replace(
+        "Tools: search the user's notes and files, search earlier conversations, create a note, save to memory.",
+        `Tools: search the user's notes and files, search earlier conversations, create a note, save to memory${google ? ", search and read their Gmail, save Gmail drafts, read and add Google Calendar events" : ""}${finance ? ", read their bank and card transactions, spending, balances and recurring payments" : ""}.`
+      )
+      .replace(
+        "Use the workspace tools only when the user asks about their own materials or asks you to create something.",
+        "Use the tools only when the user asks about their own materials, email, calendar or money, or asks you to create something."
+      )
+  };
+};
 
 // OpenAI, the main model, gets a long stretch of the conversation. Groq, the
 // fallback, limits tokens per minute, so lib/ai.ts trims history again before
@@ -828,7 +900,7 @@ const TOOL_SOURCES: Record<string, string> = {
 const HISTORY_CHAR_BUDGET = 60_000;
 const HISTORY_MESSAGE_MAX = 8_000;
 const CURRENT_MESSAGE_MAX = 12000;
-const STOP_POLL_MS = 1500;
+const STOP_POLL_MS = 4000;
 const SUGGESTIONS_WAIT_MS = 3_500;
 const CHAT_REPLIES_PER_HOUR = 240;
 const HOLD_CHARS = 160;

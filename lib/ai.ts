@@ -10,7 +10,7 @@ import {
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
 import { openaiModel, openaiReady, OpenAIRequestError, streamOpenAI, type OpenAIItem } from "@/lib/openai";
-import { geminiModel, geminiReady, GeminiRequestError, streamGemini, type GeminiPart } from "@/lib/gemini";
+import { geminiModel, geminiReady, GeminiRequestError, streamGemini, type GeminiGrounding, type GeminiPart } from "@/lib/gemini";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
@@ -33,6 +33,7 @@ type CompletionResult = {
   usage: TokenUsage;
   model?: string;
   fallbackReason?: string;
+  grounding?: GeminiGrounding;
 };
 
 /**
@@ -65,11 +66,15 @@ type StreamOptions = {
   maxTokens?: number;
   onToken: (token: string) => void;
   onToolCallStart?: () => void;
+  onSearchQuery?: (queries: string[]) => void;
+  onUrlRead?: (urls: string[]) => void;
   provider?: AiProvider;
   /** The previous tool round's raw output (OpenAI items or Gemini parts), replayed to the same provider. */
   assistantContent?: Array<Record<string, unknown>>;
   tools?: Parameters<typeof streamOpenAI>[1];
   allowTools?: boolean;
+  /** Enable Gemini's built-in Google Search and URL Context page reader. */
+  webSearch?: boolean;
   cacheKey?: string;
   /** Private links to pictures attached to the newest message (Gemini and OpenAI; Groq gets their text). */
   images?: string[];
@@ -110,7 +115,7 @@ export async function streamChatWithTools(
         assistantContent: options.assistantContent as OpenAIItem[] | undefined,
         onToken: (token) => { if (token) started = true; options.onToken(token); }
       });
-      if (result.text.trim() || result.toolCalls.length) return { ...result, assistantContent: result.assistantContent as Array<Record<string, unknown>>, provider: "openai" as const, fallbackReason: undefined };
+      if (result.text.trim() || result.toolCalls.length) return { ...result, assistantContent: result.assistantContent as Array<Record<string, unknown>>, provider: "openai" as const, fallbackReason: undefined, grounding: undefined };
       fallbackReason = "empty";
     } catch (error) {
       if (started || options.signal?.aborted) throw error;
@@ -124,7 +129,7 @@ export async function streamChatWithTools(
   const result = tools.length && options.allowTools !== false
     ? await streamGroqWithTools(lean, tools, options)
     : { text: await streamGroq(lean, options), toolCalls: [] };
-  return { ...result, provider: "groq" as const, assistantContent: undefined, model: groqModel(), fallbackReason };
+  return { ...result, provider: "groq" as const, assistantContent: undefined, model: groqModel(), fallbackReason, grounding: undefined };
 }
 
 const GROQ_HISTORY_BUDGET = 7_000;
@@ -244,6 +249,7 @@ export async function streamAi(
     provider: result.provider,
     model: result.model,
     fallbackReason: result.fallbackReason,
+    grounding: result.grounding,
     // Groq's streaming endpoint is not asked for usage, so nothing to report.
     usage: { ...NO_USAGE }
   };

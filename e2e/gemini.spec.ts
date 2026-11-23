@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { resetMocks } from "./support/session";
 import { configuredAiModel, streamChatWithTools } from "../lib/ai";
-import { embedForMemory, memoryEmbeddingModel } from "../lib/embeddings";
+import { embedForMemory, embedText, hasEmbeddingProvider, memoryEmbeddingModel } from "../lib/embeddings";
 
 // Gemini is the main model in production (GEMINI_API_KEY). These run the real
 // client code against the fake Gemini server in e2e/support/mock-servers.mjs.
@@ -106,5 +106,25 @@ test.describe("Gemini", () => {
     const [request] = (await gemini()).requests;
     expect(request.path).toBe("/gemini/v1beta/models/gemini-embedding-001:batchEmbedContents");
     expect(request.body.requests[0].outputDimensionality).toBe(1536);
+
+    delete process.env.EMBEDDING_API_KEY;
+    expect(hasEmbeddingProvider()).toBe(true);
+    const chunkVector = await embedText("project lease summary");
+    expect(chunkVector).toHaveLength(1536);
+  });
+
+  test("enables built-in Google Search and URL context alongside workspace tools", async () => {
+    const result = await streamChatWithTools(
+      [{ role: "user", content: "What is the current price of the PS5?" }],
+      [tool],
+      { webSearch: true, onToken: () => {} }
+    );
+    expect(result.provider).toBe("gemini");
+    const [request] = (await gemini()).requests;
+    expect(request.body.tools).toEqual([
+      { functionDeclarations: [{ name: tool.function.name, description: tool.function.description, parameters: tool.function.parameters }] },
+      { googleSearch: {} },
+      { urlContext: {} }
+    ]);
   });
 });

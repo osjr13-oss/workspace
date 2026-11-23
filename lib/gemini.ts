@@ -16,6 +16,11 @@ import { removeEmDashes } from "@/lib/text";
 
 /** One raw part of a Gemini message, kept exactly as received for replay. */
 export type GeminiPart = Record<string, unknown>;
+export type GeminiGrounding = {
+  queries: string[];
+  sources: Array<{ title: string; url: string }>;
+  readUrls: string[];
+};
 type Tool = { type: string; function: { name: string; description: string; parameters: Record<string, unknown> } };
 type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
 
@@ -170,13 +175,38 @@ async function readEvents(body: ReadableStream<Uint8Array>, handle: (event: Reco
 export async function streamGemini(
   messages: GroqChatMessage[],
   tools: Tool[],
-  options: { signal?: AbortSignal; maxTokens?: number; onToken: (token: string) => void; onToolCallStart?: () => void; assistantContent?: GeminiPart[]; allowTools?: boolean; images?: string[] }
-): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: GeminiPart[]; model: string }> {
+  options: {
+    signal?: AbortSignal;
+    maxTokens?: number;
+    onToken: (token: string) => void;
+    onToolCallStart?: () => void;
+    onSearchQuery?: (queries: string[]) => void;
+    onUrlRead?: (urls: string[]) => void;
+    assistantContent?: GeminiPart[];
+    allowTools?: boolean;
+    webSearch?: boolean;
+    images?: string[];
+  }
+): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: GeminiPart[]; model: string; grounding?: GeminiGrounding }> {
   const controller = new AbortController();
-  const firstOutputTimeout = setTimeout(() => controller.abort(), 30_000);
+  const firstOutputTimeout = setTimeout(() => controller.abort(), 35_000);
   const totalTimeout = setTimeout(() => controller.abort(), 150_000);
   try {
     const { systemInstruction, contents } = await toGeminiContents(messages, options.assistantContent, options.images);
+    const geminiTools: Array<Record<string, unknown>> = [];
+    if (tools.length) {
+      geminiTools.push({
+        functionDeclarations: tools.map(({ function: tool }) => ({
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters
+        }))
+      });
+    }
+    if (options.webSearch) {
+      geminiTools.push({ googleSearch: {} });
+      geminiTools.push({ urlContext: {} });
+    }
     const response = await fetch(`${geminiBaseUrl()}/models/${encodeURIComponent(geminiModel())}:streamGenerateContent?alt=sse`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": requireEnv("GEMINI_API_KEY") },
@@ -184,11 +214,9 @@ export async function streamGemini(
       body: JSON.stringify({
         ...(systemInstruction ? { systemInstruction } : {}),
         contents,
+        ...(geminiTools.length ? { tools: geminiTools } : {}),
         ...(tools.length
-          ? {
-              tools: [{ functionDeclarations: tools.map(({ function: tool }) => ({ name: tool.name, description: tool.description, parameters: tool.parameters })) }],
-              toolConfig: { functionCallingConfig: { mode: options.allowTools === false ? "NONE" : "AUTO" } }
-            }
+          ? { toolConfig: { functionCallingConfig: { mode: options.allowTools === false ? "NONE" : "AUTO" } } }
           : {}),
         // Thinking counts toward the output limit, so leave room for both.
         generationConfig: { maxOutputTokens: Math.max(options.maxTokens ?? 4096, 4096) + 4096, thinkingConfig: { thinkingLevel: thinkingLevel() } }
@@ -198,6 +226,9 @@ export async function streamGemini(
     if (!response.body) throw new Error("Gemini returned no stream");
 
     const parts: GeminiPart[] = [];
+    const searchQueries = new Set<string>();
+    const groundingSources = new Map<string, string>();
+    const readUrls = new Set<string>();
     let text = "";
     let finished = "";
     let model = geminiModel();
@@ -205,6 +236,42 @@ export async function streamGemini(
       if (event.error) throw new Error("Gemini stream error");
       if (typeof event.modelVersion === "string") model = event.modelVersion;
       const candidate = event.candidates?.[0];
+      const gm = candidate?.groundingMetadata as {
+        webSearchQueries?: unknown[];
+        groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+      } | undefined;
+      if (gm) {
+        const addedQueries: string[] = [];
+        for (const q of gm.webSearchQueries || []) {
+          if (typeof q === "string" && q.trim() && !searchQueries.has(q.trim())) {
+            searchQueries.add(q.trim());
+            addedQueries.push(q.trim());
+          }
+        }
+        if (addedQueries.length) options.onSearchQuery?.(addedQueries);
+        for (const chunk of gm.groundingChunks || []) {
+          const uri = chunk?.web?.uri?.trim();
+          const title = chunk?.web?.title?.trim() || "";
+          if (uri && /^https?:\/\//i.test(uri) && !groundingSources.has(uri)) {
+            groundingSources.set(uri, removeEmDashes(title || uri));
+          }
+        }
+      }
+      const um = candidate?.urlContextMetadata as {
+        urlMetadata?: Array<{ retrievedUrl?: string; urlRetrievalStatus?: string }>;
+      } | undefined;
+      if (um?.urlMetadata?.length) {
+        const addedUrls: string[] = [];
+        for (const item of um.urlMetadata) {
+          const url = item?.retrievedUrl?.trim();
+          if (url && /^https?:\/\//i.test(url) && !readUrls.has(url)) {
+            readUrls.add(url);
+            addedUrls.push(url);
+            if (!groundingSources.has(url)) groundingSources.set(url, new URL(url).hostname);
+          }
+        }
+        if (addedUrls.length) options.onUrlRead?.(addedUrls);
+      }
       for (const part of (candidate?.content?.parts || []) as GeminiPart[]) {
         parts.push(part);
         if (part.functionCall) {
@@ -238,7 +305,15 @@ export async function streamGemini(
       unnamed += 1;
       return call.id ? part : { ...part, functionCall: { ...call, id: `gemini-call-${unnamed}` } };
     });
-    return { text, toolCalls, assistantContent: replay, model };
+    const grounding: GeminiGrounding | undefined =
+      searchQueries.size || groundingSources.size || readUrls.size
+        ? {
+            queries: Array.from(searchQueries),
+            sources: Array.from(groundingSources, ([url, title]) => ({ url, title })),
+            readUrls: Array.from(readUrls)
+          }
+        : undefined;
+    return { text, toolCalls, assistantContent: replay, model, grounding };
   } finally {
     clearTimeout(firstOutputTimeout);
     clearTimeout(totalTimeout);
