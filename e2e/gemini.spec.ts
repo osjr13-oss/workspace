@@ -113,7 +113,7 @@ test.describe("Gemini", () => {
     expect(chunkVector).toHaveLength(1536);
   });
 
-  test("enables built-in Google Search and URL context alongside workspace tools", async () => {
+  test("enables built-in Google Search and URL context without mixing function declarations", async () => {
     const result = await streamChatWithTools(
       [{ role: "user", content: "What is the current price of the PS5?" }],
       [tool],
@@ -122,9 +122,9 @@ test.describe("Gemini", () => {
     expect(result.provider).toBe("gemini");
     const [request] = (await gemini()).requests;
     expect(request.body.tools).toEqual([
-      { functionDeclarations: [{ name: tool.function.name, description: tool.function.description, parameters: tool.function.parameters }] },
       { googleSearch: {} },
       { urlContext: {} }
     ]);
+    expect(request.body.toolConfig).toBeUndefined();
   });
 });

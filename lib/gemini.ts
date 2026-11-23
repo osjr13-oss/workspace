@@ -131,10 +131,13 @@ export async function toGeminiContents(messages: GroqChatMessage[], replay?: Gem
 }
 
 async function failure(response: Response) {
-  // Never log a provider response body: it can echo private prompts.
+  // Never log a provider response body verbatim: only log Google's short error status/message for debugging 400s.
   const payload = await response.json().catch(() => null);
   const status = String(payload?.error?.status || "");
   const message = String(payload?.error?.message || "");
+  if (response.status === 400 && message) {
+    console.warn("[gemini] 400 error", status || "INVALID_ARGUMENT", message.slice(0, 180));
+  }
   const reason =
     response.status === 429 || status === "RESOURCE_EXHAUSTED" ? (/billing|quota/i.test(message) ? "quota" : "rate_limit")
       : response.status === 401 || response.status === 403 || /api key/i.test(message) ? "authentication"
@@ -194,7 +197,12 @@ export async function streamGemini(
   try {
     const { systemInstruction, contents } = await toGeminiContents(messages, options.assistantContent, options.images);
     const geminiTools: Array<Record<string, unknown>> = [];
-    if (tools.length) {
+    // Gemini generateContent does not allow mixing built-in web tools
+    // (googleSearch/urlContext) with custom functionDeclarations in the same call.
+    if (options.webSearch) {
+      geminiTools.push({ googleSearch: {} });
+      geminiTools.push({ urlContext: {} });
+    } else if (tools.length) {
       geminiTools.push({
         functionDeclarations: tools.map(({ function: tool }) => ({
           name: tool.name,
@@ -202,10 +210,6 @@ export async function streamGemini(
           parameters: tool.parameters
         }))
       });
-    }
-    if (options.webSearch) {
-      geminiTools.push({ googleSearch: {} });
-      geminiTools.push({ urlContext: {} });
     }
     const response = await fetch(`${geminiBaseUrl()}/models/${encodeURIComponent(geminiModel())}:streamGenerateContent?alt=sse`, {
       method: "POST",
@@ -215,7 +219,7 @@ export async function streamGemini(
         ...(systemInstruction ? { systemInstruction } : {}),
         contents,
         ...(geminiTools.length ? { tools: geminiTools } : {}),
-        ...(tools.length
+        ...(!options.webSearch && tools.length
           ? { toolConfig: { functionCallingConfig: { mode: options.allowTools === false ? "NONE" : "AUTO" } } }
           : {}),
         // Thinking counts toward the output limit, so leave room for both.

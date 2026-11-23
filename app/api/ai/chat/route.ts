@@ -1,4 +1,4 @@
-import { assessResearch, planResearchAction, runQuickResearch, runResearch } from "@/lib/research";
+import { assessResearch, personalAccountQuestion, planResearchAction, researchRequired, runQuickResearch, runResearch } from "@/lib/research";
 import { EVERYDAY_ANSWER_GUIDE, SELRANO_PERSONA } from "@/lib/chat-guidance";
 import type { ResearchMetadata } from "@/lib/types";
 import { after, NextResponse } from "next/server";
@@ -307,6 +307,11 @@ export async function POST(request: Request) {
 
     const webCitations: Record<string, Citation> = {};
     const tools = [...toolDefinitions, ...(google ? googleToolDefinitions : []), ...(finance ? financeToolDefinitions : [])];
+    // Gemini generateContent cannot mix built-in web tools (googleSearch + urlContext)
+    // with custom functionDeclarations in one call. Use personal tools only when the
+    // user is asking about their own accounts, notes, memory, or project files;
+    // otherwise give Gemini native Google Search and live webpage reading.
+    const useGeminiWebTools = nativeWebSearch && !needsPersonalTools(userContent, { hasGoogle: Boolean(google), hasFinance: Boolean(finance), hasProject: Boolean(projectId) });
     const toolCtx: ToolContext = {
       supabase,
       google,
@@ -319,7 +324,7 @@ export async function POST(request: Request) {
       webCitations,
       citationOffset: Object.keys(context.citations).length
     };
-    const toolMessages: GroqChatMessage[] = [messages[0], ACCOUNT_ACTION_GUIDE(Boolean(google), Boolean(finance), nativeWebSearch), ...messages.slice(1)];
+    const toolMessages: GroqChatMessage[] = [messages[0], ACCOUNT_ACTION_GUIDE(Boolean(google), Boolean(finance), useGeminiWebTools), ...messages.slice(1)];
 
     const encoder = new TextEncoder();
     const startedAt = Date.now();
@@ -472,7 +477,7 @@ export async function POST(request: Request) {
           temperature: 0.6,
           cacheKey: user!.id,
           images: attachments.images,
-          webSearch: nativeWebSearch,
+          webSearch: useGeminiWebTools,
           onSearchQuery,
           onUrlRead,
           provider: latest?.provider ?? first?.provider,
@@ -571,12 +576,12 @@ export async function POST(request: Request) {
           if (result.action && !researchSignal.aborted) await runResearchAction(result.action);
         } else if (nativeWebSearch || route || routeFailed) {
           try {
-            first = await streamChatWithTools(toolMessages, tools, {
+            first = await streamChatWithTools(toolMessages, useGeminiWebTools ? [] : tools, {
               signal: stopSignal,
               temperature: 0.6,
               cacheKey: user!.id,
               images: attachments.images,
-              webSearch: nativeWebSearch,
+              webSearch: useGeminiWebTools,
               onSearchQuery,
               onUrlRead,
               onToken,
@@ -638,7 +643,7 @@ export async function POST(request: Request) {
                   temperature: 0.6,
                   cacheKey: user!.id,
                   images: attachments.images,
-                  webSearch: nativeWebSearch,
+                  webSearch: false,
                   onSearchQuery,
                   onUrlRead,
                   provider: round.provider,
@@ -844,6 +849,30 @@ export async function POST(request: Request) {
     console.error("[chat]", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/**
+ * Decides whether this turn needs Selrano's custom workspace/account tools
+ * (Gmail, Calendar, Plaid money, Notes, Memory, Past Chats) instead of
+ * Gemini's built-in Google Search + URL Context (which generateContent cannot
+ * combine with custom functionDeclarations in the same request).
+ */
+function needsPersonalTools(
+  text: string,
+  ctx: { hasGoogle: boolean; hasFinance: boolean; hasProject: boolean }
+): boolean {
+  // Explicit URL or web-search request always gets Gemini's web tools.
+  if (/https?:\/\/\S+/i.test(text) || researchRequired(text)) return false;
+  // Connected Gmail, Calendar, or Bank questions.
+  if ((ctx.hasGoogle || ctx.hasFinance) && personalAccountQuestion(text)) return true;
+  if (ctx.hasGoogle && /\b(?:gmail|inbox|emails?|drafts?|calendars?|meetings?|appointments?|schedule|add (?:an? )?event|coming up)\b/i.test(text)) return true;
+  // Workspace notes, files, memory, or searching past chats.
+  if (/\b(?:my notes?|save (?:a |this |that )?note|create (?:a )?note|take a note|note about|my files?|my documents?|in my workspace|search my|past chats?|earlier chats?|previous conversations?|we talked about|remember (?:that|this|my)|save to memory|don['’]t forget|keep in mind)\b/i.test(text)) {
+    return true;
+  }
+  // Inside a project, keep workspace search available unless the user is clearly asking the web.
+  if (ctx.hasProject) return true;
+  return false;
 }
 
 const UNCHECKED_NOTE = {
