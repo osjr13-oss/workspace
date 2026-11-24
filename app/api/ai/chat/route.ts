@@ -50,7 +50,10 @@ export async function POST(request: Request) {
       temporary?: boolean;
       /** Response style for this message (lib/response-styles.ts); defaults to the one in Settings. */
       style?: string;
+      /** Thinking/model depth: "fast" (Hydrogen) or "deep" (Argon). */
+      depth?: "fast" | "deep";
     };
+    const depth = body.depth === "deep" ? "deep" : "fast";
     let userContent = removeEmDashes(body.message || "").trim();
 
     let threadId = body.threadId || null;
@@ -240,7 +243,7 @@ export async function POST(request: Request) {
     const messages = [
       { role: "system" as const, content: SELRANO_PERSONA },
       { role: "system" as const, content: EVERYDAY_ANSWER_GUIDE },
-      ...personal,
+      ...personal.messages,
       // The persona, guide and account notes rarely change and come first, so the
       // provider can reuse that part between turns. The time comes last for the same reason.
       ...(google
@@ -259,7 +262,7 @@ export async function POST(request: Request) {
             }
           ]
         : []),
-      ...(styleProfile?.styleDirective
+      ...(personal.chosenStyle === "mine" && styleProfile?.styleDirective
         ? [
             {
               role: "system" as const,
@@ -478,6 +481,7 @@ export async function POST(request: Request) {
           cacheKey: user!.id,
           images: attachments.images,
           webSearch: useGeminiWebTools,
+          depth,
           onSearchQuery,
           onUrlRead,
           provider: latest?.provider ?? first?.provider,
@@ -582,6 +586,7 @@ export async function POST(request: Request) {
               cacheKey: user!.id,
               images: attachments.images,
               webSearch: useGeminiWebTools,
+              depth,
               onSearchQuery,
               onUrlRead,
               onToken,
@@ -644,6 +649,7 @@ export async function POST(request: Request) {
                   cacheKey: user!.id,
                   images: attachments.images,
                   webSearch: false,
+                  depth,
                   onSearchQuery,
                   onUrlRead,
                   provider: round.provider,
@@ -1059,10 +1065,14 @@ async function loadInstructions(
   const parts: string[] = [];
   if (p.about_you?.trim()) parts.push(`What the user wants you to know about them:\n${clip(removeEmDashes(p.about_you.trim()), INSTRUCTIONS_MAX)}`);
   if (p.response_instructions?.trim()) parts.push(`How the user wants you to respond (follow this unless a request says otherwise):\n${clip(removeEmDashes(p.response_instructions.trim()), INSTRUCTIONS_MAX)}`);
-  const style = responseStyleDirective(isResponseStyle(styleOverride) ? styleOverride : p.response_style);
+  const chosenStyle = isResponseStyle(styleOverride) ? styleOverride : isResponseStyle(p.response_style) ? p.response_style : "normal";
+  const style = responseStyleDirective(chosenStyle);
   if (style) parts.push(style);
   if (proj?.instructions?.trim()) parts.push(`Instructions for the project "${removeEmDashes(proj.name || "")}" (this chat belongs to it):\n${clip(removeEmDashes(proj.instructions.trim()), INSTRUCTIONS_MAX)}`);
-  return parts.length ? [{ role: "system" as const, content: parts.join("\n\n") }] : [];
+  return {
+    chosenStyle,
+    messages: parts.length ? [{ role: "system" as const, content: parts.join("\n\n") }] : []
+  };
 }
 const INSTRUCTIONS_MAX = 3_000;
 

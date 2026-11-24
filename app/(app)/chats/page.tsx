@@ -94,6 +94,9 @@ function ChatsContent() {
   const [text, setText] = useState("");
   // How Selrano answers; starts from the default in Settings and can change per chat.
   const [responseStyle, setResponseStyle] = useState<ResponseStyleId>("normal");
+  const [depth, setDepth] = useState<"fast" | "deep">("fast");
+  const depthRef = useRef<"fast" | "deep">("fast");
+  depthRef.current = depth;
   // A temporary chat is not kept in the list, is never learned from, and is removed after a day.
   const [temporary, setTemporary] = useState(false);
   const temporaryRef = useRef(false);
@@ -359,6 +362,7 @@ function ChatsContent() {
           // The new message follows the last saved message on screen (the version showing).
           parentId: lastSavedId.current,
           style: responseStyleRef.current,
+          depth: depthRef.current,
           temporary: !threadIdRef.current && temporaryRef.current
         })
       });
@@ -627,6 +631,8 @@ function ChatsContent() {
         maxAttachments={MAX_ATTACHMENTS}
         responseStyle={responseStyle}
         onResponseStyleChange={setResponseStyle}
+        depth={depth}
+        onDepthChange={setDepth}
       />
     </form>
   );

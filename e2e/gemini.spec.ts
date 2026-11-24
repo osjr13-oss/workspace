@@ -126,5 +126,18 @@ test.describe("Gemini", () => {
       { urlContext: {} }
     ]);
     expect(request.body.toolConfig).toBeUndefined();
+    expect(request.body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "medium" });
+  });
+
+  test("deep mode switches to Gemini 4 Argon with high thinking", async () => {
+    const result = await streamChatWithTools(
+      [{ role: "user", content: "Compare these tradeoffs in depth" }],
+      [],
+      { depth: "deep", webSearch: true, onToken: () => {} }
+    );
+    expect(result.provider).toBe("gemini");
+    const [request] = (await gemini()).requests;
+    expect(request.path).toBe("/gemini/v1beta/models/gemini-4-argon:streamGenerateContent");
+    expect(request.body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "high" });
   });
 });

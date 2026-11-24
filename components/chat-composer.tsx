@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, FileText, FolderOpen, Loader2, Mic, MicOff, Paperclip, SlidersHorizontal, Square, X } from "lucide-react";
+import { ArrowUp, FileText, FolderOpen, Loader2, Mic, MicOff, Paperclip, SlidersHorizontal, Sparkles, Square, X } from "lucide-react";
 import { RESPONSE_STYLES, type ResponseStyleId } from "@/lib/response-styles";
 import { autocorrectOnBoundary } from "@/lib/autocorrect";
 import { removeEmDashes } from "@/lib/text";
@@ -36,6 +36,9 @@ type ChatComposerProps = {
   /** How Selrano should answer in this chat; hidden when not given. */
   responseStyle?: ResponseStyleId;
   onResponseStyleChange?: (style: ResponseStyleId) => void;
+  /** "fast" (Gemini 4 Hydrogen) or "deep" (Gemini 4 Argon). */
+  depth?: "fast" | "deep";
+  onDepthChange?: (depth: "fast" | "deep") => void;
 };
 
 /** Pasted text longer than this becomes an attachment, so the box stays usable and nothing is cut. */
@@ -80,7 +83,9 @@ export function ChatComposer({
   maxAttachments,
   allowAttachments = true,
   responseStyle,
-  onResponseStyleChange
+  onResponseStyleChange,
+  depth = "fast",
+  onDepthChange
 }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -310,6 +315,21 @@ export function ChatComposer({
           <Paperclip size={18} />
         </button>
         </>
+        ) : null}
+
+        {onDepthChange ? (
+          <label className="project-chip project-chip-select" title="Fast uses Gemini 4 Hydrogen; Deep uses Gemini 4 Argon with extended thinking">
+            <Sparkles size={14} />
+            <select
+              aria-label="Thinking depth"
+              value={depth}
+              onChange={(event) => onDepthChange(event.target.value === "deep" ? "deep" : "fast")}
+              className="max-w-[6rem] appearance-none truncate bg-transparent pr-1 outline-none"
+            >
+              <option value="fast">Fast</option>
+              <option value="deep">Deep</option>
+            </select>
+          </label>
         ) : null}
 
         {onResponseStyleChange ? (

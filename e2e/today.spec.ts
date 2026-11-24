@@ -12,9 +12,10 @@ test.describe("Today", () => {
     await signIn(context);
   });
 
-  test("signing in lands on Today, with cards that invite the next step", async ({ page }) => {
+  test("signing in lands on Chat, and Today shows cards that invite the next step", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page).toHaveURL(/\/chats$/);
+    await page.goto("/dashboard");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^(Good (morning|afternoon|evening)|Still up), Test\.$/);
     await expect(page.getByRole("region", { name: "Coming up" }).getByRole("link", { name: "Connect Google" })).toBeVisible();
     await expect(page.getByRole("region", { name: "This month" }).getByRole("link", { name: "Connect a bank" })).toBeVisible();

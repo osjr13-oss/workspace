@@ -35,7 +35,10 @@ export function geminiReady() {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
 }
 
-export function geminiModel() {
+export type GeminiDepth = "fast" | "deep";
+
+export function geminiModel(depth: GeminiDepth = "fast") {
+  if (depth === "deep") return process.env.GEMINI_DEEP_MODEL?.trim() || "gemini-4-argon";
   return process.env.GEMINI_MODEL?.trim() || "gemini-4-hydrogen";
 }
 
@@ -44,11 +47,12 @@ export function geminiBaseUrl() {
 }
 
 /**
- * How much the model thinks before answering. Low by default so replies start
- * quickly; GEMINI_THINKING_LEVEL (low, medium, high) trades speed for depth.
+ * How much the model thinks before answering. Medium by default so everyday
+ * conversations feel genuinely thoughtful; High in Deep mode for tough problems.
  */
-function thinkingLevel() {
-  return process.env.GEMINI_THINKING_LEVEL?.trim() || "low";
+function thinkingLevel(depth: GeminiDepth = "fast") {
+  if (depth === "deep") return "high";
+  return process.env.GEMINI_THINKING_LEVEL?.trim() || "medium";
 }
 
 /** Used for an earlier tool call whose original signature was not kept (Google's documented placeholder). */
@@ -188,12 +192,15 @@ export async function streamGemini(
     assistantContent?: GeminiPart[];
     allowTools?: boolean;
     webSearch?: boolean;
+    depth?: GeminiDepth;
     images?: string[];
   }
 ): Promise<{ text: string; toolCalls: GroqToolCall[]; assistantContent: GeminiPart[]; model: string; grounding?: GeminiGrounding }> {
+  const depth = options.depth === "deep" ? "deep" : "fast";
+  const chosenModel = geminiModel(depth);
   const controller = new AbortController();
-  const firstOutputTimeout = setTimeout(() => controller.abort(), 35_000);
-  const totalTimeout = setTimeout(() => controller.abort(), 150_000);
+  const firstOutputTimeout = setTimeout(() => controller.abort(), depth === "deep" ? 60_000 : 35_000);
+  const totalTimeout = setTimeout(() => controller.abort(), 180_000);
   try {
     const { systemInstruction, contents } = await toGeminiContents(messages, options.assistantContent, options.images);
     const geminiTools: Array<Record<string, unknown>> = [];
@@ -211,7 +218,7 @@ export async function streamGemini(
         }))
       });
     }
-    const response = await fetch(`${geminiBaseUrl()}/models/${encodeURIComponent(geminiModel())}:streamGenerateContent?alt=sse`, {
+    const response = await fetch(`${geminiBaseUrl()}/models/${encodeURIComponent(chosenModel)}:streamGenerateContent?alt=sse`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": requireEnv("GEMINI_API_KEY") },
       signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal,
@@ -222,8 +229,11 @@ export async function streamGemini(
         ...(!options.webSearch && tools.length
           ? { toolConfig: { functionCallingConfig: { mode: options.allowTools === false ? "NONE" : "AUTO" } } }
           : {}),
-        // Thinking counts toward the output limit, so leave room for both.
-        generationConfig: { maxOutputTokens: Math.max(options.maxTokens ?? 4096, 4096) + 4096, thinkingConfig: { thinkingLevel: thinkingLevel() } }
+        // Thinking counts toward the output limit, so leave generous room for both.
+        generationConfig: {
+          maxOutputTokens: depth === "deep" ? 16_384 : Math.max(options.maxTokens ?? 4096, 4096) + 4096,
+          thinkingConfig: { thinkingLevel: thinkingLevel(depth) }
+        }
       })
     });
     if (!response.ok) throw await failure(response);
@@ -235,7 +245,7 @@ export async function streamGemini(
     const readUrls = new Set<string>();
     let text = "";
     let finished = "";
-    let model = geminiModel();
+    let model = chosenModel;
     await readEvents(response.body, (event) => {
       if (event.error) throw new Error("Gemini stream error");
       if (typeof event.modelVersion === "string") model = event.modelVersion;

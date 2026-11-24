@@ -21,9 +21,9 @@ struct SelranoApp: App {
 /// Which tab is open, and a message handed from Today to a new chat.
 @Observable
 final class Router {
-    enum Tab: Hashable { case today, chats, notes, money, more }
-    var tab: Tab = .today
-    var chatPath: [ChatRoute] = []
+    enum Tab: Hashable { case chats, today, notes, money, more }
+    var tab: Tab = .chats
+    var chatPath: [ChatRoute] = [.new(firstMessage: nil)]
 
     func startChat(with message: String) {
         tab = .chats

@@ -86,8 +86,8 @@ struct MainTabs: View {
     var body: some View {
         @Bindable var router = router
         TabView(selection: $router.tab) {
-            Tab("Today", systemImage: "sun.max", value: Router.Tab.today) { TodayView() }
             Tab("Chats", systemImage: "bubble.left.and.bubble.right", value: Router.Tab.chats) { ChatListView() }
+            Tab("Today", systemImage: "sun.max", value: Router.Tab.today) { TodayView() }
             Tab("Notes", systemImage: "book.closed", value: Router.Tab.notes) { NotesView() }
             Tab("Money", systemImage: "wallet.bifold", value: Router.Tab.money) { MoneyView() }
             Tab("More", systemImage: "ellipsis.circle", value: Router.Tab.more) { MoreView() }

@@ -153,7 +153,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" className="icon-button" aria-label="Open menu" onClick={() => setDrawerOpen(true)}>
             <Menu size={20} />
           </button>
-          <Link href="/dashboard" className="text-[17px] font-semibold tracking-[-0.01em]">
+          <Link href="/chats" className="text-[17px] font-semibold tracking-[-0.01em]">
             Selrano
           </Link>
           <Link href="/chats" className="icon-button" aria-label="New chat" title="New chat">
@@ -211,7 +211,7 @@ function SidebarContent({
     <div className="flex min-h-0 w-full flex-col">
       <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} gap-2 px-3 pt-4`}>
         {collapsed ? null : (
-          <Link href="/dashboard" className="flex items-center gap-2.5 px-2">
+          <Link href="/chats" className="flex items-center gap-2.5 px-2">
             <Image src="/logo.svg" alt="" width={28} height={28} priority />
             <span className="text-lg font-semibold tracking-[-0.01em]">Selrano</span>
           </Link>

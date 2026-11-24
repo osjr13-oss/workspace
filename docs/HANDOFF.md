@@ -2,7 +2,12 @@
 
 Last updated: **November 21, 2026 (end of session; read the next section first)**
 
-## Open problems and state (November 23)
+## Open problems and state (November 24)
+
+**Shipped November 24 (conversational feel, thinking depth, Fast/Deep mode, chat-first home):**
+1. **Natural conversational persona (`lib/chat-guidance.ts`, `app/api/ai/chat/route.ts`):** Rewrote `SELRANO_PERSONA` and `EVERYDAY_ANSWER_GUIDE` to remove the overly rigid bans on follow-up questions, headings/lists, and inline markdown links (so shopping/deal replies can link products directly), and restricted `styleProfile.styleDirective` injection to the `"mine"` ("Write like me") style instead of every turn.
+2. **Gemini thinking depth + Fast/Deep selector (`lib/gemini.ts`, `lib/ai.ts`, `components/chat-composer.tsx`, `app/(app)/chats/page.tsx`, `ios/`):** Raised default Gemini `thinkingLevel` from `"low"` to `"medium"`, and added a **Fast / Deep** selector in both the web composer and iPhone composer (`fast` -> `gemini-4-hydrogen` at `medium` thinking; `deep` -> `gemini-4-argon` at `high` thinking, 16k output budget).
+3. **Chat-first launch on Web and iPhone:** Signed-in web root/sign-in redirects and logo links now open `/chats` directly (Today remains at `/dashboard` in the sidebar). On the iPhone app (`ios/`), `Chats` is now the first tab and launches straight into a blank `New chat` ready to type, with `< Chats` one tap/swipe back and `Today` beside it.
 
 **Shipped November 23 (reliability, native Google Search + URL Context, and file embeddings):**
 1. **Native Google Search + live webpage reading on Gemini:** When `GEMINI_API_KEY` is configured, `/api/ai/chat` skips the separate Groq `assessResearch` pre-router and passes `{ googleSearch: {} }` and `{ urlContext: {} }` directly to Gemini (`lib/gemini.ts`, `lib/ai.ts`, `app/api/ai/chat/route.ts`) alongside workspace/Google/Plaid function tools. Grounding metadata (`groundingChunks`, `webSearchQueries`, `urlContextMetadata`) streams live search/page-read activity steps and persists clickable web citations on the message (visible on both web and iOS). Exa + `assessResearch` stay as the fallback when Gemini is not configured.

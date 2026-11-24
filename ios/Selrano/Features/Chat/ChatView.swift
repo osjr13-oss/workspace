@@ -60,8 +60,10 @@ struct ChatView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
+            @Bindable var bindableModel = model
             Composer(
                 text: $text,
+                depth: $bindableModel.depth,
                 busy: model.busy,
                 uploading: model.uploadingAttachments,
                 attachments: model.attachments,
@@ -192,6 +194,7 @@ struct PressableStyle: ButtonStyle {
 
 struct Composer: View {
     @Binding var text: String
+    @Binding var depth: String
     let busy: Bool
     let uploading: Bool
     let attachments: [ChatAttachment]
@@ -232,6 +235,27 @@ struct Composer: View {
                 }
                 .accessibilityLabel("Attach photo or file")
                 .padding(.leading, 8)
+                .padding(.bottom, 8)
+
+                Menu {
+                    Button {
+                        depth = "fast"
+                    } label: {
+                        Label("Fast (Gemini 4 Hydrogen)", systemImage: depth == "fast" ? "checkmark" : "bolt")
+                    }
+                    Button {
+                        depth = "deep"
+                    } label: {
+                        Label("Deep (Gemini 4 Argon)", systemImage: depth == "deep" ? "checkmark" : "sparkles")
+                    }
+                } label: {
+                    Text(depth == "deep" ? "Deep" : "Fast")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(depth == "deep" ? Theme.accent : Theme.muted)
+                        .padding(.horizontal, 6)
+                        .frame(height: 34)
+                }
+                .accessibilityLabel("Thinking depth")
                 .padding(.bottom, 8)
 
                 TextField("Ask Selrano anything", text: $text, axis: .vertical)

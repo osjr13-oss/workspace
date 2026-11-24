@@ -10,7 +10,7 @@ import {
 } from "@/lib/groq";
 import { removeEmDashes } from "@/lib/text";
 import { openaiModel, openaiReady, OpenAIRequestError, streamOpenAI, type OpenAIItem } from "@/lib/openai";
-import { geminiModel, geminiReady, GeminiRequestError, streamGemini, type GeminiGrounding, type GeminiPart } from "@/lib/gemini";
+import { geminiModel, geminiReady, GeminiRequestError, streamGemini, type GeminiDepth, type GeminiGrounding, type GeminiPart } from "@/lib/gemini";
 
 type SimpleMessage = {
   role: "system" | "user" | "assistant";
@@ -75,6 +75,8 @@ type StreamOptions = {
   allowTools?: boolean;
   /** Enable Gemini's built-in Google Search and URL Context page reader. */
   webSearch?: boolean;
+  /** "fast" (Hydrogen, medium thinking) or "deep" (Argon, high thinking). */
+  depth?: GeminiDepth;
   cacheKey?: string;
   /** Private links to pictures attached to the newest message (Gemini and OpenAI; Groq gets their text). */
   images?: string[];

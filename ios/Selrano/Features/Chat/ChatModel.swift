@@ -33,6 +33,7 @@ final class ChatModel {
     private(set) var busy = false
     private(set) var status: String?
     private(set) var replyStarted = false
+    var depth: String = "fast"
     var error: String?
 
     @ObservationIgnored private var replyTask: Task<Void, Never>?
@@ -125,7 +126,7 @@ final class ChatModel {
         status = nil
         currentQuestionId = nil
         currentStartedAt = nil
-        var body: [String: Any] = ["message": text]
+        var body: [String: Any] = ["message": text, "depth": depth]
         if let threadId { body["threadId"] = threadId }
         if let parentId { body["parentId"] = parentId }
         if !ready.isEmpty { body["fileIds"] = ready.map(\.id) }
@@ -139,7 +140,7 @@ final class ChatModel {
         replyStarted = false
         currentQuestionId = nil
         currentStartedAt = nil
-        var body: [String: Any] = ["regenerateMessageId": message.id]
+        var body: [String: Any] = ["regenerateMessageId": message.id, "depth": depth]
         if let threadId { body["threadId"] = threadId }
         replyTask = Task { await run(body: body, api: api) }
     }
